@@ -73,7 +73,7 @@ footer .v{font-family:'Fraunces',serif;font-style:italic;font-size:1.05em;color:
 .psave{margin-top:.5em}
 /* pinned live-class video that stays at the top of the Mine while lessons scroll below */
 #present-stage{position:fixed;inset:0;z-index:9999;background:#000;display:flex;align-items:center;justify-content:center}
-#present-stage img{max-width:100%;max-height:100%;object-fit:contain;display:block;position:relative;z-index:0;pointer-events:none}
+#present-stage img{max-width:100%;max-height:100%;object-fit:contain;display:block;position:relative;z-index:0;pointer-events:none;background:#000}
 #present-stage .pnav{position:fixed;inset:0;display:flex;z-index:1}
 #present-stage .pnav .l,#present-stage .pnav .r{flex:1;cursor:pointer}
 #present-stage #ps-exit{position:fixed;top:14px;right:16px;z-index:10;width:48px;height:48px;border-radius:50%;border:2px solid rgba(255,255,255,.5);background:rgba(0,0,0,.55);color:#fff;font-size:1.4rem;font-weight:700;cursor:pointer;opacity:.85;backdrop-filter:blur(4px)}
@@ -440,7 +440,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v50</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v51</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -752,19 +752,30 @@ function enterPresentStage(){
   var cur=Math.min(Math.max(1,(C.sermons&&C.sermons.current)||1),Math.max(1,total));
   var stage=document.getElementById('present-stage');
   if(!stage){ stage=document.createElement('div'); stage.id='present-stage'; document.body.appendChild(stage); }
-  function paint(){
-    // Pure slide only — nothing else shows (projector-clean at all times).
-    stage.innerHTML='<img src="'+SERMONS_PATH+cur+SLIDES_EXT+'" alt="Slide '+cur+'">'
-      +'<div class="pnav"><div class="l" id="ps-prev"></div><div class="r" id="ps-next"></div></div>'
-      +'<button id="ps-exit" title="Exit">✕</button>';
-    document.getElementById('ps-next').onclick=goNext;
-    document.getElementById('ps-prev').onclick=goPrev;
-    document.getElementById('ps-exit').onclick=function(){ stage.remove(); };
+
+  // Preload every slide in the background so advancing is instant (no black flash).
+  var cache={};
+  function preload(i){ if(i<1||i>total||cache[i])return; var im=new Image(); im.src=SERMONS_PATH+i+SLIDES_EXT; cache[i]=im; }
+  for(var i=1;i<=total;i++){ preload(i); }
+
+  // Build the stage ONCE with a persistent <img> we just swap src on (no full re-render, no flash).
+  stage.innerHTML='<img id="ps-img" src="'+SERMONS_PATH+cur+SLIDES_EXT+'" alt="Slide '+cur+'">'
+    +'<div class="pnav"><div class="l" id="ps-prev"></div><div class="r" id="ps-next"></div></div>'
+    +'<button id="ps-exit" title="Exit">✕</button>';
+  var img=document.getElementById('ps-img');
+  document.getElementById('ps-next').onclick=goNext;
+  document.getElementById('ps-prev').onclick=goPrev;
+  document.getElementById('ps-exit').onclick=function(){ stage.remove(); };
+
+  function show(){
+    // swap src only; because it's preloaded, it appears immediately
+    if(img)img.src=SERMONS_PATH+cur+SLIDES_EXT;
+    preload(cur+1); preload(cur-1);  // keep neighbours warm
   }
   function syncFB(){ try{ sermonWrite({current:cur}); }catch(e){} }
-  function goNext(){ if(cur<total){ cur++; paint(); syncFB(); } }
-  function goPrev(){ if(cur>1){ cur--; paint(); syncFB(); } }
-  paint();
+  function goNext(){ if(cur<total){ cur++; show(); syncFB(); } }
+  function goPrev(){ if(cur>1){ cur--; show(); syncFB(); } }
+
   document.addEventListener('keydown',function pk(e){
     if(!document.getElementById('present-stage')){document.removeEventListener('keydown',pk);return;}
     if(e.key==='ArrowRight'||e.key===' '||e.key==='Spacebar'||e.key==='ArrowDown'||e.key==='PageDown'||e.key==='Enter'){e.preventDefault();goNext();}
