@@ -55,8 +55,8 @@ label{font-size:.8em;font-weight:700;letter-spacing:.07em;text-transform:upperca
 .door .name{font-family:'Fraunces',serif;font-weight:640;font-size:1.35rem;margin:.25em 0 .1em}
 .door .what{font-size:.85em;color:var(--dim)}
 .door .tagline{font-size:.72em;color:var(--gold);letter-spacing:.08em;text-transform:uppercase;font-weight:700;margin-top:.5em}
-.livepill{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:50;display:none;
-  background:var(--red);color:#fff;border-radius:999px;padding:.6em 1.4em;font-weight:700;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.livepill{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:50;display:none;
+  background:var(--red);color:#fff;border-radius:999px;padding:.42em 1em;font-weight:700;font-size:.88rem;box-shadow:0 6px 22px rgba(0,0,0,.45)}
 .livepill a{color:#fff;text-decoration:none}
 /* iOS add-to-home-screen guide overlay */
 .iosov{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
@@ -256,6 +256,19 @@ footer .v{font-family:'Fraunces',serif;font-style:italic;font-size:1.05em;color:
     <p class="iosov-note">The treasure-map icon will appear with your other apps. Tapping it opens this like an app — full screen, always with you.</p>
   </div>
   <div class="iosov-arrow" id="iosov-arrow">⬇︎</div>
+</div>
+<div id="android-install-overlay" class="iosov top" style="display:none">
+  <div class="iosov-bg" id="androv-close-bg"></div>
+  <div class="iosov-card">
+    <button class="iosov-x" id="androv-x" aria-label="Close">✕</button>
+    <div class="iosov-icon">📲</div>
+    <h3>Add Pastor Josh to your Home Screen</h3>
+    <p>Just <b>two taps</b> — follow the arrow:</p>
+    <div class="iosov-step"><span class="iosov-num">1</span> Tap the <b>⋮</b> menu <span class="iosov-share">↗︎</span> (top-right of Chrome)</div>
+    <div class="iosov-step"><span class="iosov-num">2</span> Tap <b>Add to Home screen</b> (or <b>Install app</b>), then <b>Add</b></div>
+    <p class="iosov-note">The treasure-map icon will appear with your other apps. Tapping it opens this like an app — full screen, always with you.</p>
+  </div>
+  <div class="iosov-arrow" id="androv-arrow">⬆︎</div>
 </div>
 
 <script>
@@ -763,7 +776,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v66</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v68</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -1128,7 +1141,10 @@ function showIosOverlay(){
   // iPad's Safari share button is top-right; iPhone's is bottom-centre.
   if(deviceKind()==='ipad'){ ov.classList.add('top'); } else { ov.classList.remove('top'); }
   ov.style.display='flex';
-  var close=function(){ ov.style.display='none'; };
+  // Tuck the LIVE pill away so the arrow has a clean path to the Share button.
+  var pill=document.getElementById('livepill'); var pillPrev = pill ? pill.style.display : null;
+  if(pill) pill.style.display='none';
+  var close=function(){ ov.style.display='none'; if(pill) pill.style.display=(pillPrev||''); };
   var x=document.getElementById('iosov-x'); if(x)x.onclick=close;
   var bg=document.getElementById('iosov-close-bg'); if(bg)bg.onclick=close;
 }
@@ -1151,13 +1167,23 @@ async function triggerAddToPhone(btn){
     showIosOverlay();
     return;
   }
-  // Fallback: no native prompt available (e.g. iOS, or Android before the prompt fired)
-  if(kind==='android'){ showAndroidHint(btn); return; }
-  showIosOverlay(); // best-effort visual guide
+  // No native prompt available.
+  if(kind==='android'){ showAndroidOverlay(); return; }
+  // Desktop / other: the arrow overlay is meaningless here — give a plain note.
+  showDesktopHint(btn);
 }
-function showAndroidHint(btn){
+function showAndroidOverlay(){
+  var ov=document.getElementById('android-install-overlay'); if(!ov)return;
+  ov.style.display='flex';
+  var pill=document.getElementById('livepill'); var pillPrev = pill ? pill.style.display : null;
+  if(pill) pill.style.display='none';
+  var close=function(){ ov.style.display='none'; if(pill) pill.style.display=(pillPrev||''); };
+  var x=document.getElementById('androv-x'); if(x)x.onclick=close;
+  var bg=document.getElementById('androv-close-bg'); if(bg)bg.onclick=close;
+}
+function showDesktopHint(btn){
   var slot=document.getElementById(btn && btn.dataset && btn.dataset.slot ? btn.dataset.slot : 'x');
-  var msg='<div class="note" style="margin-top:.5em">Tap the <b>⋮</b> menu (top-right of Chrome), then <b>Add to Home screen</b>.</div>';
+  var msg='<div class="note" style="margin-top:.5em">This works best on a <b>phone</b> — open the site on your phone to add it to your home screen. On a computer, look for an <b>install ⊕</b> icon in your browser\u2019s address bar.</div>';
   if(slot){ slot.innerHTML=msg; } else if(btn && btn.parentNode){ var d=document.createElement('div'); d.innerHTML=msg; btn.parentNode.appendChild(d); }
 }
 function addToPhoneCard(){
@@ -2362,7 +2388,7 @@ function showLivePill(){
   if(C.live.teaching.on)lit.push(['class','📖 Class']);
   const p=document.getElementById('livepill');
   if(lit.length){p.style.display='block';
-    p.innerHTML=`<a href="#${lit[0][0]}">🔥 LIVE NOW: ${lit.map(l=>l[1]).join(' · ')} — tap to gather</a>`;
+    p.innerHTML=`<a href="#${lit[0][0]}">🔴 LIVE — tap to join</a>`;
   } else p.style.display='none';
 }
 
