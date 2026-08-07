@@ -188,7 +188,17 @@ let C={
  slides:{on:false,total:0,current:1}
 };
 if(db){
-  db.ref('content').on('value',s=>{const v=s.val();if(v){if(v.devotional)C.devotional={...C.devotional,...v.devotional};if(v.live){['prayer','teaching','expedition'].forEach(f=>{if(v.live[f])C.live[f]={...C.live[f],...v.live[f]};});}if(v.archive&&v.archive.items)C.archive=v.archive.items;if(v.config)C.config={...C.config,...v.config};if(v.trail&&v.trail.items)C.trail=v.trail.items;if(v.rhythm&&v.rhythm.items)C.rhythm=v.rhythm.items;if(v.slides)C.slides={...C.slides,...v.slides};}render();showLivePill();});
+  db.ref('content').on('value',s=>{const v=s.val();if(v){
+      if(v.devotional)C.devotional={...C.devotional,...v.devotional};
+      if(v.live){['prayer','teaching','expedition'].forEach(f=>{if(v.live[f])C.live[f]={...C.live[f],...v.live[f]};});}
+      if(v.archive&&v.archive.items)C.archive=v.archive.items;
+      if(v.config)C.config={...C.config,...v.config};
+      if(v.trail&&v.trail.items)C.trail=v.trail.items;
+      if(v.rhythm&&v.rhythm.items)C.rhythm=v.rhythm.items;
+      const slidesOnly = v.slides && onlySlidesChanged(v);
+      if(v.slides)C.slides={...C.slides,...v.slides};
+      if(slidesOnly && updateSlideInPlace()){ showLivePill(); return; }  /* don't reload the video */
+    }render();showLivePill();});
 }
 
 /* ================= THE VEINS (categories) & DIG SITES (studies) ================= */
@@ -406,7 +416,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v26</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v30</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -457,18 +467,72 @@ async function mountCircle(containerId,room,name){
   }
 }
 /* ---- Live Slides: JPEGs in /slides folder, synced current slide ---- */
-const SLIDES_PATH='/slides/';           // repo folder that holds 1.jpg, 2.jpg ...
+const SLIDES_PATH='/slides/';           // slides live in the /slides folder: 1.jpg, 2.jpg ...
 const SLIDES_EXT='.jpg';                // file extension of your exported slides
 function slidesPanel(){
   const s=C.slides;
   if(!s||!s.on||!s.total)return '';     // only show when a deck is live
   const n=Math.min(Math.max(1,s.current||1),s.total);
+  const isMod=!!SESSION_MOD_PASS;       // only the steward sees the arrows
   return `<div class="card" style="padding:.5em">
-    <img src="${SLIDES_PATH}${n}${SLIDES_EXT}" alt="Slide ${n}"
-      style="width:100%;border-radius:10px;display:block;background:#000"
-      onerror="this.style.opacity=.4;this.alt='Slide ${n} not found — expected /slides/${n}.jpg'">
-    <div class="note" style="text-align:center;margin-top:.4em">Slide ${n} of ${s.total} · follows Pastor Josh live</div>
+    <div style="position:relative">
+      <img src="${SLIDES_PATH}${n}${SLIDES_EXT}" alt="Slide ${n}"
+        style="width:100%;border-radius:10px;display:block;background:#000"
+        onerror="this.style.opacity=.4;this.alt='Slide ${n} not found — expected /slides/${n}.jpg'">
+      ${isMod?`
+      <button id="slide-prev" aria-label="Previous slide" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);
+        width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;font-size:1.5rem;
+        background:rgba(29,21,16,.72);color:var(--gold);backdrop-filter:blur(4px)">◀</button>
+      <button id="slide-next" aria-label="Next slide" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);
+        width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;font-size:1.5rem;
+        background:rgba(29,21,16,.72);color:var(--gold);backdrop-filter:blur(4px)">▶</button>`:''}
+    </div>
+    <div class="note" style="text-align:center;margin-top:.4em">
+      ${isMod?`<b style="color:var(--gold)">Slide ${n} of ${s.total}</b> · tap ◀ ▶ to lead — everyone follows`
+             :`Slide ${n} of ${s.total} · follows Pastor Josh live`}
+    </div>
   </div>`;
+}
+/* wire the on-slide presenter arrows (called after each render that includes slides) */
+async function slideNudge(delta){
+  try{
+    const s=C.slides||{}; const total=s.total||0;
+    let cur=(s.current||1)+delta;
+    cur=Math.min(Math.max(1,cur),Math.max(1,total));
+    await db.ref('content/slides').set({k:WRITE_KEY,on:!!s.on,total:total,current:cur});
+    C.slides={...s,current:cur};
+  }catch(e){}
+}
+let _lastSig=undefined;
+function onlySlidesChanged(v){
+  /* build a signature of everything EXCEPT slides; if unchanged, only slides moved */
+  try{
+    const sig=JSON.stringify({d:v.devotional,l:v.live,a:v.archive,c:v.config,t:v.trail,r:v.rhythm});
+    const changed = sig!==_lastSig;
+    _lastSig=sig;
+    return !changed;  /* nothing else changed => slides-only */
+  }catch(e){ return false; }
+}
+function updateSlideInPlace(){
+  /* swap just the <img> src + counter if a slide panel is currently on screen */
+  const s=C.slides; if(!s)return false;
+  const img=document.querySelector('#slide-prev,#slide-next') ? document.querySelector('.card img[alt^="Slide"]') : document.querySelector('.card img[alt^="Slide"]');
+  const panelImg=document.querySelector('img[alt^="Slide "]');
+  if(!panelImg)return false;
+  const n=Math.min(Math.max(1,s.current||1),s.total||1);
+  panelImg.src=SLIDES_PATH+n+SLIDES_EXT;
+  panelImg.alt='Slide '+n;
+  /* update the counter line if present */
+  const note=panelImg.closest('.card') && panelImg.closest('.card').querySelector('.note');
+  if(note) note.innerHTML = SESSION_MOD_PASS
+    ? '<b style="color:var(--gold)">Slide '+n+' of '+(s.total||0)+'</b> · tap ◀ ▶ to lead — everyone follows'
+    : 'Slide '+n+' of '+(s.total||0)+' · follows Pastor Josh live';
+  return true;
+}
+function wireSlideArrows(){
+  const p=document.getElementById('slide-prev'), n=document.getElementById('slide-next');
+  if(p)p.onclick=e=>{e.preventDefault();slideNudge(-1);};
+  if(n)n.onclick=e=>{e.preventDefault();slideNudge(1);};
 }
 
 /* Small UI to let Pastor Josh unlock moderator for this session. */
@@ -494,7 +558,7 @@ function render(){
 
   const pages={map,spring,mine,expeditions,watchfire:expeditions,provisions,trail,altar,treasury,panel,tent,prayerteam,'class':klass};
   (pages[h]||map)();
-  window.scrollTo(0,0);
+  wireSlideArrows();window.scrollTo(0,0);
 }
 
 /* ================= PAGES ================= */
