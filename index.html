@@ -64,6 +64,15 @@ label{font-size:.8em;font-weight:700;letter-spacing:.07em;text-transform:upperca
 footer{margin-top:3em;text-align:center;color:var(--dim);font-size:.8em}
 footer .v{font-family:'Fraunces',serif;font-style:italic;font-size:1.05em;color:var(--dim)}
 .hide{display:none!important}
+/* pinned live-class video that stays at the top of the Mine while lessons scroll below */
+#classpin{position:sticky;top:0;z-index:40;background:var(--walnut);
+  padding:.5em 0 .6em;margin:-.4em 0 .8em;border-bottom:1px solid rgba(201,162,75,.3)}
+#classpin .pinvid{width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#000}
+#classpin .pinvid iframe{width:100%;height:100%;border:0}
+#classpin .pinbar{display:flex;align-items:center;gap:.6em;margin-bottom:.4em}
+#classpin .pinbar b{color:var(--red)}
+#classpin .pinclose{margin-left:auto;background:var(--card);border:1px solid rgba(244,237,224,.25);
+  color:var(--ivory);border-radius:8px;padding:.25em .7em;font-size:.8em;font-weight:700;cursor:pointer}
 /* ---- the ancient map beneath everything ---- */
 #mapbg{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.9}
 #mapbg svg{width:100%;height:100%}
@@ -172,7 +181,7 @@ db=firebase.database();
 
 /* ================= CONTENT (live-editable via Panel; these are defaults) ================= */
 let C={
- config:{teamcode:"pray2026"},
+ config:{teamcode:"pray2026",classcode:"class2026"},
  trail:[],
  rhythm:[
   {day:"Tue & Thu",time:"3:30 – 5:00 PM",what:"Office Hours — drop in",where:"Bucks County SDA, Warminster PA",link:"none"},
@@ -182,23 +191,13 @@ let C={
  devotional:{title:"Welcome to the Spring",youtubeId:"",verse:"Whosoever drinketh of the water that I shall give him shall never thirst.",verseref:"John 4:14",thought:"A new devotional flows here each week. The first one is on its way — check back soon, and bring your cup."},
  live:{
    prayer:{on:false,room:"JoshuaMuraPrayer",note:"The prayer circle gathers here. Next meeting: announced soon."},
-   teaching:{on:false,room:"JoshuaMuraTeaching",note:"Live class meets here. Next session: announced soon."},
+   teaching:{on:false,room:"JoshuaMuraTeaching",topic:"",note:"Live class meets here. Next session: announced soon."},
    expedition:{on:false,title:"",source:"none",youtubeId:"",room:"JoshuaMuraExpedition",deckUrl:"",study:"",note:"When the fire is lit — a sermon, a seminar, a small-group journey — this is the gathering place: his voice above, the slides turning in your hand below."}
  },
  slides:{on:false,total:0,current:1}
 };
 if(db){
-  db.ref('content').on('value',s=>{const v=s.val();if(v){
-      if(v.devotional)C.devotional={...C.devotional,...v.devotional};
-      if(v.live){['prayer','teaching','expedition'].forEach(f=>{if(v.live[f])C.live[f]={...C.live[f],...v.live[f]};});}
-      if(v.archive&&v.archive.items)C.archive=v.archive.items;
-      if(v.config)C.config={...C.config,...v.config};
-      if(v.trail&&v.trail.items)C.trail=v.trail.items;
-      if(v.rhythm&&v.rhythm.items)C.rhythm=v.rhythm.items;
-      const slidesOnly = v.slides && onlySlidesChanged(v);
-      if(v.slides)C.slides={...C.slides,...v.slides};
-      if(slidesOnly && updateSlideInPlace()){ showLivePill(); return; }  /* don't reload the video */
-    }render();showLivePill();});
+  db.ref('content').on('value',s=>{const v=s.val();if(v){if(v.devotional)C.devotional={...C.devotional,...v.devotional};if(v.live){['prayer','teaching','expedition'].forEach(f=>{if(v.live[f])C.live[f]={...C.live[f],...v.live[f]};});}if(v.archive&&v.archive.items)C.archive=v.archive.items;if(v.config)C.config={...C.config,...v.config};if(v.trail&&v.trail.items)C.trail=v.trail.items;if(v.rhythm&&v.rhythm.items)C.rhythm=v.rhythm.items;if(v.slides)C.slides={...C.slides,...v.slides};}render();showLivePill();});
 }
 
 /* ================= THE VEINS (categories) & DIG SITES (studies) ================= */
@@ -416,7 +415,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v31</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v33</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -469,72 +468,69 @@ async function mountCircle(containerId,room,name){
 /* ---- Live Slides: JPEGs in /slides folder, synced current slide ---- */
 const SLIDES_PATH='/slides/';           // slides live in the /slides folder: 1.jpg, 2.jpg ...
 const SLIDES_EXT='.jpg';                // file extension of your exported slides
-function slidesPanel(){
-  const s=C.slides;
-  if(!s||!s.on||!s.total)return '';     // only show when a deck is live
-  const n=Math.min(Math.max(1,s.current||1),s.total);
-  const isMod=!!SESSION_MOD_PASS;       // only the steward sees the arrows
-  return `<div class="card" style="padding:.5em">
-    <div style="position:relative">
-      <img src="${SLIDES_PATH}${n}${SLIDES_EXT}" alt="Slide ${n}"
-        style="width:100%;border-radius:10px;display:block;background:#000"
-        onerror="this.style.opacity=.4;this.alt='Slide ${n} not found — expected /slides/${n}.jpg'">
-      ${isMod?`
-      <button id="slide-prev" aria-label="Previous slide" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);
-        width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;font-size:1.5rem;
-        background:rgba(29,21,16,.72);color:var(--gold);backdrop-filter:blur(4px)">◀</button>
-      <button id="slide-next" aria-label="Next slide" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);
-        width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;font-size:1.5rem;
-        background:rgba(29,21,16,.72);color:var(--gold);backdrop-filter:blur(4px)">▶</button>`:''}
-    </div>
-    <div class="note" style="text-align:center;margin-top:.4em">
-      ${isMod?`<b style="color:var(--gold)">Slide ${n} of ${s.total}</b> · tap ◀ ▶ to lead — everyone follows`
-             :`Slide ${n} of ${s.total} · follows Pastor Josh live`}
-    </div>
+function liveClassBanner(){
+  const k=C.live.teaching;
+  if(!k||!k.on)return '';
+  const topic=k.topic?(' — '+esc(k.topic)):'';
+  return `<a class="door" href="#class" style="border-color:var(--red);display:block;margin-bottom:1em">
+    <div class="ico">📖</div>
+    <div class="name" style="color:var(--red)">🔥 Live class in session${topic}</div>
+    <div class="what">Pastor Josh is teaching in real time — tap to join the circle and dig together.</div>
+  </a>`;
+}
+/* ---- Live Class in the Mine: opt-in, code-gated video pinned above the lessons ---- */
+let CLASS_JOINED=false;   // this session has entered the live class video
+function classPin(){
+  const k=C.live.teaching;
+  if(!k||!k.on)return '';                 // nothing live -> no box at all
+  const topic=k.topic?(' — '+esc(k.topic)):'';
+  if(!CLASS_JOINED){
+    /* opt-in prompt: study alone, or join the live video with the class code */
+    return `<div id="classpin"><div class="pinbar"><b>🔥 Live class in session${topic}</b></div>
+      <div class="note" style="margin:.2em 0 .5em">You can read any lesson below on your own. To study <b>live with Pastor Josh</b>, join the class — you'll need the class code he shared with those invited.</div>
+      <div style="display:flex;gap:.5em;align-items:center;flex-wrap:wrap">
+        <input type="text" id="class-code" placeholder="Class code" style="max-width:12em;margin:0">
+        <button class="btn" id="class-join">📖 Join the live class</button>
+      </div>
+      <div id="class-code-err" class="err" style="margin-top:.3em"></div>
+    </div>`;
+  }
+  /* joined: pinned video + a clear Leave button */
+  return `<div id="classpin">
+    <div class="pinbar"><b>🔥 You're in the live class${topic}</b>
+      <button class="pinclose" id="class-leave">Leave class ✕</button></div>
+    <div class="pinvid" id="classpin-video"></div>
+    <div class="note" style="margin-top:.35em">Open the lesson Pastor Josh names below — the video stays here while you read. Raise your hand 🖐 to speak. <b>Leaving disconnects you</b>; you can rejoin anytime.</div>
   </div>`;
 }
-/* wire the on-slide presenter arrows (called after each render that includes slides) */
-async function slideNudge(delta){
-  try{
-    const s=C.slides||{}; const total=s.total||0;
-    let cur=(s.current||1)+delta;
-    cur=Math.min(Math.max(1,cur),Math.max(1,total));
-    await db.ref('content/slides').set({k:WRITE_KEY,on:!!s.on,total:total,current:cur});
-    C.slides={...s,current:cur};
-  }catch(e){}
+function wireClassPin(){
+  const k=C.live.teaching;
+  if(!k||!k.on)return;
+  const join=document.getElementById('class-join');
+  if(join)join.onclick=()=>{
+    const code=(document.getElementById('class-code').value||'').trim();
+    if(code!==(C.config.classcode||'class2026')){
+      document.getElementById('class-code-err').textContent='That is not the class code. Ask Pastor Josh for the code to this invited class.';
+      return;
+    }
+    CLASS_JOINED=true; render();
+  };
+  const host=document.getElementById('classpin-video');
+  if(host)mountCircle('classpin-video',k.room,'Friend');
+  const leave=document.getElementById('class-leave');
+  if(leave)leave.onclick=()=>{ CLASS_JOINED=false; render(); };
 }
-let _lastSig=undefined;
-function onlySlidesChanged(v){
-  /* build a signature of everything EXCEPT slides; if unchanged, only slides moved */
-  try{
-    const sig=JSON.stringify({d:v.devotional,l:v.live,a:v.archive,c:v.config,t:v.trail,r:v.rhythm});
-    const changed = sig!==_lastSig;
-    _lastSig=sig;
-    return !changed;  /* nothing else changed => slides-only */
-  }catch(e){ return false; }
+function slidesPanel(){
+  const s=C.slides;
+  if(!s||!s.on||!s.total)return '';
+  const n=Math.min(Math.max(1,s.current||1),s.total);
+  return `<div class="card" style="padding:.5em">
+    <img src="${SLIDES_PATH}${n}${SLIDES_EXT}" alt="Slide ${n}"
+      style="width:100%;border-radius:10px;display:block;background:#000"
+      onerror="this.style.opacity=.4;this.alt='Slide ${n} not found — expected /slides/${n}.jpg'">
+    <div class="note" style="text-align:center;margin-top:.4em">Slide ${n} of ${s.total} · follows Pastor Josh live</div>
+  </div>`;
 }
-function updateSlideInPlace(){
-  /* swap just the <img> src + counter if a slide panel is currently on screen */
-  const s=C.slides; if(!s)return false;
-  const img=document.querySelector('#slide-prev,#slide-next') ? document.querySelector('.card img[alt^="Slide"]') : document.querySelector('.card img[alt^="Slide"]');
-  const panelImg=document.querySelector('img[alt^="Slide "]');
-  if(!panelImg)return false;
-  const n=Math.min(Math.max(1,s.current||1),s.total||1);
-  panelImg.src=SLIDES_PATH+n+SLIDES_EXT;
-  panelImg.alt='Slide '+n;
-  /* update the counter line if present */
-  const note=panelImg.closest('.card') && panelImg.closest('.card').querySelector('.note');
-  if(note) note.innerHTML = SESSION_MOD_PASS
-    ? '<b style="color:var(--gold)">Slide '+n+' of '+(s.total||0)+'</b> · tap ◀ ▶ to lead — everyone follows'
-    : 'Slide '+n+' of '+(s.total||0)+' · follows Pastor Josh live';
-  return true;
-}
-function wireSlideArrows(){
-  const p=document.getElementById('slide-prev'), n=document.getElementById('slide-next');
-  if(p)p.onclick=e=>{e.preventDefault();slideNudge(-1);};
-  if(n)n.onclick=e=>{e.preventDefault();slideNudge(1);};
-}
-
 /* Small UI to let Pastor Josh unlock moderator for this session. */
 function modUnlockCard(afterRoom,afterName,afterContainer){
   return `<div class="card note" style="margin-top:.6em">
@@ -547,18 +543,18 @@ function wireModUnlock(room,name,containerId){
   link.onclick=e=>{
     e.preventDefault();
     const p=prompt('Moderator passphrase (kept only for this session):');
-    if(p){ SESSION_MOD_PASS=p; mountCircle(containerId,room,name); link.textContent='Re-joining as moderator…'; setTimeout(()=>render(),400); }
+    if(p){ SESSION_MOD_PASS=p; mountCircle(containerId,room,name); link.textContent='Re-joining as moderator…'; }
   };
 }
 
 function render(){
   const h=(location.hash||'#map').replace('#','');
-  if(h.startsWith('dig-')){dig(h.slice(4));window.scrollTo(0,0);return}
+  if(h.startsWith('dig-')){dig(h.slice(4));wireClassPin();window.scrollTo(0,0);return}
   if(h.startsWith('vein-')){vein(h.slice(5));window.scrollTo(0,0);return}
 
   const pages={map,spring,mine,expeditions,watchfire:expeditions,provisions,trail,altar,treasury,panel,tent,prayerteam,'class':klass};
   (pages[h]||map)();
-  wireSlideArrows();window.scrollTo(0,0);
+  window.scrollTo(0,0);
 }
 
 /* ================= PAGES ================= */
@@ -636,10 +632,9 @@ const cards=VEINS.map(v=>{
     <div style="margin-top:.5em;font-size:.85em">${done>0?`<span class="ok">${done} treasure${done>1?'s':''} unearthed</span> · `:''}<span class="note">${total>0?total+' stud'+(total>1?'ies':'y')+' open':'surveying'} · ${v.courses.length} planned</span></div>
   </a>`;
 }).join('');
-const kls=C.live.teaching;
 app.innerHTML=`${crumb()}
+ ${classPin()}
  <div class="eyebrow">⛏️ The Mine · Bible School</div>
- ${kls.on?`<a class="door" href="#class" style="border-color:var(--red);display:block;margin-bottom:1em"><div class="ico">📖</div><div class="name" style="color:var(--red)">🔥 Live class in session</div><div class="what">Pastor Josh is teaching in real time — walk in and take a seat.</div></a>`:''}
  <h2>Five veins run through this mountain</h2>
  <div class="verse"><p>"If thou seekest her as silver, and searchest for her as for hid treasures; then shalt thou understand the fear of the LORD, and find the knowledge of God."</p><cite>Proverbs 2:4–5</cite></div>
  <p class="sub">Choose a vein, then a dig site within it. Every study you finish sets a gem in <a href="#treasury">your Treasury</a> — and a treasure token comes to you by mail.</p>
@@ -650,6 +645,7 @@ app.innerHTML=`${crumb()}
 function vein(veinId){
 const V=veinById(veinId);
 if(!V){go('mine');return}
+
 const cards=V.courses.map(c=>{
   const prog=readProg(c.id);
   const done=prog.completed;
@@ -671,6 +667,7 @@ const cards=V.courses.map(c=>{
   </a>`;
 }).join('');
 app.innerHTML=`<div class="crumb"><a href="#mine">⛏️ ← All veins</a></div>
+ ${classPin()}
  <div class="eyebrow">${V.gem} ${esc(V.name)}</div>
  <h2>${esc(V.label)}</h2>
  <div class="verse"><p>"${esc(V.verse)}"</p><cite>${esc(V.verseref)} · KJV</cite></div>
@@ -680,6 +677,7 @@ app.innerHTML=`<div class="crumb"><a href="#mine">⛏️ ← All veins</a></div>
 }
 
 function dig(courseId){
+
 const CO=courseById(courseId);
 if(!CO||!CO.open){go('mine');return}
 const prog=readProg(CO.id);
@@ -719,6 +717,7 @@ const filled=CO.questions.filter((qq,i)=>qDone(qq,i)).length;
 const pct=Math.round(filled/CO.questions.length*100);
 const VV=veinOf(CO.id);
 app.innerHTML=`<div class="crumb"><a href="#vein-${VV.id}">${VV.gem} ← Back to ${esc(VV.label)}</a></div>
+ ${classPin()}
  <div class="eyebrow">${VV.gem} ${esc(VV.name)} · ${esc(CO.site)}</div>
  <h2>${esc(CO.name)}</h2>
  ${done?`
@@ -1167,6 +1166,14 @@ document.getElementById('panelbox').innerHTML=`
  <input type="text" id="tc-code" value="${esc(C.config.teamcode)}">
  <button class="btn" id="save-tc">Save team code</button> <span id="tc-ok" class="ok"></span>
  <hr style="border-color:rgba(244,237,224,.15);margin:1.5em 0">
+ <h2 style="color:var(--gold)">📖 Live Class — invitation code</h2>
+ <p class="note" style="margin-bottom:.6em">Anyone can read lessons alone. To join the <b>live video class</b> in the Mine, they must enter this code — share it only with those you invite. Change it anytime; old codes stop working instantly.</p>
+ <label>Class topic (optional — shows in the banner, e.g. "Counseling Youth · Overcoming Anger")</label>
+ <input type="text" id="cl-topic" value="${esc((C.live.teaching&&C.live.teaching.topic)||'')}">
+ <label>Class code</label>
+ <input type="text" id="cl-code" value="${esc((C.config&&C.config.classcode)||'class2026')}">
+ <button class="btn" id="save-cl">Save class settings</button> <span id="cl-ok" class="ok"></span>
+ <hr style="border-color:rgba(244,237,224,.15);margin:1.5em 0">
  <h2 style="color:var(--gold)">📽️ Live Slides</h2>
  <p class="note" style="margin-bottom:.6em">Export your slides as JPEGs named <b>slide1.jpg, slide2.jpg…</b> and put them in the <b>/slides</b> folder of your GitHub repo. Then set the total below, flip slides ON, and use ◀ ▶ to advance — every viewer under a live circle follows you.</p>
  <label>How many slides in the current deck? (0–50)</label>
@@ -1229,6 +1236,20 @@ document.getElementById('save-sl').onclick=async()=>{
 };
 document.getElementById('sl-next').onclick=async()=>{ try{ await slideWrite({current:((C.slides&&C.slides.current)||1)+1}); }catch(e){} };
 document.getElementById('sl-prev').onclick=async()=>{ try{ await slideWrite({current:((C.slides&&C.slides.current)||1)-1}); }catch(e){} };
+document.getElementById('save-cl').onclick=async()=>{
+  try{
+    await db.ref('content/config').set({k:WRITE_KEY,teamcode:(C.config.teamcode||'pray2026'),classcode:v('cl-code')});
+    /* save topic alongside the rest of the live block so the section-key rule is satisfied */
+    const L=C.live;
+    await db.ref('content/live').set({k:WRITE_KEY,
+      prayer:{on:L.prayer.on,room:L.prayer.room,note:L.prayer.note},
+      teaching:{on:L.teaching.on,room:L.teaching.room,topic:v('cl-topic'),note:L.teaching.note},
+      expedition:{on:L.expedition.on,title:L.expedition.title,source:L.expedition.source,youtubeId:L.expedition.youtubeId,room:L.expedition.room,deckUrl:L.expedition.deckUrl,study:L.expedition.study,note:L.expedition.note}
+    });
+    C.config.classcode=v('cl-code'); C.live.teaching.topic=v('cl-topic');
+    document.getElementById('cl-ok').textContent='Saved ✓';
+  }catch(e){ document.getElementById('cl-ok').textContent='Save failed — rules published?'; }
+};
 document.getElementById('save-tc').onclick=async()=>{
   try{await db.ref('content/config').set({k:WRITE_KEY,teamcode:v('tc-code')});
   document.getElementById('tc-ok').textContent='Saved ✓ — new code in force.';}catch(e){document.getElementById('tc-ok').textContent='Save failed.';}
