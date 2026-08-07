@@ -205,7 +205,7 @@ db=firebase.database();
 
 /* ================= CONTENT (live-editable via Panel; these are defaults) ================= */
 let C={
- config:{teamcode:"pray2026",classcode:"class2026",presentcode:"present2026"},
+ config:{teamcode:"pray2026",classcode:"class2026",presentcode:"present2026",slidedelay:0},
  trail:[],
  rhythm:[
   {day:"Tue & Thu",time:"3:30 – 5:00 PM",what:"Office Hours — drop in",where:"Bucks County SDA, Warminster PA",link:"none"},
@@ -222,7 +222,16 @@ let C={
  sermons:{on:false,total:0,current:1}
 };
 if(db){
-  db.ref('content').on('value',s=>{const v=s.val();if(v){if(v.devotional)C.devotional={...C.devotional,...v.devotional};if(v.live){['prayer','teaching','expedition'].forEach(f=>{if(v.live[f])C.live[f]={...C.live[f],...v.live[f]};});}if(v.archive&&v.archive.items)C.archive=v.archive.items;if(v.config)C.config={...C.config,...v.config};if(v.trail&&v.trail.items)C.trail=v.trail.items;if(v.rhythm&&v.rhythm.items)C.rhythm=v.rhythm.items;if(v.slides)C.slides={...C.slides,...v.slides};if(v.sermons)C.sermons={...C.sermons,...v.sermons};}render();showLivePill();});
+  db.ref('content').on('value',s=>{const v=s.val();if(v){if(v.devotional)C.devotional={...C.devotional,...v.devotional};if(v.live){['prayer','teaching','expedition'].forEach(f=>{if(v.live[f])C.live[f]={...C.live[f],...v.live[f]};});}if(v.archive&&v.archive.items)C.archive=v.archive.items;if(v.config)C.config={...C.config,...v.config};if(v.trail&&v.trail.items)C.trail=v.trail.items;if(v.rhythm&&v.rhythm.items)C.rhythm=v.rhythm.items;if(v.slides)C.slides={...C.slides,...v.slides};if(v.sermons)C.sermons={...C.sermons,...v.sermons};}
+    var liveImg=document.getElementById('live-present-img');
+    if(liveImg && C.live.expedition.on && C.live.expedition.source==='present' && C.sermons && C.sermons.total){
+      var nn=Math.min(Math.max(1,C.sermons.current||1),C.sermons.total);
+      liveImg.src=SERMONS_PATH+nn+SLIDES_EXT;
+      var lab=liveImg.parentNode&&liveImg.parentNode.querySelector('.note');
+      if(lab)lab.textContent='Slide '+nn+' of '+C.sermons.total+' · the slides turn as he teaches';
+      showLivePill(); return;   /* smooth in-place update, no full re-render */
+    }
+    render();showLivePill();});
 }
 
 /* ================= THE VEINS (categories) & DIG SITES (studies) ================= */
@@ -440,7 +449,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v51</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v53</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -656,6 +665,18 @@ function wireLordsPrayer(){
     };
   });
 }
+function livePresentView(){
+  var s=C.sermons;
+  if(!s||!s.total){
+    return '<div class="card" style="text-align:center"><div style="font-size:2.2rem">📱</div><p class="sub">The live presentation is about to begin — the first slide will appear here shortly.</p></div>';
+  }
+  var n=Math.min(Math.max(1,s.current||1),s.total);
+  return '<div class="card" style="padding:.5em;border-color:var(--red)">'
+    +'<div style="text-align:center;margin-bottom:.4em"><b style="color:var(--red)">🔴 LIVE — following Pastor Josh</b></div>'
+    +'<img src="'+SERMONS_PATH+n+SLIDES_EXT+'" alt="Slide '+n+'" style="width:100%;border-radius:10px;display:block;background:#000" '
+    +'onerror="this.style.opacity=.4;this.alt=\'Slide '+n+'\'">'
+    +'<div class="note" style="text-align:center;margin-top:.4em">Slide '+n+' of '+s.total+' · the slides turn as he teaches</div></div>';
+}
 function sermonsPanel(){
   var s=C.sermons;
   if(!s||!s.on||!s.total)return '';
@@ -768,11 +789,19 @@ function enterPresentStage(){
   document.getElementById('ps-exit').onclick=function(){ stage.remove(); };
 
   function show(){
-    // swap src only; because it's preloaded, it appears immediately
+    // swap src only; because it's preloaded, it appears immediately (INSTANT for the room)
     if(img)img.src=SERMONS_PATH+cur+SLIDES_EXT;
     preload(cur+1); preload(cur-1);  // keep neighbours warm
   }
-  function syncFB(){ try{ sermonWrite({current:cur}); }catch(e){} }
+  var _pending=null;
+  function syncFB(){
+    // Push to ONLINE viewers, delayed to match the YouTube stream lag (projector already updated instantly).
+    var delayMs=Math.max(0,(+(C.config&&C.config.slidedelay)||0))*1000;
+    var target=cur;
+    if(_pending)clearTimeout(_pending);
+    if(delayMs===0){ try{ sermonWrite({current:target}); }catch(e){} return; }
+    _pending=setTimeout(function(){ try{ sermonWrite({current:target}); }catch(e){} },delayMs);
+  }
   function goNext(){ if(cur<total){ cur++; show(); syncFB(); } }
   function goPrev(){ if(cur>1){ cur--; show(); syncFB(); } }
 
@@ -1065,10 +1094,12 @@ const ex=C.live.expedition;
 let media='';
 if(ex.on){
   if(ex.source==='youtube'&&ex.youtubeId){
-    media=`<div class="videoframe"><iframe src="https://www.youtube.com/embed/${esc(ex.youtubeId)}?autoplay=1" allow="autoplay;encrypted-media;picture-in-picture" allowfullscreen></iframe></div>${sermonsPanel()}`;
+    media=`<div class="videoframe"><iframe src="https://www.youtube.com/embed/${esc(ex.youtubeId)}?autoplay=1" allow="autoplay;encrypted-media;picture-in-picture" allowfullscreen></iframe></div>`;
   }else if(ex.source==='jitsi'){
     media=`<div class="videoframe" id="circle-watchfire"></div>${slidesPanel()}
     <p class="note">🧭 A round-table journey — you join <b>muted</b>; raise your hand 🖐 to speak.</p>`;
+  }else if(ex.source==='present'){
+    media=livePresentView();
   }
 }
 app.innerHTML=`${crumb()}
@@ -1393,10 +1424,11 @@ document.getElementById('panelbox').innerHTML=`
    <label>Journey title</label><input type="text" id="e-title" value="${esc(lv.expedition.title||'')}" placeholder="e.g. Sabbath Worship · The God Who Sees">
    <label>Shape of the journey</label>
    <select id="e-src">
-     <option value="none" ${lv.expedition.source==='none'?'selected':''}>🏛️ In person — slides only</option>
-     <option value="youtube" ${lv.expedition.source==='youtube'?'selected':''}>🎙️ Sermon / broadcast — YouTube</option>
-     <option value="jitsi" ${lv.expedition.source==='jitsi'?'selected':''}>👥 Small group / seminar — Jitsi</option>
+     <option value="present" ${lv.expedition.source==='present'||lv.expedition.source==='none'?'selected':''}>📱 Live Presentation — congregation follows your slides on their phones</option>
+     <option value="youtube" ${lv.expedition.source==='youtube'?'selected':''}>🎙️ Sermon / broadcast — YouTube (video only)</option>
+     <option value="jitsi" ${lv.expedition.source==='jitsi'?'selected':''}>👥 Small group / seminar — Jitsi circle</option>
    </select>
+   <div class="note" style="margin:-.2em 0 .5em">📱 <b>Live Presentation:</b> you drive the slides full-screen from <a href="#present">Presenter mode</a> (with your clicker); the congregation opens the Watchfire and follows the same slides live on their phones. Set the sermon slide count in the Live Slides section above.</div>
    <label>YouTube live video ID (broadcast)</label><input type="text" id="e-yt" value="${esc(lv.expedition.youtubeId)}">
    <label>Jitsi room name (small-group)</label><input type="text" id="e-room" value="${esc(lv.expedition.room||'JoshuaMuraExpedition')}">
    <label>Synced deck URL (all shapes)</label><input type="text" id="e-deck" value="${esc(lv.expedition.deckUrl)}">
@@ -1436,6 +1468,9 @@ document.getElementById('panelbox').innerHTML=`
    <input type="number" id="se-total" min="0" max="50" value="${(C.sermons&&C.sermons.total)||0}">
    <label>Show under the YouTube sermon?</label>
    <select id="se-on"><option value="no" ${(C.sermons&&C.sermons.on)?'':'selected'}>🚫 Off</option><option value="yes" ${(C.sermons&&C.sermons.on)?'selected':''}>📽️ On — showing now</option></select>
+   <label>⏱️ Online slide delay (seconds) — matches YouTube stream lag</label>
+   <input type="number" id="se-delay" min="0" max="60" value="${(C.config&&C.config.slidedelay)||0}">
+   <div class="note" style="margin:-.2em 0 .4em">In-church projector is <b>always instant</b>. This delay only holds the ONLINE viewers' slide back so it lands in time with your delayed YouTube video. Set to <b>0</b> for prayer circles or in-person-only events. Typical ultra-low-latency stream ≈ 3–5 seconds.</div>
    <button class="btn psave" id="save-se">Save sermon slides</button> <span id="se-ok" class="ok"></span>
    <div style="margin-top:.8em">
      <div style="display:flex;align-items:center;gap:.6em;justify-content:center">
@@ -1552,21 +1587,26 @@ document.getElementById('sl-next').onclick=async()=>{ try{ await slideWrite({cur
 document.getElementById('sl-prev').onclick=async()=>{ try{ await slideWrite({current:((C.slides&&C.slides.current)||1)-1}); }catch(e){} };
 function seUpd(){const n=document.getElementById('se-now'); if(n)n.textContent='Slide '+((C.sermons&&C.sermons.current)||1)+' of '+((C.sermons&&C.sermons.total)||0);}
 document.getElementById('save-se').onclick=async()=>{
-  try{ await sermonWrite({total:+(document.getElementById('se-total').value||0),on:document.getElementById('se-on').value==='yes'}); seUpd(); document.getElementById('se-ok').textContent='Saved ✓'; }
+  try{
+    await sermonWrite({total:+(document.getElementById('se-total').value||0),on:document.getElementById('se-on').value==='yes'});
+    var dly=Math.max(0,Math.min(60,+(document.getElementById('se-delay').value||0)));
+    await db.ref('content/config').set({k:WRITE_KEY,teamcode:(C.config.teamcode||'pray2026'),classcode:(C.config.classcode||'class2026'),presentcode:(C.config.presentcode||'present2026'),slidedelay:dly});
+    C.config.slidedelay=dly;
+    seUpd(); document.getElementById('se-ok').textContent='Saved ✓'; }
   catch(e){ document.getElementById('se-ok').textContent='Save failed — rules published?'; }
 };
 document.getElementById('se-next').onclick=async()=>{ try{ await sermonWrite({current:((C.sermons&&C.sermons.current)||1)+1}); seUpd(); }catch(e){} };
 document.getElementById('se-prev').onclick=async()=>{ try{ await sermonWrite({current:((C.sermons&&C.sermons.current)||1)-1}); seUpd(); }catch(e){} };
 document.getElementById('save-pr').onclick=async()=>{
   try{
-    await db.ref('content/config').set({k:WRITE_KEY,teamcode:(C.config.teamcode||'pray2026'),classcode:(C.config.classcode||'class2026'),presentcode:v('pr-codeset')});
+    await db.ref('content/config').set({k:WRITE_KEY,teamcode:(C.config.teamcode||'pray2026'),classcode:(C.config.classcode||'class2026'),presentcode:v('pr-codeset'),slidedelay:(C.config.slidedelay||0)});
     C.config.presentcode=v('pr-codeset');
     document.getElementById('pr-ok').textContent='Saved ✓';
   }catch(e){ document.getElementById('pr-ok').textContent='Save failed'; }
 };
 document.getElementById('save-cl').onclick=async()=>{
   try{
-    await db.ref('content/config').set({k:WRITE_KEY,teamcode:(C.config.teamcode||'pray2026'),classcode:v('cl-code'),presentcode:(C.config.presentcode||'present2026')});
+    await db.ref('content/config').set({k:WRITE_KEY,teamcode:(C.config.teamcode||'pray2026'),classcode:v('cl-code'),presentcode:(C.config.presentcode||'present2026'),slidedelay:(C.config.slidedelay||0)});
     /* save topic alongside the rest of the live block so the section-key rule is satisfied */
     const L=C.live;
     await db.ref('content/live').set({k:WRITE_KEY,
@@ -1579,7 +1619,7 @@ document.getElementById('save-cl').onclick=async()=>{
   }catch(e){ document.getElementById('cl-ok').textContent='Save failed — rules published?'; }
 };
 document.getElementById('save-tc').onclick=async()=>{
-  try{await db.ref('content/config').set({k:WRITE_KEY,teamcode:v('tc-code'),classcode:(C.config.classcode||'class2026'),presentcode:(C.config.presentcode||'present2026')});
+  try{await db.ref('content/config').set({k:WRITE_KEY,teamcode:v('tc-code'),classcode:(C.config.classcode||'class2026'),presentcode:(C.config.presentcode||'present2026'),slidedelay:(C.config.slidedelay||0)});
   C.config.teamcode=v('tc-code');
   document.getElementById('tc-ok').textContent='Saved ✓ — new code in force.';}catch(e){document.getElementById('tc-ok').textContent='Save failed.';}
 };
