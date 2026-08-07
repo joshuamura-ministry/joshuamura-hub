@@ -213,10 +213,11 @@ let C={
    teaching:{on:false,room:"JoshuaMuraTeaching",topic:"",note:"Live class meets here. Next session: announced soon."},
    expedition:{on:false,title:"",source:"none",youtubeId:"",room:"JoshuaMuraExpedition",deckUrl:"",study:"",note:"When the fire is lit — a sermon, a seminar, a small-group journey — this is the gathering place: his voice above, the slides turning in your hand below."}
  },
- slides:{on:false,total:0,current:1}
+ slides:{on:false,total:0,current:1},
+ sermons:{on:false,total:0,current:1}
 };
 if(db){
-  db.ref('content').on('value',s=>{const v=s.val();if(v){if(v.devotional)C.devotional={...C.devotional,...v.devotional};if(v.live){['prayer','teaching','expedition'].forEach(f=>{if(v.live[f])C.live[f]={...C.live[f],...v.live[f]};});}if(v.archive&&v.archive.items)C.archive=v.archive.items;if(v.config)C.config={...C.config,...v.config};if(v.trail&&v.trail.items)C.trail=v.trail.items;if(v.rhythm&&v.rhythm.items)C.rhythm=v.rhythm.items;if(v.slides)C.slides={...C.slides,...v.slides};}render();showLivePill();});
+  db.ref('content').on('value',s=>{const v=s.val();if(v){if(v.devotional)C.devotional={...C.devotional,...v.devotional};if(v.live){['prayer','teaching','expedition'].forEach(f=>{if(v.live[f])C.live[f]={...C.live[f],...v.live[f]};});}if(v.archive&&v.archive.items)C.archive=v.archive.items;if(v.config)C.config={...C.config,...v.config};if(v.trail&&v.trail.items)C.trail=v.trail.items;if(v.rhythm&&v.rhythm.items)C.rhythm=v.rhythm.items;if(v.slides)C.slides={...C.slides,...v.slides};if(v.sermons)C.sermons={...C.sermons,...v.sermons};}render();showLivePill();});
 }
 
 /* ================= THE VEINS (categories) & DIG SITES (studies) ================= */
@@ -434,7 +435,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v41</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v43</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -487,6 +488,7 @@ async function mountCircle(containerId,room,name){
 /* ---- Live Slides: JPEGs in /slides folder, synced current slide ---- */
 const SLIDES_PATH='/slides/';           // slides live in the /slides folder: 1.jpg, 2.jpg ...
 const SLIDES_EXT='.jpg';                // file extension of your exported slides
+const SERMONS_PATH='/sermons/';         // sermon slides live in /sermons: 1.jpg, 2.jpg ...
 function liveClassBanner(){
   const k=C.live.teaching;
   if(!k||!k.on)return '';
@@ -649,6 +651,15 @@ function wireLordsPrayer(){
     };
   });
 }
+function sermonsPanel(){
+  var s=C.sermons;
+  if(!s||!s.on||!s.total)return '';
+  var n=Math.min(Math.max(1,s.current||1),s.total);
+  return '<div class="card" style="padding:.5em">'
+    +'<img src="'+SERMONS_PATH+n+SLIDES_EXT+'" alt="Sermon slide '+n+'" style="width:100%;border-radius:10px;display:block;background:#000" '
+    +'onerror="this.style.opacity=.4;this.alt=\'Sermon slide '+n+' not found — expected /sermons/'+n+'.jpg\'">'
+    +'<div class="note" style="text-align:center;margin-top:.4em">Slide '+n+' of '+s.total+' · follows the preacher live</div></div>';
+}
 function slidesPanel(){
   const s=C.slides;
   if(!s||!s.on||!s.total)return '';
@@ -711,13 +722,13 @@ function present(){
     };
     return;
   }
-  // Presenter control screen (not yet full-screen): shows current + total, launch button
-  const s=C.slides||{total:0,current:1};
+  // Presenter control screen — SERMONS deck (separate from prayer slides)
+  const s=C.sermons||{total:0,current:1};
   app.innerHTML=`${crumb()}
    <div class="eyebrow">📽️ Presenter · ready</div>
    <h2>Run the slides</h2>
    <div class="card" style="text-align:center">
-     <p class="sub">Slides load from your <b>/slides</b> folder (1.jpg, 2.jpg …). Set the total in the Steward's Panel. Tap <b>Go full screen</b>, then connect this device to the projector.</p>
+     <p class="sub">Sermon slides load from your <b>/sermons</b> folder (1.jpg, 2.jpg …). Set the sermon total in the Steward's Panel. Tap <b>Go full screen</b>, then connect this device to the projector.</p>
      <div style="margin:.8em 0"><b id="pr-count" style="font-size:1.2rem">Slide ${Math.min(s.current||1,s.total||1)} of ${s.total||0}</b></div>
      <div style="display:flex;gap:.6em;justify-content:center;margin:.6em 0">
        <button class="btn ghost" id="pr-prev" style="font-size:1.4rem;padding:.3em 1em">◀</button>
@@ -726,15 +737,15 @@ function present(){
      <button class="btn" id="pr-full" style="margin-top:.4em">⛶ Go full screen</button>
    </div>
    ${footer()}`;
-  const upd=()=>{const c=document.getElementById('pr-count'); if(c)c.textContent='Slide '+Math.min((C.slides.current||1),(C.slides.total||1))+' of '+(C.slides.total||0);};
-  document.getElementById('pr-next').onclick=async()=>{ await slideWrite({current:((C.slides.current||1)+1)}); upd(); };
-  document.getElementById('pr-prev').onclick=async()=>{ await slideWrite({current:((C.slides.current||1)-1)}); upd(); };
+  const upd=()=>{const c=document.getElementById('pr-count'); if(c)c.textContent='Slide '+Math.min((C.sermons.current||1),(C.sermons.total||1))+' of '+(C.sermons.total||0);};
+  document.getElementById('pr-next').onclick=async()=>{ await sermonWrite({current:((C.sermons.current||1)+1)}); upd(); };
+  document.getElementById('pr-prev').onclick=async()=>{ await sermonWrite({current:((C.sermons.current||1)-1)}); upd(); };
   document.getElementById('pr-full').onclick=()=>enterPresentStage();
 }
 function enterPresentStage(){
   let showNext=true;
   const build=()=>{
-    const s=C.slides||{total:0,current:1};
+    const s=C.sermons||{total:0,current:1};
     const n=Math.min(Math.max(1,s.current||1),Math.max(1,s.total||1));
     const nextN=(n<(s.total||1))?n+1:null;
     let stage=document.getElementById('present-stage');
@@ -747,11 +758,11 @@ function enterPresentStage(){
         <button id="ps-exit">Exit ✕</button>
         <span style="opacity:.7">Tap right = next · left = previous</span>
       </div>
-      <img src="${SLIDES_PATH}${n}${SLIDES_EXT}" alt="Slide ${n}">
+      <img src="${SERMONS_PATH}${n}${SLIDES_EXT}" alt="Slide ${n}">
       <div class="pnav"><div class="l" id="ps-prev"></div><div class="r" id="ps-next"></div></div>
-      ${(showNext&&nextN)?`<div class="pnext"><span class="lbl">Next</span><img src="${SLIDES_PATH}${nextN}${SLIDES_EXT}" alt=""></div>`:''}`;
-    document.getElementById('ps-next').onclick=async()=>{ await slideWrite({current:n+1}); build(); };
-    document.getElementById('ps-prev').onclick=async()=>{ await slideWrite({current:n-1}); build(); };
+      ${(showNext&&nextN)?`<div class="pnext"><span class="lbl">Next</span><img src="${SERMONS_PATH}${nextN}${SLIDES_EXT}" alt=""></div>`:''}`;
+    document.getElementById('ps-next').onclick=async()=>{ await sermonWrite({current:n+1}); build(); };
+    document.getElementById('ps-prev').onclick=async()=>{ await sermonWrite({current:n-1}); build(); };
     document.getElementById('ps-exit').onclick=()=>{ stage.remove(); };
     document.getElementById('ps-toggle').onclick=()=>{ showNext=!showNext; build(); };
   };
@@ -759,8 +770,10 @@ function enterPresentStage(){
   // keyboard arrows for iPad keyboards / clickers
   document.addEventListener('keydown',function pk(e){
     if(!document.getElementById('present-stage')){document.removeEventListener('keydown',pk);return;}
-    if(e.key==='ArrowRight'||e.key===' '){document.getElementById('ps-next').click();}
-    if(e.key==='ArrowLeft'){document.getElementById('ps-prev').click();}
+    // Next: right arrow, space, down arrow, Page Down, Enter (covers most clickers)
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='ArrowDown'||e.key==='PageDown'||e.key==='Enter'||e.key==='Spacebar'){e.preventDefault();document.getElementById('ps-next').click();}
+    // Previous: left arrow, up arrow, Page Up, Backspace
+    if(e.key==='ArrowLeft'||e.key==='ArrowUp'||e.key==='PageUp'||e.key==='Backspace'){e.preventDefault();document.getElementById('ps-prev').click();}
     if(e.key==='Escape'){document.getElementById('ps-exit').click();}
   });
 }
@@ -1046,7 +1059,7 @@ const ex=C.live.expedition;
 let media='';
 if(ex.on){
   if(ex.source==='youtube'&&ex.youtubeId){
-    media=`<div class="videoframe"><iframe src="https://www.youtube.com/embed/${esc(ex.youtubeId)}?autoplay=1" allow="autoplay;encrypted-media;picture-in-picture" allowfullscreen></iframe></div>${slidesPanel()}`;
+    media=`<div class="videoframe"><iframe src="https://www.youtube.com/embed/${esc(ex.youtubeId)}?autoplay=1" allow="autoplay;encrypted-media;picture-in-picture" allowfullscreen></iframe></div>${sermonsPanel()}`;
   }else if(ex.source==='jitsi'){
     media=`<div class="videoframe" id="circle-watchfire"></div>${slidesPanel()}
     <p class="note">🧭 A round-table journey — you join <b>muted</b>; raise your hand 🖐 to speak.</p>`;
@@ -1390,20 +1403,42 @@ document.getElementById('panelbox').innerHTML=`
 
  <!-- ========== 3. LIVE SLIDES ========== -->
  <div class="psec">
-  <h2>📽️ Live Slides — present during a gathering</h2>
-  <div class="pdesc">Export slides as JPEGs named <b>1.jpg, 2.jpg …</b> in the <b>/slides</b> folder of your repo. Set the count, flip ON, then use ◀ ▶ — everyone under a live circle follows you.</div>
-  <label>How many slides in the current deck? (0–50)</label>
-  <input type="number" id="sl-total" min="0" max="50" value="${(C.slides&&C.slides.total)||0}">
-  <label>Show slides under live circles?</label>
-  <select id="sl-on"><option value="no" ${(C.slides&&C.slides.on)?'':'selected'}>🚫 Off</option><option value="yes" ${(C.slides&&C.slides.on)?'selected':''}>📽️ On — showing now</option></select>
-  <button class="btn psave" id="save-sl">Save slide settings</button> <span id="sl-ok" class="ok"></span>
-  <div id="sl-live" style="margin-top:1em">
-    <div style="display:flex;align-items:center;gap:.6em;justify-content:center">
-      <button class="btn ghost" id="sl-prev" style="font-size:1.4rem;padding:.3em .9em">◀</button>
-      <b id="sl-now" style="font-size:1.2rem;min-width:7em;text-align:center">Slide ${(C.slides&&C.slides.current)||1} of ${(C.slides&&C.slides.total)||0}</b>
-      <button class="btn" id="sl-next" style="font-size:1.4rem;padding:.3em .9em">▶</button>
-    </div>
-    <p class="note" style="text-align:center;margin-top:.4em">Tapping ◀ ▶ advances the slide for everyone instantly.</p>
+  <h2>📽️ Live Slides</h2>
+  <div class="pdesc">Two separate decks. Each is JPEGs named <b>1.jpg, 2.jpg …</b> in its own folder. Set the count, flip ON, then use ◀ ▶ — viewers follow you.</div>
+
+  <div class="subcard">
+   <b>🙏 Prayer &amp; Class slides → /slides folder</b>
+   <div class="note" style="margin-bottom:.3em">Shown under the Altar prayer circle and the Mine live class.</div>
+   <label>How many slides? (0–50)</label>
+   <input type="number" id="sl-total" min="0" max="50" value="${(C.slides&&C.slides.total)||0}">
+   <label>Show under prayer / class circles?</label>
+   <select id="sl-on"><option value="no" ${(C.slides&&C.slides.on)?'':'selected'}>🚫 Off</option><option value="yes" ${(C.slides&&C.slides.on)?'selected':''}>📽️ On — showing now</option></select>
+   <button class="btn psave" id="save-sl">Save prayer/class slides</button> <span id="sl-ok" class="ok"></span>
+   <div id="sl-live" style="margin-top:.8em">
+     <div style="display:flex;align-items:center;gap:.6em;justify-content:center">
+       <button class="btn ghost" id="sl-prev" style="font-size:1.4rem;padding:.3em .9em">◀</button>
+       <b id="sl-now" style="font-size:1.1rem;min-width:7em;text-align:center">Slide ${(C.slides&&C.slides.current)||1} of ${(C.slides&&C.slides.total)||0}</b>
+       <button class="btn" id="sl-next" style="font-size:1.4rem;padding:.3em .9em">▶</button>
+     </div>
+   </div>
+  </div>
+
+  <div class="subcard">
+   <b>🎙️ Sermon slides → /sermons folder</b>
+   <div class="note" style="margin-bottom:.3em">Shown under the Watchfire YouTube service and driven by Presenter mode. Separate from prayer slides.</div>
+   <label>How many sermon slides? (0–50)</label>
+   <input type="number" id="se-total" min="0" max="50" value="${(C.sermons&&C.sermons.total)||0}">
+   <label>Show under the YouTube sermon?</label>
+   <select id="se-on"><option value="no" ${(C.sermons&&C.sermons.on)?'':'selected'}>🚫 Off</option><option value="yes" ${(C.sermons&&C.sermons.on)?'selected':''}>📽️ On — showing now</option></select>
+   <button class="btn psave" id="save-se">Save sermon slides</button> <span id="se-ok" class="ok"></span>
+   <div style="margin-top:.8em">
+     <div style="display:flex;align-items:center;gap:.6em;justify-content:center">
+       <button class="btn ghost" id="se-prev" style="font-size:1.4rem;padding:.3em .9em">◀</button>
+       <b id="se-now" style="font-size:1.1rem;min-width:7em;text-align:center">Slide ${(C.sermons&&C.sermons.current)||1} of ${(C.sermons&&C.sermons.total)||0}</b>
+       <button class="btn" id="se-next" style="font-size:1.4rem;padding:.3em .9em">▶</button>
+     </div>
+     <p class="note" style="text-align:center;margin-top:.4em">Or run these full-screen from <a href="#present">Presenter mode</a>.</p>
+   </div>
   </div>
  </div>
 
@@ -1486,6 +1521,13 @@ document.getElementById('save-l').onclick=async()=>{
   });
   document.getElementById('l-ok').textContent='Saved ✓ — the map knows what is live.';}catch(e){document.getElementById('l-ok').textContent='Save failed — rules published?';}
 };
+async function sermonWrite(patch){
+  const cur={total:+(C.sermons.total||0),on:!!C.sermons.on,current:(C.sermons&&C.sermons.current)||1, ...patch};
+  cur.total=Math.min(50,Math.max(0,cur.total));
+  cur.current=Math.min(Math.max(1,cur.current),Math.max(1,cur.total));
+  await db.ref('content/sermons').set({k:WRITE_KEY,on:cur.on,total:cur.total,current:cur.current});
+  C.sermons={...C.sermons,...cur};
+}
 async function slideWrite(patch){
   const cur={total:+(document.getElementById('sl-total').value||0),
              on:document.getElementById('sl-on').value==='yes',
@@ -1502,6 +1544,13 @@ document.getElementById('save-sl').onclick=async()=>{
 };
 document.getElementById('sl-next').onclick=async()=>{ try{ await slideWrite({current:((C.slides&&C.slides.current)||1)+1}); }catch(e){} };
 document.getElementById('sl-prev').onclick=async()=>{ try{ await slideWrite({current:((C.slides&&C.slides.current)||1)-1}); }catch(e){} };
+function seUpd(){const n=document.getElementById('se-now'); if(n)n.textContent='Slide '+((C.sermons&&C.sermons.current)||1)+' of '+((C.sermons&&C.sermons.total)||0);}
+document.getElementById('save-se').onclick=async()=>{
+  try{ await sermonWrite({total:+(document.getElementById('se-total').value||0),on:document.getElementById('se-on').value==='yes'}); seUpd(); document.getElementById('se-ok').textContent='Saved ✓'; }
+  catch(e){ document.getElementById('se-ok').textContent='Save failed — rules published?'; }
+};
+document.getElementById('se-next').onclick=async()=>{ try{ await sermonWrite({current:((C.sermons&&C.sermons.current)||1)+1}); seUpd(); }catch(e){} };
+document.getElementById('se-prev').onclick=async()=>{ try{ await sermonWrite({current:((C.sermons&&C.sermons.current)||1)-1}); seUpd(); }catch(e){} };
 document.getElementById('save-pr').onclick=async()=>{
   try{
     await db.ref('content/config').set({k:WRITE_KEY,teamcode:(C.config.teamcode||'pray2026'),classcode:(C.config.classcode||'class2026'),presentcode:v('pr-codeset')});
