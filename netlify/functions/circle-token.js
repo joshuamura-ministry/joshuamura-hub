@@ -17,7 +17,22 @@ function normalizeKey(raw) {
   if ((k.startsWith('"') && k.endsWith('"')) || (k.startsWith("'") && k.endsWith("'"))) {
     k = k.slice(1, -1);
   }
-  k = k.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
+  k = k.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  // If the key got flattened (newlines replaced by spaces, or all on one line),
+  // rebuild a valid PEM: header line, 64-char base64 body lines, footer line.
+  const beginMatch = k.match(/-----BEGIN [^-]+-----/);
+  const endMatch = k.match(/-----END [^-]+-----/);
+  if (beginMatch && endMatch) {
+    const header = beginMatch[0];
+    const footer = endMatch[0];
+    let body = k.substring(k.indexOf(header) + header.length, k.indexOf(footer));
+    body = body.replace(/\s+/g, '');
+    const wrapped = body.match(/.{1,64}/g);
+    if (wrapped) {
+      k = header + '\n' + wrapped.join('\n') + '\n' + footer + '\n';
+    }
+  }
   return k;
 }
 
@@ -96,46 +111,6 @@ exports.handler = async (event) => {
   const name = (params.name || 'Friend').toString().slice(0, 60);
   const pass = (params.pass || '').toString();
 
-  // Safe diagnostic mode: ?diag=1 reports characteristics of the stored key
-  // WITHOUT ever revealing the key itself. Helps debug parse failures.
-  if (params.diag === '1') {
-    const k = normalizeKey(PRIVATE_KEY);
-    const firstLine = (k.split('\n')[0] || '').slice(0, 40);
-    const lastLine = (k.trim().split('\n').pop() || '').slice(0, 40);
-    const hasSmartQuotes = /[\u2018\u2019\u201C\u201D]/.test(k);
-    const hasCRLF = /\r/.test(PRIVATE_KEY);
-    const hasLiteralBackslashN = /\\n/.test(PRIVATE_KEY);
-    const nonAscii = (k.match(/[^\x00-\x7F]/g) || []).length;
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        ok: true,
-        diag: {
-          rawLength: PRIVATE_KEY.length,
-          normalizedLength: k.length,
-          firstLine,
-          lastLine,
-          lineCount: k.split('\n').length,
-          startsWithBegin: k.startsWith('-----BEGIN'),
-          endsWithEnd: k.trim().endsWith('KEY-----'),
-          hasSmartQuotes,
-          hasCRLF,
-          hasLiteralBackslashN,
-          nonAsciiCharCount: nonAscii,
-        },
-      }),
-    };
-  }
-
-  if (!room) {
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({ ok: false, error: 'Missing room name.' }),
-    };
-  }
-
   const isModerator = MOD_PASS ? pass === MOD_PASS : false;
 
   const now = Math.floor(Date.now() / 1000);
@@ -161,6 +136,14 @@ exports.handler = async (event) => {
       },
     },
   };
+
+  if (!room) {
+    return {
+      statusCode: 400,
+      headers,
+      body: JSON.stringify({ ok: false, error: 'Missing room name.' }),
+    };
+  }
 
   let token;
   try {
