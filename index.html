@@ -424,7 +424,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v38</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v39</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -581,6 +581,63 @@ function printStudy(courseId){
     +'<div class="foot">Joshua Mura · Digital Ministry Hub — joshuamura.netlify.app<br>“Seek, and ye shall find.” · Matthew 7:7</div>'
     +'<style>@media print{.no-print{display:none}}</style></body></html>');
   w.document.close();
+}
+const LORDS_PRAYER=[
+ {day:"Day 1",pet:"Our Father which art in heaven",title:"You Are His Child — Before You Do Anything",
+  body:["Jesus does not teach us to begin prayer with our failures, our resolutions, or our worthiness. He teaches us to begin with a relationship: Father. This is righteousness by faith at the very doorway of prayer — we come not as strangers earning an audience, but as children already welcomed home.",
+        "Ellen White wrote that in calling God our Father, Jesus gives us the assurance that we are recognized as members of the divine family. You do not pray to gain acceptance — you pray from it."],
+  pray:"Father, I come to You in Jesus' name and in His righteousness, not my own. Thank You that before I have done anything today, I am already Your child. Teach me to live this day as one who is loved."},
+ {day:"Day 2",pet:"Hallowed be thy name",title:"His Character, Revealed in Christ — and in You",
+  body:["God's name is His character — mercy, justice, truth, and love. In the great controversy between Christ and Satan, that character has been questioned before the universe. But Jesus came and hallowed the Father's name by living it out: full of grace and truth.",
+        "To hallow His name is to trust that the Judge of all the earth is exactly like Jesus. The cross is God's answer to every accusation against His government of love."],
+  pray:"Lord, Your name is holy and Your character is love. Let Christ live in me today, so that something of Your goodness may be seen in how I speak, work, and forgive. Hallowed be Your name — in me."},
+ {day:"Day 3",pet:"Thy kingdom come. Thy will be done",title:"The Blessed Hope",
+  body:["This is the Advent prayer. Every time we pray Thy kingdom come, we are longing for the soon return of Jesus — the day when the kingdom of grace becomes the kingdom of glory, when sin and death are ended forever.",
+        "Surrender is not the price of salvation — Christ has paid that in full. Surrender is the response of a heart that has seen His love and can no longer hold anything back."],
+  pray:"Come, Lord Jesus. Until that day, let Your will be done in my plans, my family, and my heart, as it is done in heaven. I lay down my own way and take up Yours — gladly."},
+ {day:"Day 4",pet:"Give us this day our daily bread",title:"Daily Dependence, Daily Grace",
+  body:["Like the manna in the wilderness, God's provision comes one day at a time. Jesus invites us to trust the Father for the needs of the body — food, strength, work — and even more for the Bread of Life, Christ Himself.",
+        "Yesterday's bread cannot feed today's soul. Come to Jesus fresh each morning, and He will give you grace enough for this day — no more is promised, and no less is needed."],
+  pray:"Father, give me today what I need for today — bread for my body and Christ for my soul. I will not worry about tomorrow. I take Your grace for this one day, and I thank You for it."},
+ {day:"Day 5",pet:"Forgive us our debts, as we forgive our debtors",title:"Justified Freely — and Made Forgiving",
+  body:["Here is the heart of the gospel. Our debt of sin is one we could never pay, and Jesus paid it in full at Calvary. We are justified freely by His grace — declared righteous, not because of anything in us, but because of Christ.",
+        "And forgiveness received becomes forgiveness given. We do not forgive others in order to be forgiven; we forgive because we have been forgiven so much. A heart that has stood at the cross cannot keep a grudge."],
+  pray:"Lord Jesus, thank You for taking my debt and giving me Your righteousness. Search my heart — if I am holding anything against anyone, help me release it now, as freely as You released me."},
+ {day:"Day 6",pet:"Lead us not into temptation, but deliver us from evil",title:"Kept by a Stronger Hand",
+  body:["Jesus faced every temptation we face — and overcame, in our behalf. The victory He won in the wilderness and at the cross is now offered to us as a gift. We are not asked to fight the enemy in our own strength.",
+        "When temptation comes, do not look inward at your weakness — look upward at your Saviour. He is able to keep you from falling, and He is faithful."],
+  pray:"Father, I know my weakness — but I know Your strength. Keep me close to Jesus today. When temptation comes, lift my eyes to the cross, and deliver me from the evil one. The victory is Yours."},
+ {day:"Day 7",pet:"For thine is the kingdom, and the power, and the glory, for ever",title:"Rest in the Finished Work",
+  body:["The prayer ends where it began — with God, not with us. The kingdom is His, the power is His, the glory is His forever. This is the spirit of the Sabbath: we cease from our own works and rest in what Christ has done.",
+        "Salvation from beginning to end is of the Lord. Our part is to believe, to receive, and to praise. Let this day be a day of worship — not anxious effort, but adoring rest."],
+  pray:"Father, Yours is the kingdom I long for, Yours the power that saves me, Yours the glory forever. I rest today in the finished work of Jesus. It is enough. It will always be enough. Amen."}
+];
+function lordsPrayerSection(){
+  var days=LORDS_PRAYER.map(function(d,i){
+    var paras=d.body.map(function(p){return '<p style="margin:.5em 0;line-height:1.7">'+esc(p)+'</p>';}).join('');
+    return '<div class="qbox" style="margin:.6em 0">'
+      +'<div class="ref" style="cursor:pointer;color:var(--gold);font-weight:700" data-lp="'+i+'">'
+      +esc(d.day)+' · "'+esc(d.pet)+'" ▾</div>'
+      +'<div class="hide" id="lp-'+i+'">'
+      +'<div style="font-family:\'Fraunces\',serif;font-size:1.15em;color:var(--ivory);margin:.5em 0 .3em">'+esc(d.title)+'</div>'
+      +paras
+      +'<div class="verse" style="margin-top:.7em"><p>'+esc(d.pray)+'</p><cite>A prayer to pray</cite></div>'
+      +'</div></div>';
+  }).join('');
+  return '<div class="card" style="border-color:var(--gold)">'
+    +'<h2 style="color:var(--gold);font-size:1.4rem">🙏 Teach Us to Pray</h2>'
+    +'<p class="sub">A seven-day journey through the Lord\'s Prayer — one petition each day, resting in Christ our Righteousness. Tap a day to open it.</p>'
+    +'<div class="verse" style="margin:.6em 0"><p>After this manner therefore pray ye: Our Father which art in heaven…</p><cite>Matthew 6:9 · KJV</cite></div>'
+    +days
+    +'</div>';
+}
+function wireLordsPrayer(){
+  document.querySelectorAll('[data-lp]').forEach(function(el){
+    el.onclick=function(){
+      var box=document.getElementById('lp-'+el.dataset.lp);
+      if(box)box.classList.toggle('hide');
+    };
+  });
 }
 function slidesPanel(){
   const s=C.slides;
@@ -1115,12 +1172,14 @@ app.innerHTML=`${crumb()}
   <button class="btn" id="p-send">🕊️ Send to the Altar</button>
  </div>
  <div class="verse"><p>"Casting all your care upon him; for he careth for you."</p><cite>1 Peter 5:7</cite></div>
+ ${lordsPrayerSection()}
  <div class="card note">👥 <b>On the Prayer Team?</b> <a href="#prayerteam">Enter the team room</a> with your team code.</div>
  ${footer()}`;
 if(pc.on){ mountCircle('circle-prayer',pc.room,'Friend'); wireModUnlock(pc.room,'Pastor Josh','circle-prayer'); }
 document.getElementById('p-home').onchange=()=>{
   document.getElementById('p-which-wrap').classList.toggle('hide',document.getElementById('p-home').value!=='other-church');
 };
+wireLordsPrayer();
 document.getElementById('p-call').onchange=document.getElementById('p-visit').onchange=()=>{
   const call=document.getElementById('p-call').checked, visit=document.getElementById('p-visit').checked;
   document.getElementById('p-contact-wrap').classList.toggle('hide',!(call||visit));
