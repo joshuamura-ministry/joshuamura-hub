@@ -1,13 +1,5 @@
 // circle-token.js — JaaS (8x8) JWT signer for Joshua Mura's live circles
 // Zero npm dependencies: uses Node's built-in crypto only.
-//
-// Reads four environment variables set in Netlify (never in this file):
-//   JAAS_PRIVATE_KEY  – the full PEM private key block (BEGIN/END lines included)
-//   JAAS_KID          – Key ID, e.g. vpaas-magic-cookie-.../1d5513
-//   JAAS_APP_ID       – the JaaS AppID (vpaas-magic-cookie-...)
-//   CIRCLE_MOD_PASS   – the private moderator passphrase
-//
-// This function never returns the private key or the passphrase to the browser.
 
 const crypto = require('crypto');
 
@@ -17,6 +9,19 @@ function b64url(input) {
     .replace(/=/g, '')
     .replace(/\+/g, '-')
     .replace(/\//g, '_');
+}
+
+// Netlify env storage can turn real newlines into the literal characters "\n",
+// or wrap the value in quotes, or add stray whitespace. Normalize all of that
+// back into a clean PEM block Node's crypto can parse.
+function normalizeKey(raw) {
+  if (!raw) return raw;
+  let k = raw.trim();
+  if ((k.startsWith('"') && k.endsWith('"')) || (k.startsWith("'") && k.endsWith("'"))) {
+    k = k.slice(1, -1);
+  }
+  k = k.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
+  return k;
 }
 
 function sign(payloadObj, privateKeyPem, kid) {
@@ -117,7 +122,7 @@ exports.handler = async (event) => {
 
   let token;
   try {
-    token = sign(payload, PRIVATE_KEY, KID);
+    token = sign(payload, normalizeKey(PRIVATE_KEY), KID);
   } catch (e) {
     return {
       statusCode: 500,
@@ -126,6 +131,7 @@ exports.handler = async (event) => {
         ok: false,
         error:
           'Could not sign token — the private key may be malformed. Re-paste the full PEM block (including BEGIN/END lines) into JAAS_PRIVATE_KEY.',
+        detail: (e && e.message) ? e.message : String(e),
       }),
     };
   }
