@@ -72,6 +72,16 @@ footer .v{font-family:'Fraunces',serif;font-style:italic;font-size:1.05em;color:
 .psec .subcard>b{color:var(--ivory);display:block;margin-bottom:.3em}
 .psave{margin-top:.5em}
 /* pinned live-class video that stays at the top of the Mine while lessons scroll below */
+#present-stage{position:fixed;inset:0;z-index:9999;background:#000;display:flex;align-items:center;justify-content:center}
+#present-stage img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+#present-stage .pnav{position:fixed;bottom:0;left:0;right:0;height:38%;display:flex}
+#present-stage .pnav .l,#present-stage .pnav .r{flex:1;cursor:pointer}
+#present-stage .pbar{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;gap:.8em;padding:.5em .8em;background:linear-gradient(#000a,transparent);color:#fff;font-size:.85rem;opacity:0;transition:opacity .25s;z-index:2}
+#present-stage:hover .pbar,#present-stage.show .pbar{opacity:1}
+#present-stage .pbar button{background:#fff2;border:1px solid #fff4;color:#fff;border-radius:8px;padding:.3em .8em;font-weight:700;cursor:pointer}
+#present-stage .pnext{position:fixed;right:12px;bottom:12px;width:22vw;max-width:260px;border:2px solid #fff6;border-radius:8px;overflow:hidden;background:#000;opacity:.9;z-index:2}
+#present-stage .pnext img{width:100%}
+#present-stage .pnext .lbl{position:absolute;top:2px;left:6px;color:#fff;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;text-shadow:0 1px 3px #000}
 #classpin-persist:empty{display:none}
 #classpin-persist{position:sticky;top:0;z-index:50;background:var(--walnut);padding:0 clamp(16px,4vw,40px)}
 #classpin{position:sticky;top:0;z-index:40;background:var(--walnut);
@@ -190,7 +200,7 @@ db=firebase.database();
 
 /* ================= CONTENT (live-editable via Panel; these are defaults) ================= */
 let C={
- config:{teamcode:"pray2026",classcode:"class2026"},
+ config:{teamcode:"pray2026",classcode:"class2026",presentcode:"present2026"},
  trail:[],
  rhythm:[
   {day:"Tue & Thu",time:"3:30 – 5:00 PM",what:"Office Hours — drop in",where:"Bucks County SDA, Warminster PA",link:"none"},
@@ -424,7 +434,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v40</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v41</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -671,13 +681,89 @@ function render(){
   if(h.startsWith('dig-')){dig(h.slice(4));wireClassPin();window.scrollTo(0,0);return}
   if(h.startsWith('vein-')){vein(h.slice(5));wireClassPin();window.scrollTo(0,0);return}
 
-  const pages={map,spring,mine,expeditions,watchfire:expeditions,provisions,trail,altar,treasury,panel,tent,prayerteam,'class':klass};
+  const pages={map,spring,mine,expeditions,watchfire:expeditions,provisions,trail,altar,treasury,panel,tent,prayerteam,'class':klass,present};
   (pages[h]||map)();
   wireClassPin();
   window.scrollTo(0,0);
 }
 
 /* ================= PAGES ================= */
+let PRESENT_OK=false;
+function present(){
+  // Gate with the presenter code (separate from steward PIN / mod pass)
+  if(!PRESENT_OK){
+    app.innerHTML=`${crumb()}
+     <div class="eyebrow">📽️ Presenter</div>
+     <h2>Presenter mode</h2>
+     <div class="card">
+      <p class="sub">Full-screen slides for the projector or screen share. Advancing here changes the slide for everyone watching online, too.</p>
+      <label>Presenter code</label><input type="text" id="pr-code" placeholder="Presenter code">
+      <div id="pr-err" class="err"></div>
+      <button class="btn" id="pr-go">Enter presenter mode</button>
+      <p class="note" style="margin-top:.6em">Guests can be given this code to run slides — it does <b>not</b> unlock the Steward's Panel or anything else.</p>
+     </div>
+     ${footer()}`;
+    document.getElementById('pr-go').onclick=()=>{
+      if(document.getElementById('pr-code').value.trim()!==(C.config.presentcode||'present2026')){
+        document.getElementById('pr-err').textContent='That is not the presenter code.';return;
+      }
+      PRESENT_OK=true; present();
+    };
+    return;
+  }
+  // Presenter control screen (not yet full-screen): shows current + total, launch button
+  const s=C.slides||{total:0,current:1};
+  app.innerHTML=`${crumb()}
+   <div class="eyebrow">📽️ Presenter · ready</div>
+   <h2>Run the slides</h2>
+   <div class="card" style="text-align:center">
+     <p class="sub">Slides load from your <b>/slides</b> folder (1.jpg, 2.jpg …). Set the total in the Steward's Panel. Tap <b>Go full screen</b>, then connect this device to the projector.</p>
+     <div style="margin:.8em 0"><b id="pr-count" style="font-size:1.2rem">Slide ${Math.min(s.current||1,s.total||1)} of ${s.total||0}</b></div>
+     <div style="display:flex;gap:.6em;justify-content:center;margin:.6em 0">
+       <button class="btn ghost" id="pr-prev" style="font-size:1.4rem;padding:.3em 1em">◀</button>
+       <button class="btn" id="pr-next" style="font-size:1.4rem;padding:.3em 1em">▶</button>
+     </div>
+     <button class="btn" id="pr-full" style="margin-top:.4em">⛶ Go full screen</button>
+   </div>
+   ${footer()}`;
+  const upd=()=>{const c=document.getElementById('pr-count'); if(c)c.textContent='Slide '+Math.min((C.slides.current||1),(C.slides.total||1))+' of '+(C.slides.total||0);};
+  document.getElementById('pr-next').onclick=async()=>{ await slideWrite({current:((C.slides.current||1)+1)}); upd(); };
+  document.getElementById('pr-prev').onclick=async()=>{ await slideWrite({current:((C.slides.current||1)-1)}); upd(); };
+  document.getElementById('pr-full').onclick=()=>enterPresentStage();
+}
+function enterPresentStage(){
+  let showNext=true;
+  const build=()=>{
+    const s=C.slides||{total:0,current:1};
+    const n=Math.min(Math.max(1,s.current||1),Math.max(1,s.total||1));
+    const nextN=(n<(s.total||1))?n+1:null;
+    let stage=document.getElementById('present-stage');
+    if(!stage){ stage=document.createElement('div'); stage.id='present-stage'; document.body.appendChild(stage); }
+    stage.className=showNext?'':'';
+    stage.innerHTML=`
+      <div class="pbar">
+        <b>Slide ${n} of ${s.total||0}</b>
+        <button id="ps-toggle">${showNext?'Hide next-preview':'Show next-preview'}</button>
+        <button id="ps-exit">Exit ✕</button>
+        <span style="opacity:.7">Tap right = next · left = previous</span>
+      </div>
+      <img src="${SLIDES_PATH}${n}${SLIDES_EXT}" alt="Slide ${n}">
+      <div class="pnav"><div class="l" id="ps-prev"></div><div class="r" id="ps-next"></div></div>
+      ${(showNext&&nextN)?`<div class="pnext"><span class="lbl">Next</span><img src="${SLIDES_PATH}${nextN}${SLIDES_EXT}" alt=""></div>`:''}`;
+    document.getElementById('ps-next').onclick=async()=>{ await slideWrite({current:n+1}); build(); };
+    document.getElementById('ps-prev').onclick=async()=>{ await slideWrite({current:n-1}); build(); };
+    document.getElementById('ps-exit').onclick=()=>{ stage.remove(); };
+    document.getElementById('ps-toggle').onclick=()=>{ showNext=!showNext; build(); };
+  };
+  build();
+  // keyboard arrows for iPad keyboards / clickers
+  document.addEventListener('keydown',function pk(e){
+    if(!document.getElementById('present-stage')){document.removeEventListener('keydown',pk);return;}
+    if(e.key==='ArrowRight'||e.key===' '){document.getElementById('ps-next').click();}
+    if(e.key==='ArrowLeft'){document.getElementById('ps-prev').click();}
+    if(e.key==='Escape'){document.getElementById('ps-exit').click();}
+  });
+}
 function map(){
 app.innerHTML=`
  <div style="text-align:center;padding-top:1em">
@@ -976,6 +1062,7 @@ app.innerHTML=`${crumb()}
    ${ex.study?`<a class="door" href="#${esc(ex.study)}" style="margin-top:.8em;display:block"><div class="ico">⚒️</div><div class="name" style="font-size:1.1rem">Take this sermon to the Forge</div><div class="what">The five-part companion study for today's message — dig it this week.</div></a>`:''}
  `:`<div class="card" style="text-align:center"><div style="font-size:2.6rem">🪵</div><p class="sub">${esc(ex.note)}</p></div>`}
  <div class="verse"><p>"And thine ears shall hear a word behind thee, saying, This is the way, walk ye in it."</p><cite>Isaiah 30:21</cite></div>
+ <div class="card note" style="text-align:center">📽️ <b>Presenting?</b> <a href="#present">Open Presenter mode</a> — full-screen slides for the projector (needs the presenter code).</div>
  ${footer()}`;
 if(ex.on&&ex.source==='jitsi'){ mountCircle('circle-watchfire',ex.room,'Friend'); }
 }
@@ -1341,6 +1428,14 @@ document.getElementById('panelbox').innerHTML=`
    <input type="text" id="cl-code" value="${esc((C.config&&C.config.classcode)||'class2026')}">
    <button class="btn psave" id="save-cl">Save class settings</button> <span id="cl-ok" class="ok"></span>
   </div>
+
+  <div class="subcard">
+   <b>📽️ Presenter code (for you or a guest speaker)</b>
+   <div class="note" style="margin-bottom:.3em">Give this to whoever runs the slides. It opens <b>Presenter mode</b> (full-screen slides) only — never the Steward's Panel or your private keys. The presenter page is at <b>#present</b>.</div>
+   <label>Presenter code</label>
+   <input type="text" id="pr-codeset" value="${esc((C.config&&C.config.presentcode)||'present2026')}">
+   <button class="btn psave" id="save-pr">Save presenter code</button> <span id="pr-ok" class="ok"></span>
+  </div>
  </div>
 
  <!-- ========== 5. SCHEDULE ========== -->
@@ -1407,9 +1502,16 @@ document.getElementById('save-sl').onclick=async()=>{
 };
 document.getElementById('sl-next').onclick=async()=>{ try{ await slideWrite({current:((C.slides&&C.slides.current)||1)+1}); }catch(e){} };
 document.getElementById('sl-prev').onclick=async()=>{ try{ await slideWrite({current:((C.slides&&C.slides.current)||1)-1}); }catch(e){} };
+document.getElementById('save-pr').onclick=async()=>{
+  try{
+    await db.ref('content/config').set({k:WRITE_KEY,teamcode:(C.config.teamcode||'pray2026'),classcode:(C.config.classcode||'class2026'),presentcode:v('pr-codeset')});
+    C.config.presentcode=v('pr-codeset');
+    document.getElementById('pr-ok').textContent='Saved ✓';
+  }catch(e){ document.getElementById('pr-ok').textContent='Save failed'; }
+};
 document.getElementById('save-cl').onclick=async()=>{
   try{
-    await db.ref('content/config').set({k:WRITE_KEY,teamcode:(C.config.teamcode||'pray2026'),classcode:v('cl-code')});
+    await db.ref('content/config').set({k:WRITE_KEY,teamcode:(C.config.teamcode||'pray2026'),classcode:v('cl-code'),presentcode:(C.config.presentcode||'present2026')});
     /* save topic alongside the rest of the live block so the section-key rule is satisfied */
     const L=C.live;
     await db.ref('content/live').set({k:WRITE_KEY,
@@ -1422,7 +1524,8 @@ document.getElementById('save-cl').onclick=async()=>{
   }catch(e){ document.getElementById('cl-ok').textContent='Save failed — rules published?'; }
 };
 document.getElementById('save-tc').onclick=async()=>{
-  try{await db.ref('content/config').set({k:WRITE_KEY,teamcode:v('tc-code')});
+  try{await db.ref('content/config').set({k:WRITE_KEY,teamcode:v('tc-code'),classcode:(C.config.classcode||'class2026'),presentcode:(C.config.presentcode||'present2026')});
+  C.config.teamcode=v('tc-code');
   document.getElementById('tc-ok').textContent='Saved ✓ — new code in force.';}catch(e){document.getElementById('tc-ok').textContent='Save failed.';}
 };
 document.getElementById('save-tr').onclick=async()=>{
