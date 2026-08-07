@@ -105,9 +105,10 @@ footer .v{font-family:'Fraunces',serif;font-style:italic;font-size:1.05em;color:
 .livepill{z-index:50}
 /* ===== Interactive Presentations (Bucks-style) ===== */
 .ipres{position:relative;min-height:60dvh;overflow:hidden}
-.ipslide{opacity:0;transform:translateX(30px);transition:opacity .35s ease,transform .35s ease;position:absolute;inset:0;pointer-events:none}
-.ipslide.active{opacity:1;transform:none;pointer-events:auto;position:relative}
-.ipslide.exit-left{opacity:0;transform:translateX(-30px)}
+.ipslide{opacity:0;transform:translateX(24px);transition:opacity .22s ease-out,transform .22s ease-out,visibility 0s linear .22s;position:absolute;inset:0;pointer-events:none;visibility:hidden;will-change:opacity,transform;backface-visibility:hidden}
+.ipslide.active{opacity:1;transform:translateZ(0);pointer-events:auto;position:relative;visibility:visible;transition:opacity .22s ease-out,transform .22s ease-out,visibility 0s}
+.ipslide.exit-left{opacity:0;transform:translateX(-24px)}
+.ipslide img{transform:translateZ(0)}
 .ipslide .ipinner{max-width:820px;margin:0 auto;padding:1.2em .2em 2em}
 .ipslide .eyebrow{color:var(--gold);font-size:.72em;letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:.6em}
 .ipslide h1{font-family:'Fraunces',serif;font-size:2.3rem;line-height:1.08;margin:.1em 0 .4em}
@@ -242,7 +243,7 @@ db=firebase.database();
 
 /* ================= CONTENT (live-editable via Panel; these are defaults) ================= */
 let C={
- config:{teamcode:"pray2026",classcode:"class2026",presentcode:"present2026",slidedelay:0},
+ config:{teamcode:"pray2026",classcode:"class2026",presentcode:"present2026",slidedelay:0,giveurl:"",givelabel:"Give to this ministry",invitemsg:"I found something I think you'd love — Pastor Josh's ministry hub. Studies, prayer, devotionals, and more, all in one place. Come see:"},
  trail:[],
  rhythm:[
   {day:"Tue & Thu",time:"3:30 – 5:00 PM",what:"Office Hours — drop in",where:"Bucks County SDA, Warminster PA",link:"none"},
@@ -717,7 +718,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v58</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v62</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -990,6 +991,23 @@ function sermonsPanel(){
 }
 /* ---- QR codes: generate + download for any hub link ---- */
 function qrImgURL(data,size){ size=size||300; return 'https://api.qrserver.com/v1/create-qr-code/?size='+size+'x'+size+'&margin=8&data='+encodeURIComponent(data); }
+// Build the FULL config object from current state + overrides, so no save wipes another field.
+async function cfgSet(over){
+  over=over||{};
+  var c=C.config||{};
+  var merged={
+    teamcode:   c.teamcode||'pray2026',
+    classcode:  c.classcode||'class2026',
+    presentcode:c.presentcode||'present2026',
+    slidedelay: c.slidedelay||0,
+    giveurl:    (c.giveurl||''),
+    givelabel:  (c.givelabel||'Give to this ministry'),
+    invitemsg:  (c.invitemsg||''),
+    ...over
+  };
+  await db.ref('content/config').set({k:WRITE_KEY, ...merged});
+  C.config={...c,...merged};
+}
 function baseURL(){ try{ return location.origin+location.pathname.replace(/index\.html?$/,''); }catch(e){ return 'https://joshuamura.netlify.app/'; } }
 function hubLink(hash){ var b=baseURL(); if(!b.endsWith('/'))b+='/'; return b+(hash?('#'+hash):''); }
 async function downloadQR(data,filename){
@@ -1040,10 +1058,11 @@ function wireModUnlock(room,name,containerId){
 
 function render(){
   const h=(location.hash||'#map').replace('#','');
+  if(h==='deck'||h.indexOf('deck-')===0){deck();window.scrollTo(0,0);return}
   if(h.startsWith('dig-')){dig(h.slice(4));wireClassPin();window.scrollTo(0,0);return}
   if(h.startsWith('vein-')){vein(h.slice(5));wireClassPin();window.scrollTo(0,0);return}
 
-  const pages={map,spring,mine,expeditions,watchfire:expeditions,provisions,trail,altar,treasury,panel,tent,prayerteam,'class':klass,present};
+  const pages={map,spring,mine,expeditions,watchfire:expeditions,provisions,trail,altar,treasury,panel,tent,prayerteam,'class':klass,present,share};
   (pages[h]||map)();
   wireClassPin();
   window.scrollTo(0,0);
@@ -1051,6 +1070,107 @@ function render(){
 
 /* ================= PAGES ================= */
 let PRESENT_OK=false;
+function share(){
+  const link=hubLink('');
+  const cfg=C.config||{};
+  const msg=(cfg.invitemsg||"I found something I think you'd love — Pastor Josh's ministry hub.");
+  const fullMsg=msg+' '+link;
+  const give=(cfg.giveurl||'').trim();
+  const giveLabel=esc(cfg.givelabel||'Give to this ministry');
+  app.innerHTML=`<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>
+   <div class="eyebrow">🤝 Share the Treasure</div>
+   <h2>Freely you have received — freely give</h2>
+   <div class="verse">
+     <p>"...the kingdom of heaven is like unto treasure hid in a field; the which when a man hath found, he hideth, and for joy thereof goeth and selleth all that he hath..."</p>
+     <cite>Matthew 13:44</cite>
+   </div>
+   <p class="sub">You found the treasure. Now bring someone else to it — that's how the map was always meant to be read: one traveler telling another where to dig.</p>
+
+   <div class="subcard" style="text-align:center">
+     <b>📲 Bring a friend to the journey</b>
+     <div class="note" style="margin:.3em 0 .6em">Show this code to a friend — one scan brings them to the whole map. Or use the buttons below to send it.</div>
+     <img src="${qrImgURL(link,240)}" alt="Scan to open the hub" style="width:220px;max-width:80%;background:#fff;border-radius:12px;padding:10px">
+     <div class="note" style="word-break:break-all;margin:.5em 0">${esc(link)}</div>
+     <div style="display:flex;gap:.5em;flex-wrap:wrap;justify-content:center;margin-top:.4em">
+       <button class="btn" id="sh-native">📤 Share…</button>
+       <button class="btn ghost" id="sh-text">💬 Text it</button>
+       <button class="btn ghost" id="sh-email">✉️ Email it</button>
+       <button class="btn ghost" id="sh-copy">🔗 Copy link</button>
+       <button class="btn ghost" data-qrdl="${esc(link)}" data-qrname="share-the-treasure">⬇︎ Save QR</button>
+     </div>
+     <div id="sh-copied" class="note" style="margin-top:.4em;color:var(--gold);display:none">Copied — now paste it anywhere ✓</div>
+   </div>
+
+   ${give?`<div class="subcard" style="text-align:center">
+     <b>🌱 Pay it forward</b>
+     <div class="note" style="margin:.3em 0 .7em">Everything here is free to everyone. If this ministry has been a blessing, you can help send it further — support keeps the studies, prayer, and streams reaching more people.</div>
+     <a class="btn" href="${esc(give)}" target="_blank" rel="noopener" style="text-decoration:none">💛 ${giveLabel}</a>
+     <div class="note" style="margin-top:.5em">Opens the secure giving page in a new tab.</div>
+   </div>`:''}
+
+   <div class="verse" style="margin-top:1em">
+     <p>"Freely ye have received, freely give."</p>
+     <cite>Matthew 10:8</cite>
+   </div>
+   ${footer()}`;
+
+  const done=(id)=>{const c=document.getElementById('sh-copied');if(c){c.style.display='block';c.textContent=id||'Copied — now paste it anywhere ✓';}};
+  // Native share (mobile) — falls back gracefully
+  const nb=document.getElementById('sh-native');
+  if(nb){
+    if(navigator.share){
+      nb.onclick=()=>navigator.share({title:'Pastor Josh — Ministry Hub',text:msg,url:link}).catch(()=>{});
+    }else{
+      nb.style.display='none'; // desktop with no share sheet — the other buttons cover it
+    }
+  }
+  const tb=document.getElementById('sh-text');
+  if(tb)tb.onclick=()=>{ location.href='sms:?&body='+encodeURIComponent(fullMsg); };
+  const eb=document.getElementById('sh-email');
+  if(eb)eb.onclick=()=>{ location.href='mailto:?subject='+encodeURIComponent('Something I wanted to share with you')+'&body='+encodeURIComponent(fullMsg); };
+  const cb=document.getElementById('sh-copy');
+  if(cb)cb.onclick=async()=>{
+    try{ await navigator.clipboard.writeText(link); done(); }
+    catch(e){ done('Link: '+link); }
+  };
+}
+function deck(){
+  // Standalone, self-paced view of a single presentation — a clean shareable link.
+  // URL: #deck  (shows the default deck)  or  #deck-<id>  (a specific deck).
+  const h=(location.hash||'').replace('#','');
+  let id = h.indexOf('deck-')===0 ? h.slice(5) : (PRESENTATIONS[0]&&PRESENTATIONS[0].id);
+  const d=presById(id);
+  if(!d){
+    app.innerHTML=`<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>
+     <div class="card"><p class="sub">That presentation could not be found.</p></div>${footer()}`;
+    return;
+  }
+  app.innerHTML=`<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>
+   <div class="eyebrow">✨ Presentation</div>
+   <h2 style="margin-bottom:.5em">${esc(d.title)}</h2>
+   ${ipRenderDeck(id,{follow:false})}
+   ${footer()}`;
+  // self-paced local navigation (does NOT touch Firebase — this is a private read-through)
+  let pos=0; const max=d.slides.length-1;
+  ipShow(0,true);
+  const jump=(n)=>{ pos=Math.max(0,Math.min(max,n)); ipShow(pos,true); window.scrollTo(0,0); };
+  const pv=document.getElementById('ip-prev'), nx=document.getElementById('ip-next');
+  if(pv)pv.onclick=()=>jump(pos-1);
+  if(nx)nx.onclick=()=>jump(pos+1);
+  document.querySelectorAll('[data-ipdot]').forEach((dot,idx)=>{ dot.onclick=()=>jump(idx); });
+  // swipe + clicker for the reader too
+  const host=document.getElementById('ipres-host');
+  if(host){
+    let x0=null;
+    host.addEventListener('touchstart',e=>{x0=e.touches[0].clientX;},{passive:true});
+    host.addEventListener('touchend',e=>{ if(x0===null)return; const dx=e.changedTouches[0].clientX-x0; x0=null; if(Math.abs(dx)<40)return; jump(dx<0?pos+1:pos-1); },{passive:true});
+    document.addEventListener('keydown',function dk(e){
+      if(!document.getElementById('ipres-host')){document.removeEventListener('keydown',dk);return;}
+      if(['ArrowRight',' ','PageDown','ArrowDown','Enter'].includes(e.key)){e.preventDefault();jump(pos+1);}
+      else if(['ArrowLeft','PageUp','ArrowUp','Backspace'].includes(e.key)){e.preventDefault();jump(pos-1);}
+    });
+  }
+}
 function present(){
   // Gate with the presenter code (separate from steward PIN / mod pass)
   if(!PRESENT_OK){
@@ -1156,6 +1276,7 @@ app.innerHTML=`
   <a class="door" href="#trail"><div class="ico">🥾</div><div class="name">The Trail</div><div class="what">Where the guide walks next — churches, events & public speaking</div><div class="tagline">Schedule</div></a>
   <a class="door" href="#tent"><div class="ico">🏕️</div><div class="name">The Guide's Tent</div><div class="what">Who Pastor Josh is, the churches he serves, free supplies & the Trading Post</div><div class="tagline">Connect</div></a>
   <a class="door" href="#treasury"><div class="ico">👑</div><div class="name">The Treasury</div><div class="what">Your collected gems and milestones</div><div class="tagline">Your Treasures</div></a>
+  <a class="door" href="#share" style="border-color:var(--gold)"><div class="ico">🤝</div><div class="name">Share the Treasure</div><div class="what">Freely you've received — freely give. Bring a friend to the journey, or help send it further.</div><div class="tagline">Share & Pay It Forward</div></a>
  </div>
  ${footer()}`;
 }
@@ -1899,9 +2020,20 @@ document.getElementById('panelbox').innerHTML=`
   <div class="pdesc">Each code shows its link underneath — scan it, or copy the link for a bulletin or slide. Tap <b>Download</b> to save the QR as an image.</div>
   ${qrCard('🗺️ The whole hub','','joshuamura-hub')}
   ${qrCard('🙏 The Altar (prayer)','altar','altar')}
-  ${qrCard('⛏️ The Mine (Bible studies)','mine','mine')}
+  ${qrCard('⛏️ The Mine (all the Bible studies)','mine','mine')}
   ${qrCard('🔥 The Watchfire (live — follow the slides)','watchfire','watchfire-live')}
-  ${(VEINS.flatMap(v=>v.courses.filter(c=>c.open)).map(c=>qrCard('📖 '+esc(c.name),'dig-'+c.id,'study-'+c.id)).join(''))}
+  ${qrCard('🤝 Share the Treasure (invite a friend)','share','share-the-treasure')}
+  <div class="subcard">
+   <b>🤝 Share the Treasure — settings</b>
+   <div class="note" style="margin-bottom:.3em">Controls the public <b>Share the Treasure</b> door (#share), where people invite a friend or give.</div>
+   <label>Invite message (sent along with the link when someone texts/emails it)</label>
+   <textarea id="sh-invitemsg" rows="3">${esc((C.config&&C.config.invitemsg)||'')}</textarea>
+   <label style="margin-top:.4em">💛 Giving link — paste your church's giving page (AdventistGiving, Tithe.ly, etc.). Leave blank to hide the "Pay it forward" section.</label>
+   <input type="text" id="sh-giveurl" placeholder="https://adventistgiving.org/..." value="${esc((C.config&&C.config.giveurl)||'')}">
+   <label style="margin-top:.4em">Button label</label>
+   <input type="text" id="sh-givelabel" value="${esc((C.config&&C.config.givelabel)||'Give to this ministry')}">
+   <button class="btn psave" id="save-share">Save share settings</button> <span id="share-ok" class="ok"></span>
+  </div>
   <div class="subcard">
    <b>🔗 Custom link → QR</b>
    <div class="note" style="margin-bottom:.3em">Paste any link (or a hub link like the ones above) and make a QR for it.</div>
@@ -2013,8 +2145,7 @@ document.getElementById('save-se').onclick=async()=>{
   try{
     await sermonWrite({total:+(document.getElementById('se-total').value||0),on:document.getElementById('se-on').value==='yes'});
     var dly=Math.max(0,Math.min(60,+(document.getElementById('se-delay').value||0)));
-    await db.ref('content/config').set({k:WRITE_KEY,teamcode:(C.config.teamcode||'pray2026'),classcode:(C.config.classcode||'class2026'),presentcode:(C.config.presentcode||'present2026'),slidedelay:dly});
-    C.config.slidedelay=dly;
+    await cfgSet({slidedelay:dly});
     seUpd(); document.getElementById('se-ok').textContent='Saved ✓'; }
   catch(e){ document.getElementById('se-ok').textContent='Save failed — rules published?'; }
 };
@@ -2022,14 +2153,13 @@ document.getElementById('se-next').onclick=async()=>{ try{ await sermonWrite({cu
 document.getElementById('se-prev').onclick=async()=>{ try{ await sermonWrite({current:((C.sermons&&C.sermons.current)||1)-1}); seUpd(); }catch(e){} };
 document.getElementById('save-pr').onclick=async()=>{
   try{
-    await db.ref('content/config').set({k:WRITE_KEY,teamcode:(C.config.teamcode||'pray2026'),classcode:(C.config.classcode||'class2026'),presentcode:v('pr-codeset'),slidedelay:(C.config.slidedelay||0)});
-    C.config.presentcode=v('pr-codeset');
+    await cfgSet({presentcode:v('pr-codeset')});
     document.getElementById('pr-ok').textContent='Saved ✓';
   }catch(e){ document.getElementById('pr-ok').textContent='Save failed'; }
 };
 document.getElementById('save-cl').onclick=async()=>{
   try{
-    await db.ref('content/config').set({k:WRITE_KEY,teamcode:(C.config.teamcode||'pray2026'),classcode:v('cl-code'),presentcode:(C.config.presentcode||'present2026'),slidedelay:(C.config.slidedelay||0)});
+    await cfgSet({classcode:v('cl-code')});
     /* save topic alongside the rest of the live block so the section-key rule is satisfied */
     const L=C.live;
     await db.ref('content/live').set({k:WRITE_KEY,
@@ -2037,14 +2167,21 @@ document.getElementById('save-cl').onclick=async()=>{
       teaching:{on:L.teaching.on,room:L.teaching.room,topic:v('cl-topic'),note:L.teaching.note},
       expedition:{on:L.expedition.on,title:L.expedition.title,source:L.expedition.source,youtubeId:L.expedition.youtubeId,room:L.expedition.room,deckUrl:L.expedition.deckUrl,study:L.expedition.study,note:L.expedition.note}
     });
-    C.config.classcode=v('cl-code'); C.live.teaching.topic=v('cl-topic');
+    C.live.teaching.topic=v('cl-topic');
     document.getElementById('cl-ok').textContent='Saved ✓';
   }catch(e){ document.getElementById('cl-ok').textContent='Save failed — rules published?'; }
 };
 document.getElementById('save-tc').onclick=async()=>{
-  try{await db.ref('content/config').set({k:WRITE_KEY,teamcode:v('tc-code'),classcode:(C.config.classcode||'class2026'),presentcode:(C.config.presentcode||'present2026'),slidedelay:(C.config.slidedelay||0)});
-  C.config.teamcode=v('tc-code');
+  try{await cfgSet({teamcode:v('tc-code')});
   document.getElementById('tc-ok').textContent='Saved ✓ — new code in force.';}catch(e){document.getElementById('tc-ok').textContent='Save failed.';}
+};
+document.getElementById('save-share').onclick=async()=>{
+  try{
+    var gu=(v('sh-giveurl')||'').trim();
+    if(gu && !/^https?:\/\//i.test(gu)) gu='https://'+gu; // be forgiving about http(s)
+    await cfgSet({giveurl:gu, givelabel:(v('sh-givelabel')||'Give to this ministry'), invitemsg:(document.getElementById('sh-invitemsg').value||'')});
+    document.getElementById('share-ok').textContent='Saved ✓';
+  }catch(e){ document.getElementById('share-ok').textContent='Save failed — rules published?'; }
 };
 document.getElementById('save-tr').onclick=async()=>{
   try{
