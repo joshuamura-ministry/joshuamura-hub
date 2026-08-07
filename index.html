@@ -424,7 +424,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v37</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v38</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -542,6 +542,46 @@ function syncClassPin(){
   if(leave)leave.onclick=function(){CLASS_JOINED=false;CLASS_VIDEO_UP=false;CLASS_ROOM_MOUNTED='';syncClassPin();};
 }
 function wireClassPin(){syncClassPin();}
+function printStudy(courseId){
+  var CO=courseById(courseId); if(!CO)return;
+  var VV=veinOf(CO.id);
+  var partsSeen={};
+  var q=CO.questions.map(function(qq,i){
+    var head=qq.part?('<div style="font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8a6c2c;margin:22px 0 6px;font-size:12px">'+esc(qq.part)+'</div>'):'';
+    var verse='';
+    if(qq.blanks){
+      var bi=0;
+      verse=esc(qq.verse).split('___').map(function(seg,j,arr){
+        var fill=j<arr.length-1?('<b style="color:#8a6c2c">'+esc(qq.blanks[bi++]||'____')+'</b>'):'';
+        return seg+fill;
+      }).join('');
+    }else{ verse=''; }
+    return head+'<div style="margin:0 0 16px;padding:12px 14px;border:1px solid #ddd;border-radius:8px;break-inside:avoid">'
+      +'<div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#999">Strike '+(i+1)+' of '+CO.questions.length+'</div>'
+      +'<div style="font-weight:700;font-size:15px;margin:.2em 0">'+esc(qq.q)+'</div>'
+      +'<div style="font-size:12px;color:#666;margin-bottom:.3em">Bible (NKJV): '+esc(qq.ref)+'</div>'
+      +(verse?('<div style="font-style:italic;line-height:1.9;font-family:Georgia,serif">"'+verse+'"</div>'):'')
+      +(qq.note?('<div style="margin-top:.5em;font-size:13px;line-height:1.6;color:#333"><b>Commentary:</b> '+esc(qq.note)+'</div>'):'')
+      +'</div>';
+  }).join('');
+  var mem=CO.memory?('<div style="margin:18px 0;padding:12px 14px;background:#faf6ec;border-left:4px solid #c9a24b"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a6c2c">Memory Verse</div><div style="font-style:italic;font-family:Georgia,serif;font-size:15px;margin-top:.2em">"'+esc(CO.memory.verse)+'"</div><div style="font-size:12px;color:#666;margin-top:.2em">'+esc(CO.memory.ref)+'</div></div>'):'';
+  var invite=CO.invite?('<div style="margin:18px 0;line-height:1.7;font-size:14px">'+esc(CO.invite)+'</div>'):'';
+  var intro=CO.intro?('<div style="margin:14px 0;line-height:1.7;font-size:14px;color:#333">'+esc(CO.intro)+'</div>'):'';
+  var safety=CO.safety?('<div style="margin:14px 0;padding:12px 14px;border:2px solid #c25b4a;border-radius:8px;background:#fbeeec;font-size:13px;line-height:1.6"><b>A word of care:</b> '+esc(CO.safety)+'</div>'):'';
+  var w=window.open('','_blank');
+  if(!w){ alert('Please allow pop-ups to download this study.'); return; }
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(CO.name)+'</title>'
+    +'<style>@media print{@page{margin:1.5cm}} body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:720px;margin:24px auto;padding:0 20px;color:#1a1a1a}'
+    +'h1{font-family:Georgia,serif;font-size:26px;margin:0 0 2px} .sub{color:#8a6c2c;font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:12px;margin-bottom:16px}'
+    +'.foot{margin-top:28px;padding-top:14px;border-top:1px solid #ddd;font-size:12px;color:#888;text-align:center}'
+    +'.btnrow{margin:16px 0 22px}.btnrow button{font-size:14px;padding:8px 16px;border:none;border-radius:8px;background:#c9a24b;color:#241a0d;font-weight:700;cursor:pointer}</style></head><body>'
+    +'<div class="btnrow no-print"><button onclick="window.print()">📄 Save as PDF / Print</button></div>'
+    +'<h1>'+esc(CO.name)+'</h1><div class="sub">'+esc(VV?VV.label:'Bible Study')+(CO.blurb?' · '+esc((CO.blurb||'').split('—')[0].trim()):'')+'</div>'
+    +intro+q+mem+invite+safety
+    +'<div class="foot">Joshua Mura · Digital Ministry Hub — joshuamura.netlify.app<br>“Seek, and ye shall find.” · Matthew 7:7</div>'
+    +'<style>@media print{.no-print{display:none}}</style></body></html>');
+  w.document.close();
+}
 function slidesPanel(){
   const s=C.slides;
   if(!s||!s.on||!s.total)return '';
@@ -777,6 +817,11 @@ app.innerHTML=`<div class="crumb"><a href="#vein-${VV.id}">${VV.gem} ← Back to
  </div>
  <div class="card note">💾 Your digging saves itself on this device — leave and return anytime.</div>
  `}
+ <div class="card" style="text-align:center;border-color:var(--gold)">
+   <b>📄 Take this study with you</b>
+   <p class="note" style="margin:.4em 0 .7em">Download the whole study — story, all the texts with answers, and commentary — to keep, print, or share.</p>
+   <button class="btn" id="study-print">📄 Download this study</button>
+ </div>
  ${footer()}`;
 
 if(!done){
@@ -833,6 +878,8 @@ if(!done){
     localStorage.setItem('mine-'+CO.id,JSON.stringify({answers,completed:true,anon:true}));
     render();
   };
+  const pbtn=document.getElementById('study-print');
+  if(pbtn)pbtn.onclick=()=>printStudy(CO.id);
   const claim=document.getElementById('m-claim');
   if(claim)claim.onclick=async()=>{
     const name=document.getElementById('m-name').value.trim();
