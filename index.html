@@ -103,6 +103,29 @@ footer .v{font-family:'Fraunces',serif;font-style:italic;font-size:1.05em;color:
 .wrap{position:relative;z-index:1}
 .glassbar{position:relative;z-index:1}
 .livepill{z-index:50}
+/* ===== Interactive Presentations (Bucks-style) ===== */
+.ipres{position:relative;min-height:60dvh;overflow:hidden}
+.ipslide{opacity:0;transform:translateX(30px);transition:opacity .35s ease,transform .35s ease;position:absolute;inset:0;pointer-events:none}
+.ipslide.active{opacity:1;transform:none;pointer-events:auto;position:relative}
+.ipslide.exit-left{opacity:0;transform:translateX(-30px)}
+.ipslide .ipinner{max-width:820px;margin:0 auto;padding:1.2em .2em 2em}
+.ipslide .eyebrow{color:var(--gold);font-size:.72em;letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:.6em}
+.ipslide h1{font-family:'Fraunces',serif;font-size:2.3rem;line-height:1.08;margin:.1em 0 .4em}
+.ipslide h2{font-family:'Fraunces',serif;font-size:1.6rem;line-height:1.15;margin:.1em 0 .5em;color:var(--ivory)}
+.ipslide p.sub{color:var(--ivory-dim);font-size:1.02em;line-height:1.6;max-width:34em;margin:.4em 0}
+.ipslide ul.points{list-style:none;padding:0;margin:1em 0}
+.ipslide ul.points li{padding:.55em 0 .55em 1.6em;position:relative;line-height:1.5;border-bottom:1px solid rgba(201,162,75,.12)}
+.ipslide ul.points li:before{content:'';position:absolute;left:.2em;top:1em;width:8px;height:8px;background:var(--gold);border-radius:2px;transform:rotate(45deg)}
+.ipslide blockquote.verse{border-left:3px solid var(--gold);padding:.4em 0 .4em 1em;margin:1em 0;font-style:italic;font-family:Georgia,serif}
+.ipslide blockquote.verse cite{display:block;font-style:normal;color:var(--gold);font-size:.8em;letter-spacing:.1em;text-transform:uppercase;margin-top:.4em}
+.ipslide img.ipfull{width:100%;border-radius:12px;margin:.6em 0;display:block}
+.ipnav{display:flex;align-items:center;justify-content:space-between;gap:1em;margin-top:1em;padding-top:1em;border-top:1px solid rgba(201,162,75,.15)}
+.ipnav button{background:rgba(201,162,75,.15);border:1px solid rgba(201,162,75,.4);color:var(--ivory);border-radius:10px;padding:.5em 1.2em;font-weight:700;cursor:pointer;font-size:1rem}
+.ipnav button:disabled{opacity:.3;cursor:default}
+.ipdots{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.ipdot{width:8px;height:8px;border-radius:50%;background:rgba(201,162,75,.3)}
+.ipdot.on{background:var(--gold)}
+.ipfollow{text-align:center;color:var(--gold);font-weight:700;font-size:.85em;margin-bottom:.5em}
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -219,10 +242,15 @@ let C={
    expedition:{on:false,title:"",source:"none",youtubeId:"",room:"JoshuaMuraExpedition",deckUrl:"",study:"",note:"When the fire is lit — a sermon, a seminar, a small-group journey — this is the gathering place: his voice above, the slides turning in your hand below."}
  },
  slides:{on:false,total:0,current:1},
- sermons:{on:false,total:0,current:1}
+ sermons:{on:false,total:0,current:1},
+ present:{on:false,which:"vision-sanctuary",current:0}
 };
 if(db){
-  db.ref('content').on('value',s=>{const v=s.val();if(v){if(v.devotional)C.devotional={...C.devotional,...v.devotional};if(v.live){['prayer','teaching','expedition'].forEach(f=>{if(v.live[f])C.live[f]={...C.live[f],...v.live[f]};});}if(v.archive&&v.archive.items)C.archive=v.archive.items;if(v.config)C.config={...C.config,...v.config};if(v.trail&&v.trail.items)C.trail=v.trail.items;if(v.rhythm&&v.rhythm.items)C.rhythm=v.rhythm.items;if(v.slides)C.slides={...C.slides,...v.slides};if(v.sermons)C.sermons={...C.sermons,...v.sermons};}
+  db.ref('content').on('value',s=>{const v=s.val();if(v){if(v.devotional)C.devotional={...C.devotional,...v.devotional};if(v.live){['prayer','teaching','expedition'].forEach(f=>{if(v.live[f])C.live[f]={...C.live[f],...v.live[f]};});}if(v.archive&&v.archive.items)C.archive=v.archive.items;if(v.config)C.config={...C.config,...v.config};if(v.trail&&v.trail.items)C.trail=v.trail.items;if(v.rhythm&&v.rhythm.items)C.rhythm=v.rhythm.items;if(v.slides)C.slides={...C.slides,...v.slides};if(v.sermons)C.sermons={...C.sermons,...v.sermons};if(v.present)C.present={...C.present,...v.present};}
+    var ipHost=document.getElementById('ipres-host');
+    if(ipHost && C.live.expedition.on && C.live.expedition.source==='ipres'){
+      ipShow(C.present.current, false); showLivePill(); return;
+    }
     var liveImg=document.getElementById('live-present-img');
     if(liveImg && C.live.expedition.on && C.live.expedition.source==='present' && C.sermons && C.sermons.total){
       var nn=Math.min(Math.max(1,C.sermons.current||1),C.sermons.total);
@@ -233,6 +261,88 @@ if(db){
     }
     render();showLivePill();});
 }
+
+/* ================= INTERACTIVE PRESENTATIONS (Bucks-style rich decks) ================= */
+/* Each presentation = {id, title, blurb, slides:[html,...]}. Slides are hand-crafted rich HTML.
+   Synced live via Firebase content/present {on,which,current}. Congregation follows on phones. */
+const PRESENTATIONS=[
+{ id:"vision-sanctuary", title:"A Vision for Our Sanctuary", blurb:"Worship · Media · Ministry — the vision deck.",
+  slides:[
+`<div class="ipinner" style="text-align:center;display:flex;flex-direction:column;justify-content:center;min-height:60dvh">
+  <div class="eyebrow">Bucks County Seventh-day Adventist Church · Warminster, PA</div>
+  <h1>A Vision for<br>Our Sanctuary</h1>
+  <p class="sub" style="margin:.4em auto 0">Worship &nbsp;·&nbsp; Media &nbsp;·&nbsp; Ministry<br>Presented by Pastor Josh</p>
+  <p style="margin-top:1.4em;font-size:.85em;color:var(--ivory-dim)">Your phone follows along automatically — just watch this screen. 🙌</p>
+</div>`,
+`<div class="ipinner">
+  <div class="eyebrow">Why we're here tonight</div>
+  <h2>Building on what this team has already built</h2>
+  <p class="sub">This church already has real equipment and real talent — that's the Dream Team. This proposal is about taking what's here and making it <b style="color:var(--gold)">excellent, efficient, and easier to run</b>, so the message goes out with nothing in its way.</p>
+  <ul class="points">
+    <li><b>Excellence in worship</b> — a sanctuary and platform that reflect the God we serve</li>
+    <li><b>Reach beyond these walls</b> — a live stream people actually stay and watch</li>
+    <li><b>Room for more hands</b> — every upgrade creates a place for someone to serve</li>
+  </ul>
+  <p class="sub" style="font-size:.9em">Three priorities, in order — plus a look further down the road.</p>
+</div>`,
+`<div class="ipinner">
+  <div class="eyebrow">The mandate</div>
+  <h2>"Write the vision, and make it plain"</h2>
+  <blockquote class="verse">
+    <p>"Write the vision, and make it plain upon tables, that he may run that readeth it."</p>
+    <cite>Habakkuk 2:2</cite>
+  </blockquote>
+  <p class="sub">A clear vision lets everyone run with it together. That's what tonight is — making the vision plain, so the whole team can carry it.</p>
+</div>`,
+`<div class="ipinner">
+  <div class="eyebrow">Priority One</div>
+  <h2>Refresh the front of the sanctuary</h2>
+  <p class="sub">The platform is the first thing every eye — in the room and on the stream — is drawn to. A clean, warm, well-finished front says <b style="color:var(--gold)">this is a place where God is honored</b>.</p>
+  <ul class="points">
+    <li>Refinished platform surfaces and updated backdrop</li>
+    <li>A focal point that frames the preaching of the Word</li>
+    <li>Neutral, timeless tones that photograph and stream beautifully</li>
+  </ul>
+</div>`,
+`<div class="ipinner">
+  <div class="eyebrow">Priority Two</div>
+  <h2>New platform lighting</h2>
+  <p class="sub">Good lighting is the difference between a stream people leave and a stream people stay on. It lifts the room, honors the moment, and makes everything on camera look intentional.</p>
+  <ul class="points">
+    <li>Even, warm light across the whole platform</li>
+    <li>No more dark faces or harsh shadows on camera</li>
+    <li>Simple presets — one touch for worship, preaching, or special music</li>
+  </ul>
+</div>`,
+`<div class="ipinner">
+  <div class="eyebrow">Priority Three</div>
+  <h2>Sound: the projection of the gospel</h2>
+  <p class="sub">If they can't hear it clearly, they can't receive it. Clean, balanced sound in the room and on the stream is the foundation everything else rests on.</p>
+  <ul class="points">
+    <li>Clear, consistent audio for spoken word and music</li>
+    <li>A feed to the live stream that sounds as good as it does in the room</li>
+    <li>Simple enough for any trained volunteer to run</li>
+  </ul>
+</div>`,
+`<div class="ipinner">
+  <div class="eyebrow">Is it biblical to care about beauty?</div>
+  <h2>Order and beauty testify</h2>
+  <blockquote class="verse">
+    <p>"Let all things be done decently and in order."</p>
+    <cite>1 Corinthians 14:40</cite>
+  </blockquote>
+  <p class="sub">From the tabernacle to the temple, God cared about beauty, craftsmanship, and order in the place of worship. Excellence isn't vanity — it's a witness. It says the God we serve is worthy of our best.</p>
+</div>`,
+`<div class="ipinner" style="text-align:center;display:flex;flex-direction:column;justify-content:center;min-height:60dvh">
+  <div class="eyebrow">Be part of this</div>
+  <h2>One step at a time — together</h2>
+  <p class="sub" style="margin:.4em auto 1em">Every upgrade opens a place to serve — sound, media, lighting, music, hospitality, construction. There's a seat at this table for everyone.</p>
+  <p class="sub" style="margin:0 auto"><b style="color:var(--gold)">Thank you for dreaming with us.</b><br>Let's build something that carries the Word beyond these walls.</p>
+</div>`
+  ]
+}
+];
+function presById(id){ return PRESENTATIONS.find(function(p){return p.id===id;}); }
 
 /* ================= THE VEINS (categories) & DIG SITES (studies) ================= */
 const VEINS=[
@@ -449,7 +559,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v53</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v55</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -665,6 +775,40 @@ function wireLordsPrayer(){
     };
   });
 }
+/* ---- Interactive presentation engine ---- */
+async function presentWrite(patch){
+  var cur={on:!!C.present.on,which:C.present.which,current:(C.present.current||0), ...patch};
+  var deck=presById(cur.which); var max=deck?deck.slides.length-1:0;
+  cur.current=Math.min(Math.max(0,cur.current),Math.max(0,max));
+  await db.ref('content/present').set({k:WRITE_KEY,on:cur.on,which:cur.which,current:cur.current});
+  C.present={...C.present,...cur};
+}
+function ipRenderDeck(deckId, opts){
+  opts=opts||{};
+  var deck=presById(deckId); if(!deck)return '<div class="card">Presentation not found.</div>';
+  var slidesHtml=deck.slides.map(function(s,i){
+    return '<div class="ipslide'+(i===0?' active':'')+'" data-ip="'+i+'">'+s+'</div>';
+  }).join('');
+  var dots=deck.slides.map(function(s,i){return '<span class="ipdot'+(i===0?' on':'')+'" data-ipdot="'+i+'"></span>';}).join('');
+  var follow=opts.follow?'<div class="ipfollow">🔴 LIVE — following Pastor Josh</div>':'';
+  var nav=opts.follow?'':('<div class="ipnav"><button id="ip-prev">◀ Back</button><div class="ipdots">'+dots+'</div><button id="ip-next">Next ▶</button></div>');
+  return follow+'<div class="ipres" id="ipres-host">'+slidesHtml+'</div>'+nav;
+}
+function ipShow(i, manual){
+  var host=document.getElementById('ipres-host'); if(!host)return;
+  var slides=host.querySelectorAll('.ipslide');
+  if(!slides.length)return;
+  i=Math.max(0,Math.min(slides.length-1,i));
+  slides.forEach(function(s,idx){
+    s.classList.toggle('active', idx===i);
+    s.classList.toggle('exit-left', idx<i);
+  });
+  var dots=document.querySelectorAll('[data-ipdot]');
+  dots.forEach(function(d,idx){ d.classList.toggle('on', idx===i); });
+  var pv=document.getElementById('ip-prev'), nx=document.getElementById('ip-next');
+  if(pv)pv.disabled=(i===0);
+  if(nx)nx.disabled=(i===slides.length-1);
+}
 function livePresentView(){
   var s=C.sermons;
   if(!s||!s.total){
@@ -685,6 +829,29 @@ function sermonsPanel(){
     +'<img src="'+SERMONS_PATH+n+SLIDES_EXT+'" alt="Sermon slide '+n+'" style="width:100%;border-radius:10px;display:block;background:#000" '
     +'onerror="this.style.opacity=.4;this.alt=\'Sermon slide '+n+' not found — expected /SERMONS/'+n+'.jpg\'">'
     +'<div class="note" style="text-align:center;margin-top:.4em">Slide '+n+' of '+s.total+' · follows the preacher live</div></div>';
+}
+/* ---- QR codes: generate + download for any hub link ---- */
+function qrImgURL(data,size){ size=size||300; return 'https://api.qrserver.com/v1/create-qr-code/?size='+size+'x'+size+'&margin=8&data='+encodeURIComponent(data); }
+function baseURL(){ try{ return location.origin+location.pathname.replace(/index\.html?$/,''); }catch(e){ return 'https://joshuamura.netlify.app/'; } }
+function hubLink(hash){ var b=baseURL(); if(!b.endsWith('/'))b+='/'; return b+(hash?('#'+hash):''); }
+async function downloadQR(data,filename){
+  try{
+    var res=await fetch(qrImgURL(data,600));
+    var blob=await res.blob();
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download=(filename||'qr')+'.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+  }catch(e){ alert('Could not download — check your connection.'); }
+}
+function qrCard(label,hash,filename){
+  var link=hubLink(hash);
+  return '<div class="subcard" style="text-align:center">'
+    +'<b>'+label+'</b>'
+    +'<div class="note" style="word-break:break-all;margin:.2em 0 .5em">'+esc(link)+'</div>'
+    +'<img src="'+qrImgURL(link,220)+'" alt="QR for '+esc(label)+'" style="width:200px;max-width:80%;background:#fff;border-radius:10px;padding:8px">'
+    +'<div style="margin-top:.5em"><button class="btn" data-qrdl="'+esc(link)+'" data-qrname="'+esc(filename)+'">⬇︎ Download</button></div>'
+    +'</div>';
 }
 function slidesPanel(){
   const s=C.slides;
@@ -1100,6 +1267,8 @@ if(ex.on){
     <p class="note">🧭 A round-table journey — you join <b>muted</b>; raise your hand 🖐 to speak.</p>`;
   }else if(ex.source==='present'){
     media=livePresentView();
+  }else if(ex.source==='ipres'){
+    media=ipRenderDeck(C.present.which,{follow:true});
   }
 }
 app.innerHTML=`${crumb()}
@@ -1115,6 +1284,7 @@ app.innerHTML=`${crumb()}
  <div class="card note" style="text-align:center">📽️ <b>Presenting?</b> <a href="#present">Open Presenter mode</a> — full-screen slides for the projector (needs the presenter code).</div>
  ${footer()}`;
 if(ex.on&&ex.source==='jitsi'){ mountCircle('circle-watchfire',ex.room,'Friend'); }
+if(ex.on&&ex.source==='ipres'){ setTimeout(function(){ ipShow(C.present.current||0,false); },30); }
 }
 
 function klass(){
@@ -1424,10 +1594,19 @@ document.getElementById('panelbox').innerHTML=`
    <label>Journey title</label><input type="text" id="e-title" value="${esc(lv.expedition.title||'')}" placeholder="e.g. Sabbath Worship · The God Who Sees">
    <label>Shape of the journey</label>
    <select id="e-src">
-     <option value="present" ${lv.expedition.source==='present'||lv.expedition.source==='none'?'selected':''}>📱 Live Presentation — congregation follows your slides on their phones</option>
+     <option value="present" ${lv.expedition.source==='present'||lv.expedition.source==='none'?'selected':''}>📱 Live Presentation (JPEG slides) — congregation follows on phones</option>
+     <option value="ipres" ${lv.expedition.source==='ipres'?'selected':''}>✨ Interactive Presentation (rich deck) — congregation follows on phones</option>
      <option value="youtube" ${lv.expedition.source==='youtube'?'selected':''}>🎙️ Sermon / broadcast — YouTube (video only)</option>
      <option value="jitsi" ${lv.expedition.source==='jitsi'?'selected':''}>👥 Small group / seminar — Jitsi circle</option>
    </select>
+   <div class="note" style="margin:-.2em 0 .5em">✨ <b>Interactive Presentation:</b> rich, scrollable, tappable decks (like the Bucks Vision). Pick which deck and drive it below. The congregation follows live on their phones.</div>
+   <label>Which interactive deck?</label>
+   <select id="e-deckpick">${PRESENTATIONS.map(function(p){return '<option value="'+p.id+'" '+(C.present.which===p.id?'selected':'')+'>'+esc(p.title)+'</option>';}).join('')}</select>
+   <div style="display:flex;align-items:center;gap:.6em;justify-content:center;margin:.6em 0">
+     <button class="btn ghost" id="ip-panel-prev" style="font-size:1.2rem">◀</button>
+     <b id="ip-panel-now" style="min-width:8em;text-align:center">Slide ${(C.present.current||0)+1}</b>
+     <button class="btn" id="ip-panel-next" style="font-size:1.2rem">▶</button>
+   </div>
    <div class="note" style="margin:-.2em 0 .5em">📱 <b>Live Presentation:</b> you drive the slides full-screen from <a href="#present">Presenter mode</a> (with your clicker); the congregation opens the Watchfire and follows the same slides live on their phones. Set the sermon slide count in the Live Slides section above.</div>
    <label>YouTube live video ID (broadcast)</label><input type="text" id="e-yt" value="${esc(lv.expedition.youtubeId)}">
    <label>Jitsi room name (small-group)</label><input type="text" id="e-room" value="${esc(lv.expedition.room||'JoshuaMuraExpedition')}">
@@ -1514,7 +1693,25 @@ document.getElementById('panelbox').innerHTML=`
   </div>
  </div>
 
- <!-- ========== 5. SCHEDULE ========== -->
+ <!-- ========== 5. QR CODES ========== -->
+ <div class="psec">
+  <h2>📱 QR Codes</h2>
+  <div class="pdesc">Each code shows its link underneath — scan it, or copy the link for a bulletin or slide. Tap <b>Download</b> to save the QR as an image.</div>
+  ${qrCard('🗺️ The whole hub','','joshuamura-hub')}
+  ${qrCard('🙏 The Altar (prayer)','altar','altar')}
+  ${qrCard('⛏️ The Mine (Bible studies)','mine','mine')}
+  ${qrCard('🔥 The Watchfire (live — follow the slides)','watchfire','watchfire-live')}
+  ${(VEINS.flatMap(v=>v.courses.filter(c=>c.open)).map(c=>qrCard('📖 '+esc(c.name),'dig-'+c.id,'study-'+c.id)).join(''))}
+  <div class="subcard">
+   <b>🔗 Custom link → QR</b>
+   <div class="note" style="margin-bottom:.3em">Paste any link (or a hub link like the ones above) and make a QR for it.</div>
+   <input type="text" id="qr-custom" placeholder="https://...">
+   <button class="btn" id="qr-make">Make QR</button>
+   <div id="qr-custom-out" style="text-align:center;margin-top:.6em"></div>
+  </div>
+ </div>
+
+ <!-- ========== 6. SCHEDULE ========== -->
  <div class="psec">
   <h2>🥾 The Trail — schedule</h2>
   <div class="pdesc">Where you'll be, and your weekly rhythm. Each saves separately.</div>
@@ -1534,7 +1731,7 @@ document.getElementById('panelbox').innerHTML=`
   </div>
  </div>
 
- <!-- ========== 6. READING RESPONSES ========== -->
+ <!-- ========== 7. READING RESPONSES ========== -->
  <div class="psec">
   <h2>📬 Reading what comes in</h2>
   <div class="pdesc">Responses are private — read them in your Firebase console.</div>
@@ -1542,6 +1739,22 @@ document.getElementById('panelbox').innerHTML=`
  </div>
 
 `;
+// QR downloads (delegated)
+document.querySelectorAll('[data-qrdl]').forEach(function(b){
+  b.onclick=function(){ downloadQR(b.getAttribute('data-qrdl'), b.getAttribute('data-qrname')||'qr'); };
+});
+// custom QR maker
+(function(){
+  var mk=document.getElementById('qr-make');
+  if(mk)mk.onclick=function(){
+    var val=(document.getElementById('qr-custom').value||'').trim();
+    if(!val)return;
+    var out=document.getElementById('qr-custom-out');
+    out.innerHTML='<img src="'+qrImgURL(val,220)+'" alt="Custom QR" style="width:200px;background:#fff;border-radius:10px;padding:8px"><div class="note" style="word-break:break-all;margin:.3em 0">'+esc(val)+'</div><button class="btn" id="qr-custom-dl">⬇︎ Download</button>';
+    var dl=document.getElementById('qr-custom-dl');
+    if(dl)dl.onclick=function(){ downloadQR(val,'custom-qr'); };
+  };
+})();
 document.getElementById('save-d').onclick=async()=>{
   try{
     const old=C.devotional;
@@ -1562,6 +1775,16 @@ document.getElementById('save-l').onclick=async()=>{
   });
   document.getElementById('l-ok').textContent='Saved ✓ — the map knows what is live.';}catch(e){document.getElementById('l-ok').textContent='Save failed — rules published?';}
 };
+// Interactive presentation presenter controls (in panel)
+(function(){
+  var pick=document.getElementById('e-deckpick');
+  var nowlbl=document.getElementById('ip-panel-now');
+  function upd(){ if(nowlbl)nowlbl.textContent='Slide '+((C.present.current||0)+1); }
+  if(pick)pick.onchange=async function(){ try{ await presentWrite({which:pick.value,current:0}); upd(); }catch(e){} };
+  var pn=document.getElementById('ip-panel-next'), pp=document.getElementById('ip-panel-prev');
+  if(pn)pn.onclick=async function(){ try{ await presentWrite({current:(C.present.current||0)+1}); upd(); }catch(e){} };
+  if(pp)pp.onclick=async function(){ try{ await presentWrite({current:(C.present.current||0)-1}); upd(); }catch(e){} };
+})();
 async function sermonWrite(patch){
   const cur={total:+(C.sermons.total||0),on:!!C.sermons.on,current:(C.sermons&&C.sermons.current)||1, ...patch};
   cur.total=Math.min(50,Math.max(0,cur.total));
