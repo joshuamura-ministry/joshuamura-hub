@@ -73,9 +73,11 @@ footer .v{font-family:'Fraunces',serif;font-style:italic;font-size:1.05em;color:
 .psave{margin-top:.5em}
 /* pinned live-class video that stays at the top of the Mine while lessons scroll below */
 #present-stage{position:fixed;inset:0;z-index:9999;background:#000;display:flex;align-items:center;justify-content:center}
-#present-stage img{max-width:100%;max-height:100%;object-fit:contain;display:block}
-#present-stage .pnav{position:fixed;bottom:0;left:0;right:0;height:38%;display:flex}
+#present-stage img{max-width:100%;max-height:100%;object-fit:contain;display:block;position:relative;z-index:0;pointer-events:none}
+#present-stage .pnav{position:fixed;inset:0;display:flex;z-index:1}
 #present-stage .pnav .l,#present-stage .pnav .r{flex:1;cursor:pointer}
+#present-stage .parrow{position:fixed;top:50%;transform:translateY(-50%);z-index:3;width:64px;height:64px;border-radius:50%;border:none;background:rgba(255,255,255,.15);color:#fff;font-size:1.8rem;cursor:pointer;backdrop-filter:blur(4px)}
+#present-stage .parrow.pl{left:16px}#present-stage .parrow.pr{right:16px}
 #present-stage .pbar{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;gap:.8em;padding:.5em .8em;background:linear-gradient(#000a,transparent);color:#fff;font-size:.85rem;opacity:0;transition:opacity .25s;z-index:2}
 #present-stage:hover .pbar,#present-stage.show .pbar{opacity:1}
 #present-stage .pbar button{background:#fff2;border:1px solid #fff4;color:#fff;border-radius:8px;padding:.3em .8em;font-weight:700;cursor:pointer}
@@ -435,7 +437,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v44</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v45</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -758,11 +760,17 @@ function enterPresentStage(){
         <button id="ps-exit">Exit ✕</button>
         <span style="opacity:.7">Tap right = next · left = previous</span>
       </div>
-      <img src="${SERMONS_PATH}${n}${SLIDES_EXT}" alt="Slide ${n}">
       <div class="pnav"><div class="l" id="ps-prev"></div><div class="r" id="ps-next"></div></div>
+      <img src="${SERMONS_PATH}${n}${SLIDES_EXT}" alt="Slide ${n}">
+      <button class="parrow pl" id="ps-prev-btn">◀</button>
+      <button class="parrow pr" id="ps-next-btn">▶</button>
       ${(showNext&&nextN)?`<div class="pnext"><span class="lbl">Next</span><img src="${SERMONS_PATH}${nextN}${SLIDES_EXT}" alt=""></div>`:''}`;
-    document.getElementById('ps-next').onclick=async()=>{ await sermonWrite({current:n+1}); build(); };
-    document.getElementById('ps-prev').onclick=async()=>{ await sermonWrite({current:n-1}); build(); };
+    const goNext=async()=>{ if(n<(s.total||1)){ await sermonWrite({current:n+1}); build(); } };
+    const goPrev=async()=>{ if(n>1){ await sermonWrite({current:n-1}); build(); } };
+    document.getElementById('ps-next').onclick=goNext;
+    document.getElementById('ps-prev').onclick=goPrev;
+    document.getElementById('ps-next-btn').onclick=goNext;
+    document.getElementById('ps-prev-btn').onclick=goPrev;
     document.getElementById('ps-exit').onclick=()=>{ stage.remove(); };
     document.getElementById('ps-toggle').onclick=()=>{ showNext=!showNext; build(); };
   };
