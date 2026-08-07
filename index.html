@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Joshua Mura — Seek, and Ye Shall Find</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,340;0,9..144,540;0,9..144,640;1,9..144,340&family=Source+Sans+3:wght@400;600;700&display=swap');
+:root{
+  --walnut:#1d1510; --card:#2e2218; --card2:#382a1d;
+  --ivory:#f4ede0; --dim:#c9bca8; --gold:#c9a24b; --gold-dk:#8a6c2c;
+  --blue:#5b8fd9; --green:#7fbf8a; --red:#c25b4a; --parch:#e8dcc0;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:var(--walnut);color:var(--ivory);font-family:'Source Sans 3',system-ui,sans-serif;
+  font-size:clamp(16px,1.3vw,20px);line-height:1.6;min-height:100dvh}
+.glassbar{height:5px;background:linear-gradient(90deg,#27408b,#5b8fd9 18%,#5f9e6e 38%,#e0c068 55%,#c9722e 75%,#c25b4a)}
+.wrap{max-width:880px;margin:0 auto;padding:clamp(18px,4vw,48px) clamp(16px,4vw,40px) 90px}
+h1{font-family:'Fraunces',serif;font-weight:640;font-size:clamp(2rem,6vw,3.6rem);line-height:1.1}
+h2{font-family:'Fraunces',serif;font-weight:540;font-size:clamp(1.5rem,4.5vw,2.4rem);line-height:1.15;margin-bottom:.4em}
+.eyebrow{font-size:.72em;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:.7em}
+.sub{color:var(--dim)}
+a{color:var(--blue)}
+.btn{display:inline-block;background:var(--gold);color:#241a0d;border:none;border-radius:12px;
+  font-family:inherit;font-size:1rem;font-weight:700;padding:.7em 1.4em;cursor:pointer;text-decoration:none}
+.btn.ghost{background:var(--card);color:var(--ivory);border:1px solid rgba(244,237,224,.25)}
+.btn:active{transform:scale(.97)}
+.verse{border-left:3px solid var(--gold);padding:.5em 0 .5em 1em;margin:1em 0}
+.verse p{font-family:'Fraunces',serif;font-style:italic;font-size:1.12em;color:var(--ivory)}
+.verse cite{display:block;margin-top:.4em;font-size:.7em;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);font-style:normal}
+input[type=text],input[type=email],textarea,select{width:100%;background:var(--card);border:1.5px solid rgba(244,237,224,.25);
+  border-radius:10px;color:var(--ivory);font-family:inherit;font-size:1em;padding:.6em .8em;margin:.25em 0 .8em}
+input:focus,textarea:focus{outline:2px solid var(--blue);border-color:transparent}
+label{font-size:.8em;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--dim)}
+.note{font-size:.85em;color:var(--dim)}
+.ok{color:var(--green);font-weight:700}
+.err{color:var(--red);font-weight:700}
+
+/* map grid */
+.map{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:1.4em}
+.door{background:linear-gradient(160deg,var(--card2),var(--card));border:1.5px solid rgba(201,162,75,.35);
+  border-radius:16px;padding:1.2em 1.2em 1.1em;cursor:pointer;text-decoration:none;color:var(--ivory);
+  transition:transform .15s,border-color .15s;position:relative;display:block}
+.door:hover{transform:translateY(-3px);border-color:var(--gold)}
+.door .ico{font-size:2rem}
+.door .name{font-family:'Fraunces',serif;font-weight:640;font-size:1.35rem;margin:.25em 0 .1em}
+.door .what{font-size:.85em;color:var(--dim)}
+.door .tagline{font-size:.72em;color:var(--gold);letter-spacing:.08em;text-transform:uppercase;font-weight:700;margin-top:.5em}
+.livepill{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:50;display:none;
+  background:var(--red);color:#fff;border-radius:999px;padding:.6em 1.4em;font-weight:700;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.livepill a{color:#fff;text-decoration:none}
+.crumb{margin-bottom:1.2em}
+.crumb a{color:var(--dim);text-decoration:none;font-size:.85em;font-weight:700;letter-spacing:.06em}
+.card{background:var(--card);border:1px solid rgba(201,162,75,.25);border-radius:14px;padding:1.1em 1.2em;margin:.8em 0}
+.videoframe{position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000;margin:.8em 0}
+.videoframe iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.gem{display:inline-block;font-size:2.4rem;margin:.15em}
+.qbox{background:var(--card);border:1px solid rgba(201,162,75,.3);border-radius:14px;padding:1.1em 1.2em;margin:1em 0}
+.qbox .qn{font-weight:700;color:var(--gold);font-size:.8em;letter-spacing:.1em;text-transform:uppercase}
+.qbox .qt{font-family:'Fraunces',serif;font-size:1.15em;margin:.3em 0 .2em}
+.qbox .ref{color:var(--blue);font-weight:700;font-size:.9em;margin-bottom:.5em}
+.progress{height:10px;background:var(--card);border-radius:999px;overflow:hidden;margin:.8em 0}
+.progress div{height:100%;background:linear-gradient(90deg,var(--gold-dk),var(--gold));width:0%;transition:width .4s}
+footer{margin-top:3em;text-align:center;color:var(--dim);font-size:.8em}
+footer .v{font-family:'Fraunces',serif;font-style:italic;font-size:1.05em;color:var(--dim)}
+.hide{display:none!important}
+/* ---- the ancient map beneath everything ---- */
+#mapbg{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.9}
+#mapbg svg{width:100%;height:100%}
+.wrap{position:relative;z-index:1}
+.glassbar{position:relative;z-index:1}
+.livepill{z-index:50}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+</head>
+<body>
+<div id="mapbg" aria-hidden="true"><svg viewBox="0 0 1200 1600" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="vig" cx="50%" cy="42%" r="75%">
+      <stop offset="0%" stop-color="#2a1f15" stop-opacity=".55"/>
+      <stop offset="70%" stop-color="#1d1510" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#120d09" stop-opacity=".7"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="1600" fill="url(#vig)"/>
+  <g stroke="#c9a24b" fill="none" stroke-linecap="round">
+    <!-- faded latitude / longitude sweep -->
+    <g stroke-opacity=".05" stroke-width="1">
+      <path d="M-50 300 Q600 240 1250 300"/><path d="M-50 620 Q600 560 1250 620"/>
+      <path d="M-50 950 Q600 890 1250 950"/><path d="M-50 1280 Q600 1220 1250 1280"/>
+      <path d="M280 -20 Q330 800 280 1620"/><path d="M620 -20 Q660 800 620 1620"/><path d="M960 -20 Q1000 800 960 1620"/>
+    </g>
+    <!-- western coastline & hatch-sea -->
+    <g stroke-opacity=".10" stroke-width="2">
+      <path d="M-20 420 C90 430 130 500 100 570 C70 640 150 660 160 730 C170 810 90 850 110 930 C130 1010 60 1060 90 1140 C115 1205 70 1260 -20 1280"/>
+    </g>
+    <g stroke-opacity=".06" stroke-width="1.4">
+      <path d="M15 500 q22 -9 44 0 q22 9 44 0"/><path d="M8 585 q22 -9 44 0 q22 9 44 0"/>
+      <path d="M25 680 q22 -9 44 0"/><path d="M12 780 q22 -9 44 0 q22 9 44 0"/>
+      <path d="M20 880 q22 -9 44 0"/><path d="M10 990 q22 -9 44 0 q22 9 44 0"/><path d="M28 1090 q22 -9 44 0"/>
+    </g>
+    <!-- mountain range, northeast -->
+    <g stroke-opacity=".11" stroke-width="2">
+      <path d="M840 205 l32 -46 l32 46"/><path d="M900 215 l38 -58 l38 58"/><path d="M980 205 l30 -42 l30 42"/>
+      <path d="M878 262 l30 -40 l30 40"/><path d="M950 268 l34 -48 l34 48"/>
+    </g>
+    <!-- river from the mountains -->
+    <path stroke-opacity=".09" stroke-width="2" d="M955 275 C930 360 1010 420 970 505 C935 580 1000 640 965 720"/>
+    <!-- expedition route: dashed, with waypoints, ending at the X -->
+    <g stroke-opacity=".14" stroke-width="2.2" stroke-dasharray="2 12">
+      <path d="M140 1210 C300 1150 260 980 420 930 C580 880 560 720 720 690 C880 660 850 520 940 470"/>
+    </g>
+    <g stroke-opacity=".16" stroke-width="2.4">
+      <path d="M133 1203 l14 14 M147 1203 l-14 14"/>
+      <path d="M413 923 l14 14 M427 923 l-14 14"/>
+      <path d="M713 683 l14 14 M727 683 l-14 14"/>
+    </g>
+    <!-- THE X -->
+    <g stroke-opacity=".22" stroke-width="4">
+      <path d="M925 452 l32 32 M957 452 l-32 32"/>
+    </g>
+    <circle cx="941" cy="468" r="30" stroke-opacity=".10" stroke-width="1.6"/>
+    <!-- compass rose, southeast -->
+    <g transform="translate(1020,1360)" stroke-opacity=".14">
+      <circle r="72" stroke-width="1.6"/><circle r="54" stroke-width="1"/>
+      <path stroke-width="2" d="M0 -66 L10 -12 L0 0 L-10 -12 Z M0 66 L10 12 L0 0 L-10 12 Z M-66 0 L-12 -10 L0 0 L-12 10 Z M66 0 L12 -10 L0 0 L12 10 Z"/>
+      <path stroke-width="1.2" d="M-40 -40 L0 0 M40 -40 L0 0 M-40 40 L0 0 M40 40 L0 0"/>
+    </g>
+    <text x="1020" y="1268" text-anchor="middle" fill="#c9a24b" fill-opacity=".2" stroke="none" font-family="Georgia,serif" font-size="26" font-style="italic">N</text>
+    <!-- little ship on the sea -->
+    <g stroke-opacity=".12" stroke-width="1.8">
+      <path d="M52 745 q18 12 40 0 l-6 10 q-14 8 -28 0 Z M72 743 l0 -26 M72 720 q16 6 0 14"/>
+    </g>
+    <!-- corner flourishes -->
+    <g stroke-opacity=".12" stroke-width="1.6">
+      <path d="M28 28 h70 M28 28 v70 M40 40 h44 M40 40 v44"/>
+      <path d="M1172 28 h-70 M1172 28 v70 M1160 40 h-44 M1160 40 v44"/>
+      <path d="M28 1572 h70 M28 1572 v-70 M40 1560 h44 M40 1560 v-44"/>
+      <path d="M1172 1572 h-70 M1172 1572 v-70 M1160 1560 h-44 M1160 1560 v-44"/>
+    </g>
+  </g>
+  <text x="600" y="1560" text-anchor="middle" fill="#c9a24b" fill-opacity=".12" font-family="Georgia,serif" font-size="19" font-style="italic" letter-spacing="6">HERE BE TREASURE · MATTHEW 13:44</text>
+</svg></div>
+<div class="glassbar"></div>
+<div class="wrap" id="app"></div>
+<div class="livepill" id="livepill"><a href="#watchfire">🔥 The watchfire is lit — Pastor Josh is LIVE. Tap to gather.</a></div>
+
+<script>
+window.onerror=function(msg,src,line){
+  var d=document.createElement('div');
+  d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99;background:#c25b4a;color:#fff;font:700 13px monospace;padding:8px 12px';
+  d.textContent='⚠ '+msg+' @'+line;
+  document.body.appendChild(d);
+};
+/* ================= CONFIG ================= */
+const PANEL_PIN='7777';
+const WRITE_KEY='jm-2026-steward';
+let db=null;
+try{
+firebase.initializeApp({
+  apiKey:"AIzaSyDUBDjNkekomVzJ15fRbt4W53fUtmYQ9pc",
+  authDomain:"joshuamura.firebaseapp.com",
+  databaseURL:"https://joshuamura-default-rtdb.firebaseio.com",
+  projectId:"joshuamura",
+  storageBucket:"joshuamura.firebasestorage.app",
+  messagingSenderId:"907772957025",
+  appId:"1:907772957025:web:6671580d9acd9c3aeb7520"
+});
+db=firebase.database();
+}catch(e){console.error('firebase init',e)}
+
+/* ================= CONTENT (live-editable via Panel; these are defaults) ================= */
+let C={
+ config:{teamcode:"pray2026"},
+ trail:[],
+ rhythm:[
+  {day:"Tue & Thu",time:"3:30 – 5:00 PM",what:"Office Hours — drop in",where:"Bucks County SDA, Warminster PA",link:"none"},
+  {day:"1st & 3rd Sabbath",time:"",what:"Preaching — most weeks",where:"Fairview Village SDA",link:"none"},
+  {day:"2nd & 4th Sabbath",time:"",what:"Preaching — most weeks",where:"Bucks County SDA, Warminster PA",link:"none"}
+ ],
+ devotional:{title:"Welcome to the Spring",youtubeId:"",verse:"Whosoever drinketh of the water that I shall give him shall never thirst.",verseref:"John 4:14",thought:"A new devotional flows here each week. The first one is on its way — check back soon, and bring your cup."},
+ live:{
+   prayer:{on:false,room:"JoshuaMuraPrayer",note:"The prayer circle gathers here. Next meeting: announced soon."},
+   teaching:{on:false,room:"JoshuaMuraTeaching",note:"Live class meets here. Next session: announced soon."},
+   expedition:{on:false,title:"",source:"none",youtubeId:"",room:"JoshuaMuraExpedition",deckUrl:"",study:"",note:"When the fire is lit — a sermon, a seminar, a small-group journey — this is the gathering place: his voice above, the slides turning in your hand below."}
+ }
+};
+if(db){
+  db.ref('content').on('value',s=>{const v=s.val();if(v){if(v.devotional)C.devotional={...C.devotional,...v.devotional};if(v.live){['prayer','teaching','expedition'].forEach(f=>{if(v.live[f])C.live[f]={...C.live[f],...v.live[f]};});}if(v.archive&&v.archive.items)C.archive=v.archive.items;if(v.config)C.config={...C.config,...v.config};if(v.trail&&v.trail.items)C.trail=v.trail.items;if(v.rhythm&&v.rhythm.items)C.rhythm=v.rhythm.items;}render();showLivePill();});
+}
+
+/* ================= THE VEINS (categories) & DIG SITES (studies) ================= */
+const VEINS=[
+{ id:"righteousness-by-faith", gem:"🪙", name:"The Gold Vein",
+  label:"Righteousness by Faith",
+  desc:"Gold tried in the fire — Christ our righteousness, received by faith alone. The mother lode of the whole mine.",
+  verse:"I counsel thee to buy of me gold tried in the fire, that thou mayest be rich.", verseref:"Revelation 3:18",
+  courses:[
+   { id:"treasure-of-salvation", name:"The Treasure of Salvation", site:"Study 1", gem:"💎", open:true,
+     blurb:"The treasure hid in a field — what it is, what it costs, and how it becomes yours.",
+     intro:"Every answer lies buried in the Scripture reference given. Open your Bible, dig, and write what you find. Your progress is kept — return anytime and your shaft is where you left it.",
+     questions:[
+      {q:"What is hidden in a field, that a man sells all he has to buy?",ref:"Matthew 13:44"},
+      {q:"What does Jesus say we should seek FIRST — and what is added to us?",ref:"Matthew 6:33"},
+      {q:"By what are we saved, and what may we NOT boast in?",ref:"Ephesians 2:8–9"},
+      {q:"What is the gift of God, contrasted with the wages of sin?",ref:"Romans 6:23"},
+      {q:"If we confess our sins, what two things is He faithful and just to do?",ref:"1 John 1:9"},
+      {q:"What does Jesus stand at and do — and what happens if any man opens?",ref:"Revelation 3:20"}
+     ]},
+   { id:"rbf-2", name:"Study 2 · coming soon", site:"Study 2", gem:"🪙", open:false,
+     blurb:"The next dig in this vein is being surveyed.", questions:[] }
+  ]},
+{ id:"prophecy", gem:"🫧", name:"The Pearl Vein",
+  label:"Prophecy",
+  desc:"Daniel, Revelation, and history written in advance — pearls formed in the deep, brought up one dive at a time.",
+  verse:"We have also a more sure word of prophecy; whereunto ye do well that ye take heed, as unto a light that shineth in a dark place.", verseref:"2 Peter 1:19",
+  courses:[
+   { id:"proph-1", name:"First dive · coming soon", site:"Study 1", gem:"🫧", open:false,
+     blurb:"The first descent into the deep is being charted.", questions:[] }
+  ]},
+{ id:"counseling-youth", gem:"🔷", name:"The Silver Vein",
+  label:"Counseling Youth",
+  desc:"Wisdom refined for the rising generation — identity, purity, purpose, and walking with God young.",
+  verse:"Wherewithal shall a young man cleanse his way? by taking heed thereto according to thy word.", verseref:"Psalm 119:9",
+  courses:[
+   { id:"slow-to-anger", name:"Overcoming Anger", site:"Study 1", gem:"🔷", open:true,
+     blurb:"\"Slow to Anger\" — the fire inside, and the God who is greater than it. For youth & young adults.",
+     intro:"Tavita was seventeen — the best rugby player his island club had seen — and he carried a slow-burning anger no one could see, from the day his dad walked out. One shove at his cousin in the semifinal, and he snapped: red card, team down a man. That night on the sand he finally said it out loud: \"I can't control this. It controls me.\" That confession wasn't the end — it was the beginning. Because the God of the Bible names Himself slow to anger (Exodus 34:6). Anger management is not a technique. It is a Person.\n\nHow to dig: look up each text in your Bible, fill in the missing words exactly as you find them, then write what you unearthed.",
+     memory:{verse:"The LORD is merciful and gracious, slow to anger, and abounding in mercy.",ref:"Psalm 103:8"},
+     invite:"Maybe you're the one holding the volcano. Maybe there's a name that tightens your chest when you hear it. Jesus is not standing over you with a red card — He is sitting next to you on the sand, the Savior who was mocked and nailed without once striking back (1 Peter 2:23), asking for the whole thing: the anger, the hurt underneath it, and the years you've lost to it. He is slow to anger — and quick to forgive. Will you hand Him the fire tonight?",
+     questions:[
+      {part:"Part One · Understanding the Fire",q:"Is anger always a sin?",ref:"Ephesians 4:26–27",
+       verse:"'Be ___, and do not ___': do not let the sun go down on your wrath, nor give place to the devil.",blanks:["angry","sin"],
+       note:"The Bible says \"be angry\" before it says \"do not sin\" — anger is a God-given alarm that something is wrong. Jesus felt it (Mark 3:5), mixed with grief, and it produced healing, not harm. But Paul gives anger a curfew: stored anger spoils, and a kept grudge is an open door with the devil's name on it.",
+       think:"When has your anger been an alarm — and when has it become an open door?"},
+      {q:"Where does destructive anger come from?",ref:"James 4:1",
+       verse:"Where do wars and ___ come from among you? Do they not come from your ___... that war in your members?",blanks:["fights","desires"],
+       note:"Every explosion has a fuse: a desire, blocked — respect denied, a father gone, fairness cheated. Hurt, rejection, and fear are the magma underneath; the outburst is only the eruption people see. That's why \"calm down!\" never works. The gospel goes deeper — to the wound itself.",
+       think:"What's really underneath YOUR fuse? Name the magma, not just the eruption."},
+      {q:"What does uncontrolled anger cost?",ref:"Proverbs 25:28",
+       verse:"Whoever has no ___ over his own spirit is like a city broken down, without ___.",blanks:["rule","walls"],
+       note:"A city without walls is open to every enemy — and so is a person with no rule over his spirit: lost matches, broken friendships, a damaged witness, a hardening heart. God warned Cain that sin was crouching at his door, \"but you should rule over it\" (Genesis 4:7). Anger unruled never stays the same size.",
+       think:"What has anger already cost you — or almost cost you?"},
+      {q:"What is God's own temperament — and why is that our hope?",ref:"Psalm 103:8",
+       verse:"The LORD is merciful and gracious, ___ to ___, and abounding in mercy.",blanks:["slow","anger"],
+       note:"When God introduced Himself by name (Exodus 34:6), slow to anger was in the first sentence. The God Tavita is afraid to face is more patient with him than he is with anyone. And we become like the God we behold (2 Corinthians 3:18) — so our hope is not \"try harder.\" It is \"come closer.\"",
+       think:"Which is your picture of God — red card, or sitting beside you on the sand? Be honest."},
+      {part:"Part Two · Dealing with My Own Anger",q:"What's the first move when anger rises?",ref:"James 1:19–20",
+       verse:"Let every man be swift to ___, slow to ___, slow to ___; for the wrath of man does not produce the righteousness of God.",blanks:["hear","speak","wrath"],
+       note:"Ears first, mouth second, anger last — we usually run it in reverse. Most eruptions happen in the first sixty seconds, before we know the whole story. So take the holy pause: breathe, pray five words (\"Lord, hold my tongue now\"), ask one question before you answer. Slow is not weak — it's the family resemblance of God (Proverbs 16:32).",
+       think:"Write your own five-word emergency prayer for the next sixty-second moment."},
+      {q:"What do I do with the old anger I've been carrying?",ref:"Ephesians 4:31–32",
+       verse:"Let all bitterness, wrath, anger... be ___ away from you... And be ___ to one another, tenderhearted, ___ one another, even as God in Christ forgave you.",blanks:["put","kind","forgiving"],
+       note:"Put it away like garbage — then let something move in: kindness, forgiveness, powered by the forgiveness we've received. Forgiving isn't saying the hurt didn't matter; it's handing the debt to Jesus, the better Judge (Romans 12:19). For Tavita, the hardest name on the list isn't the boy who shoved his cousin — it's his father. Grace is sufficient even for that.",
+       think:"Whose name is hardest on your list? You don't have to feel ready — just write the initial."},
+      {q:"Where does the power for self-control come from?",ref:"Galatians 5:22–23",
+       verse:"But the ___ of the Spirit is love, joy, peace, longsuffering... gentleness, ___.",blanks:["fruit","self-control"],
+       note:"Self-control is fruit of the Spirit, not of willpower — and fruit grows by connection, not effort (John 15:5: \"without Me you can do nothing\"). Counting to ten helps, but only the indwelling Spirit changes what you want to do at nine. Stay on the Vine: daily Word, instant prayer, quiet trust (Psalm 4:4).",
+       think:"What does \"staying on the Vine\" actually look like in your daily schedule?"},
+      {q:"What if I blow it again?",ref:"1 John 1:9",
+       verse:"If we ___ our sins, He is faithful and just to ___ us our sins and to cleanse us from all unrighteousness.",blanks:["confess","forgive"],
+       note:"God is not shocked — \"He remembers that we are dust\" (Psalm 103:14). A father doesn't disown a toddler for falling; he stands him up again. Growth looks like eruptions coming further apart, cooling faster, and driving you to Jesus sooner. He forgives the record and cleanses the temper.",
+       think:"What's the difference between guilt that drives you FROM God and conviction that drives you TO Him?"},
+      {part:"Part Three · Helping Someone Who Struggles",q:"What's the first gift I can give an angry friend?",ref:"Proverbs 18:13",
+       verse:"He who answers a matter before he ___ it, it is folly and shame to him.",blanks:["hears"],
+       note:"Listening. Under almost every angry teen is a hurt one, and hurt people don't open up to lecturers. Real listening — patience through silence, reflecting back (\"So you felt disrespected when...\") — helps a person finally name what they're angry about. Nobody reached Tavita on the field. Someone reached him on the beach, by sitting down and staying quiet.",
+       think:"Who in your life needs your silence more than your advice right now?"},
+      {q:"How should I speak when they're heating up?",ref:"Proverbs 15:1",
+       verse:"A ___ answer turns away wrath, but a harsh word stirs up ___.",blanks:["soft","anger"],
+       note:"Every word is water or petrol. A soft answer isn't weak — it takes more strength than matching volume — and it turns the whole encounter. Keep your voice lower than theirs, don't take the bait, affirm what's true before correcting what isn't. And check your own fire first (Matthew 7:3–5).",
+       think:"Recall your last heated moment — were your words water or petrol?"},
+      {q:"What does restoring an angry person look like?",ref:"Galatians 6:1–2",
+       verse:"...restore such a one in a spirit of ___... Bear one another's ___, and so fulfill the law of Christ.",blanks:["gentleness","burdens"],
+       note:"Restore is a medical word — setting a broken bone: gentle, patient, aimed at healing. Bear the burden with them: help them find what's underneath (Strike 2), pray with them, celebrate the day they didn't explode, correct one habit at a time, and suggest healthy release valves — exercise, writing it out, walking away early. Affirm the person while addressing the behavior. God does that with us.",
+       think:"Who could you help \"set the bone\" for — and what's one gentle first step?"},
+      {q:"When is it bigger than me — and where do we point them in the end?",ref:"Matthew 11:28–29",
+       verse:"Come to Me, all you who labor and are heavy laden, and I will give you ___... for I am ___ and lowly in heart.",blanks:["rest","gentle"],
+       note:"Some anger has roots too deep for a friend — trauma, violence at home, rage turned inward. Then love widens the circle: parents, a pastor, a godly counselor (Proverbs 11:14). That's not betrayal; it may save a life. Either way the destination is the same — not a technique, but a Person. Every angry heart is a tired heart. He gives rest.",
+       think:"If it's ever bigger than you — who are your two trusted adults? Write their names."}
+     ]},
+   { id:"joy-in-the-morning", name:"Overcoming Depression", site:"Study 2", gem:"🔷", open:true,
+     blurb:"\"Joy Comes in the Morning\" — when the soul is cast down, and the God who sits with us in the dark. For youth & young adults.",
+     intro:"Elijah had just lived the greatest day of his life — fire from heaven on Mount Carmel, a whole nation on its face crying, \"The LORD, He is God!\" Yet one threat from Queen Jezebel later, the strongest man of God in Israel was running for the desert, where he collapsed under a broom tree and prayed to die: \"It is enough! Now, LORD, take my life\" (1 Kings 19:4). Exhausted, empty, alone, convinced he was a failure and the only one left. If you have ever felt that darkness — or watched it swallow someone you love — notice carefully what God did next. No lecture. No \"snap out of it.\" He let Elijah sleep, sent an angel to cook him a meal — twice — spoke in a gentle whisper instead of the earthquake, corrected his hopeless math (seven thousand faithful remained), and gave him a friend named Elisha for the road ahead. God does not despise His depressed children. He kneels down and cooks them breakfast.\n\nHow to dig: look up each text in your Bible, fill in the missing words exactly as you find them, and tap the commentary to read the whole teaching.",
+     safety:"If you — or someone you know — ever has thoughts of self-harm or suicide: tell a parent, pastor, teacher, or another trusted adult right away. In the U.S. you can also call or text 988 (Suicide & Crisis Lifeline) any time, day or night. Reaching out is strength, not weakness.",
+     memory:{verse:"The LORD is near to those who have a broken heart.",ref:"Psalm 34:18"},
+     invite:"Maybe you've been under the broom tree a long time — smiling at school, sinking at home, wondering if anyone would even notice. Hear this: the God who cooked breakfast for a burned-out prophet has not lost track of you. He is near to the broken-hearted, He does not break bruised reeds, and He speaks in a whisper gentle enough for a soul that can't handle one more earthquake. The night is real — but it is a night, not forever. Morning is His specialty. Will you stop carrying this alone — pour out your heart to Him tonight, and tell one trusted person this week — and let the God of hope begin walking you toward morning?",
+     questions:[
+      {part:"Part One · Understanding the Darkness",q:"Do real believers get depressed?",ref:"Psalm 42:5",
+       verse:"Why are you cast ___, O my soul? And why are you ___ within me?",blanks:["down","disquieted"],
+       note:"The Bible is startlingly honest: Elijah, Job, Moses, David, and Jeremiah all sank into the pit — and in Gethsemane Jesus Himself said, \"My soul is exceedingly sorrowful, even to death\" (Matthew 26:38). Depression is not proof that your faith has failed. Some of God's most faithful people have walked through the deepest dark."},
+      {q:"Where does the darkness come from?",ref:"1 Kings 19:4–5",
+       verse:"He prayed that he might ___... Then as he lay and slept under a broom tree, suddenly an ___ touched him.",blanks:["die","angel"],
+       note:"Many streams feed it: an exhausted body, a crushing loss, rejection, stress, guilt, anger turned inward, and thought habits that paint self, world, and future black. Notice that God treated Elijah's body first — sleep and two hot meals before a single word of theology. The darkness is real, and it usually has real causes."},
+      {q:"What does it do to us?",ref:"Psalm 32:3–4",
+       verse:"My bones grew old through my ___ all the day long... my vitality was turned into the drought of ___.",blanks:["groaning","summer"],
+       note:"It drains the whole person — sleep and appetite change, focus drifts, energy dries up, and we pull away from the very friends we need. And teens are experts at wearing a mask: smiling at school, sinking when alone. That's why the people closest to us often can't tell — and why honesty (Strike 5) matters so much."},
+      {q:"What is God's posture toward the cast-down?",ref:"Psalm 34:18",
+       verse:"The LORD is ___ to those who have a ___ heart, and saves such as have a contrite spirit.",blanks:["near","broken"],
+       note:"Not distant. Not disappointed. Near. He came to Elijah in a gentle whisper, not an earthquake (1 Kings 19:12), and Isaiah promised of Jesus: \"A bruised reed He will not break\" (Isaiah 42:3). If you are bruised, you are the very person He handles most gently."},
+      {part:"Part Two · Walking Out of the Valley",q:"What's the first step — pretending, or pouring out?",ref:"Psalm 62:8",
+       verse:"Trust in Him at all times, you people; ___ out your ___ before Him; God is a refuge for us.",blanks:["pour","heart"],
+       note:"Buried feelings block the road out; poured-out feelings become prayer. God gave us a whole songbook of honest lament — dozens of psalms (6, 13, 42, 77, 142...) written from the pit. Read them aloud and let them lend you words. You cannot shock God with how you feel. He already knows — and stays."},
+      {q:"What do I do with the dark thoughts on repeat?",ref:"Psalm 42:5",
+       verse:"___ in God, for I shall yet ___ Him for the help of His countenance.",blanks:["Hope","praise"],
+       note:"In Psalm 42 the writer stops merely listening to himself and starts talking to himself — preaching hope to his own soul. Do the same: answer \"I'm worthless\" with what God says is true, fix your mind on what is true, lovely, and praiseworthy (Philippians 4:8), and give thanks in everything (1 Thessalonians 5:18). Thoughts are trails; walk the dark ones less and they grow over."},
+      {q:"Does my body matter in this battle?",ref:"1 Kings 19:7",
+       verse:"The angel of the LORD came back the second time, and touched him, and said, 'Arise and ___, because the ___ is too great for you.'",blanks:["eat","journey"],
+       note:"God's first prescription for a prophet who prayed to die was supper and a nap. Sleep, real food, sunlight, movement, and music (David's harp calmed Saul's dark moods, 1 Samuel 16:23) are not \"unspiritual\" — they are part of how God made us. And fight the pull to isolate: force yourself toward people, not away from them."},
+      {q:"Is it weak — or faithless — to get help?",ref:"Proverbs 11:14",
+       verse:"Where there is no counsel, the people ___; but in the multitude of ___ there is safety.",blanks:["fall","counselors"],
+       note:"God didn't send Elijah back alone — He gave him Elisha. Telling a parent, pastor, doctor, or Christian counselor is not a failure of faith; it is often exactly how God answers your prayer. Depression can have physical roots, and God works through wise people, and sometimes medicine, the same way He works through a cast on a broken arm."},
+      {part:"Part Three · Helping Someone in the Dark",q:"What's the first gift I can give?",ref:"Romans 12:15",
+       verse:"___ with those who rejoice, and ___ with those who weep.",blanks:["Rejoice","weep"],
+       note:"Presence before answers. Job's friends did their best work in the first seven days, when they simply sat with him in silence (Job 2:13) — and their worst when they opened their mouths to explain. A depressed friend doesn't need your solution first. They need to know they are not alone in the dark."},
+      {q:"What should I say — and never say?",ref:"Proverbs 25:20",
+       verse:"Like... vinegar on soda is one who sings ___ to a heavy ___.",blanks:["songs","heart"],
+       note:"\"Cheer up,\" \"just pray more,\" and \"others have it worse\" land like vinegar on a wound. Instead: ask gentle questions (\"When is it hardest?\"), listen without flinching, remind them this tunnel has an end, and celebrate every small step. Accept them completely — that acceptance is the sound God's nearness makes."},
+      {q:"How do I walk with them for the long road?",ref:"1 Thessalonians 5:14",
+       verse:"___ the fainthearted, uphold the ___, be patient with all.",blanks:["Comfort","weak"],
+       note:"Recovery is rarely quick, and moods will swing — so be patient. Keep inviting them even when they say no. Draw them into doing things with you: a sport, a walk, serving someone else, music. Pray with them, not just for them. Bearing a burden (Galatians 6:2) mostly looks like showing up again. And again."},
+      {q:"When must I tell someone — even if they beg me not to?",ref:"Ecclesiastes 4:10",
+       verse:"Woe to him who is ___ when he falls, for he has no one to ___ him up.",blanks:["alone","help"],
+       note:"If a friend talks about wanting to die, feeling hopeless or worthless, or giving things away — take it seriously and tell a trusted adult immediately. That is not betraying a secret; it is refusing to let them fall alone, and it may save their life. Then keep pointing them to Jesus, the \"Man of sorrows\" who \"has borne our griefs and carried our sorrows\" (Isaiah 53:3–4). He has been in this dark — and He knows the way out."}
+     ]},
+   { id:"never-alone", name:"Overcoming Loneliness", site:"Study 3", gem:"🔷", open:true,
+     blurb:"\"Never Alone\" — lonely in a crowd, and the God who crosses the room. For youth & young adults.",
+     intro:"By the pool of Bethesda lay a great multitude — and in the middle of that crowd, one man had been sick for thirty-eight years. When Jesus asked if he wanted to be made well, his answer wasn't about the water. It was about people: \"Sir, I have no man...\" (John 5:7). Thirty-eight years, surrounded by hundreds — and utterly alone. If you know what it is to feel invisible at a full lunch table, unseen in a full church, scrolling a phone full of \"friends\" and feeling no one — notice what Jesus did. He walked past everyone else on that porch, straight to the loneliest man there, and spoke to him first. Jesus notices the unnoticed. He still crosses the room.\n\nHow to dig: look up each text in your Bible, fill in the missing words exactly as you find them, and tap the commentary to read the whole teaching.",
+     safety:"If loneliness ever slides toward hopelessness — or thoughts of self-harm — tell a parent, pastor, teacher, or another trusted adult right away. In the U.S. you can also call or text 988 (Suicide & Crisis Lifeline) any time, day or night. Reaching out is strength, not weakness.",
+     memory:{verse:"I will never leave you nor forsake you.",ref:"Hebrews 13:5"},
+     invite:"Maybe you're the one at the full table feeling invisible — smiling in the crowd, unseen in the middle of everything. Hear this: the Savior who walked past a whole multitude to reach one forgotten man on a porch has not overlooked you. He knows the ache of rejection from the inside, He has promised never to leave, and He sets the solitary in families — His family. Will you answer the Friend who is already crossing the room toward you — and take one step toward His family this week: one service attended, one hand offered, one person greeted who looks as alone as you feel?",
+     questions:[
+      {part:"Part One · Understanding the Ache",q:"Is loneliness a sin — or a signal?",ref:"Genesis 2:18",
+       verse:"And the LORD God said, 'It is not ___ that man should be ___; I will make him a helper comparable to him.'",blanks:["good","alone"],
+       note:"Before sin ever entered the world — in a perfect garden, walking with God Himself — the Creator looked at one solitary human and said \"not good.\" Loneliness is not your failure and not your shame; it is your design speaking. You were built for connection with God AND with people, and the ache is the alarm that says so."},
+      {q:"Can you be lonely in a crowd?",ref:"John 5:7",
+       verse:"The sick man answered Him, 'Sir, I have no ___ to put me into the pool when the water is stirred up.'",blanks:["man"],
+       note:"A great multitude filled Bethesda's porches — and this man had been alone in the middle of it for thirty-eight years. Loneliness has never been about how many people are around you; it's about whether anyone truly sees you. A packed school, a full church, a thousand followers — and still \"I have no man.\" Jesus walked straight to him."},
+      {q:"Did Jesus know this ache Himself?",ref:"Isaiah 53:3",
+       verse:"He is despised and ___ by men, a Man of ___ and acquainted with grief.",blanks:["rejected","sorrows"],
+       note:"His hometown tried to throw Him off a cliff, His brothers didn't believe Him, His three closest friends slept through His darkest hour, and on the cross He cried \"My God, My God, why have You forsaken Me?\" (Matthew 27:46). Whatever loneliness you carry, you carry it beside a Savior who has felt it deeper. He is not observing your ache from a distance — He has lived it."},
+      {q:"What does loneliness do if I let it fester?",ref:"Proverbs 18:1",
+       verse:"A man who ___ himself seeks his own desire; he rages against all wise judgment.",blanks:["isolates"],
+       note:"Loneliness untreated becomes isolation chosen — we pull back to protect ourselves, and the pulling back deepens the very wound. The spiral is real: hurt, withdraw, harden, repeat. Scripture names the danger plainly so we can catch the slide early — because the ache is meant to drive us toward people, not away from them."},
+      {part:"Part Two · The God Who Draws Near",q:"What has God promised the lonely?",ref:"Hebrews 13:5",
+       verse:"For He Himself has said, 'I will never ___ you nor ___ you.'",blanks:["leave","forsake"],
+       note:"In the Greek this is a pile of negatives — never, no, never — God stacking the promise so it cannot be misread. People will move away, drift, graduate, ghost, and fail you. This is the one relationship in your life with a guarantee on it, signed in blood."},
+      {q:"What does God do with the solitary?",ref:"Psalm 68:6",
+       verse:"God sets the ___ in ___; He brings out those who are bound into prosperity.",blanks:["solitary","families"],
+       note:"Not just comfort — placement. God's answer to aloneness is belonging, and His chosen instrument is His family, the church. Imperfect? Absolutely. But it is the household where He seats the solitary — which means showing up isn't optional extra credit for the lonely; it's walking into the very room where God does this work."},
+      {q:"Is He near even when I feel nothing?",ref:"Psalm 139:7–8",
+       verse:"Where can I go from Your ___? Or where can I flee from Your presence? If I ascend into heaven, You are ___.",blanks:["Spirit","there"],
+       note:"Feelings are real, but they are not reliable reporters. David's psalm doesn't say \"I always feel You\" — it says there is nowhere You are not. On the nights heaven seems silent, His presence is a fact you stand on, not a mood you wait for. Preach the fact to the feeling."},
+      {q:"What's my part — waiting to be found, or reaching?",ref:"Proverbs 18:24",
+       verse:"A man who has friends must himself be ___, but there is a friend who sticks closer than a ___.",blanks:["friendly","brother"],
+       note:"Two truths in one verse. First: friendship usually answers initiative — the lonely wait to be chosen, the connected go first. Second: while you build human friendship, One already sticks closer than family. You reach outward from a friendship you already have, not toward one you're begging for."},
+      {part:"Part Three · Building Real Connection",q:"Where do I actually find my people?",ref:"Acts 2:42",
+       verse:"And they continued steadfastly in the apostles' doctrine and ___, in the breaking of ___, and in prayers.",blanks:["fellowship","bread"],
+       note:"The first church's friendships grew in shared rhythms — learning together, eating together, praying together, serving together. Deep connection is rarely found by searching for it directly; it grows as a side effect of doing meaningful things beside people, repeatedly. Join the thing. Keep showing up. Friendship is a crop, not a purchase."},
+      {q:"What breaks the ice — being impressive, or being real?",ref:"James 5:16",
+       verse:"___ your trespasses to one another, and ___ for one another, that you may be healed.",blanks:["Confess","pray"],
+       note:"Masks keep people lonely — you can't be loved for who you are while hiding who you are. Scripture's path to healing runs through honesty with safe people: real struggles named, real prayer exchanged. One honest conversation builds more friendship than a year of looking fine."},
+      {q:"What's the fastest medicine for my own loneliness?",ref:"Acts 20:35",
+       verse:"...remember the words of the Lord Jesus, that He said, 'It is more ___ to ___ than to receive.'",blanks:["blessed","give"],
+       note:"Strange but true: the quickest way out of your own ache is to carry someone else's. Serving turns you outward, puts you shoulder-to-shoulder with people, and hands you purpose — three cures in one act. Find someone lonelier than you and be for them what you've been waiting for."},
+      {q:"Who's sitting alone near me right now?",ref:"Matthew 25:40",
+       verse:"...inasmuch as you did it to one of the ___ of these My brethren, you did it to ___.",blanks:["least","Me"],
+       note:"Somewhere near you is a Bethesda porch — the new kid, the quiet one, the person eating alone. Jesus takes it personally when someone crosses the room to them, because He counts it done to Himself. Be the one who moves seats. And if your own loneliness — or a friend's — ever darkens toward hopelessness, widen the circle to a trusted adult immediately. He has been in this dark, and He knows the way out."}
+     ]},
+   { id:"youth-4", name:"Study 4 · coming soon", site:"Study 4", gem:"🔷", open:false,
+     blurb:"The next silver strike is being prepared.", questions:[] }
+  ]},
+{ id:"sermon-studies", gem:"🔶", name:"The Forge",
+  label:"Sermon Companion Studies",
+  desc:"What is heard at the fire is hammered here — a five-part dig alongside each sermon Pastor Josh preaches, so the Word doesn't end when the service does.",
+  verse:"Is not my word like as a fire? saith the LORD; and like a hammer that breaketh the rock in pieces?", verseref:"Jeremiah 23:29",
+  courses:[
+   { id:"forge-1", name:"First companion study · arrives with the next sermon", site:"Study 1", gem:"🔶", open:false,
+     blurb:"When the next sermon is preached, its five-part study opens here.", questions:[] }
+  ]},
+{ id:"practical-lessons", gem:"🧱", name:"The Quarry",
+  label:"Practical Lessons",
+  desc:"Hewn stones for daily building — marriage, money, habits, health, and living the Word on Monday morning.",
+  verse:"Whosoever heareth these sayings of mine, and doeth them, I will liken him unto a wise man, which built his house upon a rock.", verseref:"Matthew 7:24",
+  courses:[
+   { id:"prac-1", name:"First stone · coming soon", site:"Study 1", gem:"🧱", open:false,
+     blurb:"The first practical study is being cut and squared.", questions:[] }
+  ]}
+];
+const COURSES=VEINS.flatMap(v=>v.courses);
+function courseById(id){return COURSES.find(c=>c.id===id)}
+function veinById(id){return VEINS.find(v=>v.id===id)}
+function veinOf(courseId){return VEINS.find(v=>v.courses.some(c=>c.id===courseId))}
+
+/* ================= ROUTER ================= */
+const app=document.getElementById('app');
+window.addEventListener('hashchange',render);
+document.addEventListener('click',e=>{
+  const a=e.target.closest('a[href^="#"]');
+  if(a && location.hash===a.getAttribute('href')){ e.preventDefault(); render(); }
+});
+function go(h){location.hash=h}
+function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'{}');return (v&&typeof v==='object')?v:{};}catch(e){return {};}}
+function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
+function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
+function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v23</span></p></footer>`}
+
+function render(){
+  const h=(location.hash||'#map').replace('#','');
+  if(h.startsWith('dig-')){dig(h.slice(4));window.scrollTo(0,0);return}
+  if(h.startsWith('vein-')){vein(h.slice(5));window.scrollTo(0,0);return}
+
+  const pages={map,spring,mine,expeditions,watchfire:expeditions,provisions,trail,altar,treasury,panel,tent,prayerteam,'class':klass};
+  (pages[h]||map)();
+  window.scrollTo(0,0);
+}
+
+/* ================= PAGES ================= */
+function map(){
+app.innerHTML=`
+ <div style="text-align:center;padding-top:1em">
+  <div class="eyebrow">Pastor Joshua Mura · Digital Ministry</div>
+  <h1>The Treasure Map</h1>
+  <div class="verse" style="max-width:560px;margin:1.2em auto;text-align:left">
+    <p>"The kingdom of heaven is like unto treasure hid in a field; the which when a man hath found, he hideth, and for joy thereof goeth and selleth all that he hath, and buyeth that field."</p>
+    <cite>Matthew 13:44</cite>
+  </div>
+  <p class="sub" style="max-width:540px;margin:0 auto">Seven territories. Every one holds treasure. Everything found here points to the Pearl of Great Price.</p>
+ </div>
+ <div class="map">
+  <a class="door" href="#mine"><div class="ico">⛏️</div><div class="name">The Mine</div><div class="what">Bible studies to dig at your pace — and live classes in real time</div><div class="tagline">Bible School</div></a>
+  <a class="door" href="#spring"><div class="ico">💧</div><div class="name">The Spring</div><div class="what">This week's devotional & the deep well of past ones</div><div class="tagline">Devotionals</div></a>
+  <a class="door" href="#altar"><div class="ico">🙏</div><div class="name">The Altar</div><div class="what">Lay a burden down privately — or join the live prayer circle</div><div class="tagline">Prayer</div></a>
+  <a class="door" href="#watchfire"><div class="ico">🔥</div><div class="name">The Watchfire</div><div class="what">Gather at the fire — sermons, seminars & journeys, live: his voice above, slides in your hand</div><div class="tagline">Worship & Presentations</div></a>
+  <a class="door" href="#trail"><div class="ico">🥾</div><div class="name">The Trail</div><div class="what">Where the guide walks next — churches, events & public speaking</div><div class="tagline">Schedule</div></a>
+  <a class="door" href="#tent"><div class="ico">🏕️</div><div class="name">The Guide's Tent</div><div class="what">Who Pastor Josh is, the churches he serves, free supplies & the Trading Post</div><div class="tagline">Connect</div></a>
+  <a class="door" href="#treasury"><div class="ico">👑</div><div class="name">The Treasury</div><div class="what">Your collected gems and milestones</div><div class="tagline">Your Treasures</div></a>
+ </div>
+ ${footer()}`;
+}
+
+function spring(){
+const dv=C.devotional;
+const arch=C.archive||[];
+const wellCards=arch.map(a=>`
+  <a class="door" href="#spring" data-play="${esc(a.youtubeId)}" data-title="${esc(a.title)}" style="padding:0;overflow:hidden">
+    <img src="https://i.ytimg.com/vi/${esc(a.youtubeId)}/hqdefault.jpg" alt="" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block">
+    <div style="padding:.7em .9em .9em">
+      <div class="name" style="font-size:1.05rem">${esc(a.title)}</div>
+      ${a.verseref?`<div class="what">${esc(a.verseref)}</div>`:''}
+    </div>
+  </a>`).join('');
+app.innerHTML=`${crumb()}
+ <div class="eyebrow">💧 The Spring · Devotionals</div>
+ <h2 id="spring-title">${esc(dv.title)}</h2>
+ ${dv.youtubeId?`<div class="videoframe" id="spring-player"><iframe src="https://www.youtube.com/embed/${esc(dv.youtubeId)}" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture;web-share" allowfullscreen></iframe></div>`:''}
+ <div class="verse"><p>"${esc(dv.verse)}"</p><cite>${esc(dv.verseref)}</cite></div>
+ <p>${esc(dv.thought)}</p>
+ ${arch.length?`
+ <h2 style="margin-top:1.6em">🕳️ The Deep Well</h2>
+ <p class="sub" style="margin-bottom:.4em">Water already drawn — tap any week to drink again.</p>
+ <div class="map">${wellCards}</div>`
+ :`<div class="card note">🕳️ <b>The deep well</b> — as weeks pass, every past devotional gathers here, each one a tap away.</div>`}
+ ${footer()}`;
+/* tap a well thumbnail → it becomes the playing video up top */
+app.querySelectorAll('[data-play]').forEach(el=>{
+  el.addEventListener('click',e=>{
+    e.preventDefault();
+    const id=el.dataset.play;
+    document.getElementById('spring-title').textContent=el.dataset.title;
+    let p=document.getElementById('spring-player');
+    if(!p){p=document.createElement('div');p.className='videoframe';p.id='spring-player';
+      document.getElementById('spring-title').after(p);}
+    p.innerHTML=`<iframe src="https://www.youtube.com/embed/${id}?autoplay=1" allow="autoplay;encrypted-media;picture-in-picture" allowfullscreen></iframe>`;
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+});
+}
+
+function mine(){
+/* Mine entrance — the four veins */
+const cards=VEINS.map(v=>{
+  const total=v.courses.filter(c=>c.open).length;
+  const done=v.courses.filter(c=>readProg(c.id).completed).length;
+  return `<a class="door" href="#vein-${v.id}">
+    <div class="ico">${v.gem}</div>
+    <div class="tagline">${esc(v.name)}</div>
+    <div class="name">${esc(v.label)}</div>
+    <div class="what">${esc(v.desc)}</div>
+    <div style="margin-top:.5em;font-size:.85em">${done>0?`<span class="ok">${done} treasure${done>1?'s':''} unearthed</span> · `:''}<span class="note">${total>0?total+' stud'+(total>1?'ies':'y')+' open':'surveying'} · ${v.courses.length} planned</span></div>
+  </a>`;
+}).join('');
+const kls=C.live.teaching;
+app.innerHTML=`${crumb()}
+ <div class="eyebrow">⛏️ The Mine · Bible School</div>
+ ${kls.on?`<a class="door" href="#class" style="border-color:var(--red);display:block;margin-bottom:1em"><div class="ico">📖</div><div class="name" style="color:var(--red)">🔥 Live class in session</div><div class="what">Pastor Josh is teaching in real time — walk in and take a seat.</div></a>`:''}
+ <h2>Five veins run through this mountain</h2>
+ <div class="verse"><p>"If thou seekest her as silver, and searchest for her as for hid treasures; then shalt thou understand the fear of the LORD, and find the knowledge of God."</p><cite>Proverbs 2:4–5</cite></div>
+ <p class="sub">Choose a vein, then a dig site within it. Every study you finish sets a gem in <a href="#treasury">your Treasury</a> — and a treasure token comes to you by mail.</p>
+ <div class="map">${cards}</div>
+ ${footer()}`;
+}
+
+function vein(veinId){
+const V=veinById(veinId);
+if(!V){go('mine');return}
+const cards=V.courses.map(c=>{
+  const prog=readProg(c.id);
+  const done=prog.completed;
+  const started=!done && prog.answers && Object.values(prog.answers).some(a=>{
+    if(typeof a==='string')return a.trim().length>2;
+    if(a&&typeof a==='object')return (a.b&&a.b.some(x=>(x||'').trim().length>0))||(a.r&&(a.r||'').trim().length>2);
+    return false;
+  });
+  let status = done ? `<span class="ok">${c.gem} Treasure unearthed</span>`
+    : started ? `<span style="color:var(--gold);font-weight:700">⛏️ Dig in progress</span>`
+    : c.open ? `<span class="note">Ready to dig · ${c.questions.length} strikes</span>`
+    : `<span class="note">🚧 Coming soon — not yet open</span>`;
+  return `<a class="door" href="${c.open?'#dig-'+c.id:'#vein-'+V.id}" style="${c.open?'':'opacity:.55;cursor:default'}">
+    <div class="ico">${done?c.gem:'⛏️'}</div>
+    <div class="tagline">${esc(c.site)}</div>
+    <div class="name">${esc(c.name)}</div>
+    <div class="what">${esc(c.blurb)}</div>
+    <div style="margin-top:.5em;font-size:.85em">${status}</div>
+  </a>`;
+}).join('');
+app.innerHTML=`<div class="crumb"><a href="#mine">⛏️ ← All veins</a></div>
+ <div class="eyebrow">${V.gem} ${esc(V.name)}</div>
+ <h2>${esc(V.label)}</h2>
+ <div class="verse"><p>"${esc(V.verse)}"</p><cite>${esc(V.verseref)} · KJV</cite></div>
+ <p class="sub">${esc(V.desc)}</p>
+ <div class="map">${cards}</div>
+ ${footer()}`;
+}
+
+function dig(courseId){
+const CO=courseById(courseId);
+if(!CO||!CO.open){go('mine');return}
+const prog=readProg(CO.id);
+const answers=prog.answers||{};
+const done=prog.completed;
+const norm=s=>(s||'').toLowerCase().replace(/[^a-z]/g,'');
+const qDone=(qq,i)=>{
+  const a=answers[i];
+  if(qq.blanks){ if(!a||!a.b)return false; return qq.blanks.every((w,j)=>norm(a.b[j])===norm(w)); }
+  return typeof a==='string'&&a.trim().length>2;
+};
+let qhtml=CO.questions.map((qq,i)=>{
+ if(qq.blanks){
+  const a=answers[i]||{b:[],r:''};
+  let bi=0;
+  const versehtml=esc(qq.verse).split('___').map((seg,j,arr)=>seg+(j<arr.length-1?`<input type="text" class="blank" data-q="${i}" data-b="${bi}" value="${esc((a.b||[])[bi]||'')}" style="width:${Math.max(4,(qq.blanks[bi]||'').length+2)}ch;display:inline-block;margin:0 .15em;padding:.1em .35em;text-align:center;font-weight:700" placeholder="____">`+(bi++,''):'')).join('');
+  return `${qq.part?`<div class="eyebrow" style="margin:1.6em 0 .4em">${esc(qq.part)}</div>`:''}<div class="qbox">
+   <div class="qn">Strike ${i+1} of ${CO.questions.length}</div>
+   <div class="qt">${esc(qq.q)}</div>
+   <div class="ref">⛏️ Open your Bible (NKJV): <a href="${bibleUrl(qq.ref)}" target="_blank" rel="noopener">${esc(qq.ref)}</a> — fill in the missing words</div>
+   <p style="font-family:'Fraunces',serif;font-style:italic;line-height:2">"${versehtml}"</p>
+   <p class="note" style="margin:-.2em 0 .4em;text-align:right"><a href="#" data-reveal="${i}" style="color:var(--dim)">🔦 Stuck? Shine a light</a></p>
+   ${qq.note?`<div class="ref" style="cursor:pointer;color:var(--gold)" data-exp="${i}">📜 Read the commentary ▾</div>
+   <div class="hide" id="exp-${i}">
+     <p style="margin:.3em 0 .5em;line-height:1.75">${esc(qq.note)}</p>
+   </div>`:''}
+  </div>`;
+ }
+ return `<div class="qbox">
+  <div class="qn">Strike ${i+1} of ${CO.questions.length}</div>
+  <div class="qt">${esc(qq.q)}</div>
+  <div class="ref">⛏️ Dig here: <a href="${bibleUrl(qq.ref)}" target="_blank" rel="noopener">${esc(qq.ref)}</a></div>
+  <textarea rows="2" data-q="${i}" placeholder="Write what you unearthed...">${esc(answers[i]||'')}</textarea>
+ </div>`;
+}).join('');
+const filled=CO.questions.filter((qq,i)=>qDone(qq,i)).length;
+const pct=Math.round(filled/CO.questions.length*100);
+const VV=veinOf(CO.id);
+app.innerHTML=`<div class="crumb"><a href="#vein-${VV.id}">${VV.gem} ← Back to ${esc(VV.label)}</a></div>
+ <div class="eyebrow">${VV.gem} ${esc(VV.name)} · ${esc(CO.site)}</div>
+ <h2>${esc(CO.name)}</h2>
+ ${done?`
+   <div class="card" style="text-align:center;border-color:var(--gold)">
+     <div style="font-size:3rem">${CO.gem}</div>
+     <h2 style="color:var(--gold)">Treasure unearthed!</h2>
+     <p>You completed this dig site${prog.name?', '+esc(prog.name.split(' ')[0]):''}. Its gem now rests in <a href="#treasury">your Treasury 👑</a>.</p>
+     ${prog.anon?`<p class="note" style="margin-top:.6em">Unearthed quietly — between you and God. 🕊️</p>`:`<p class="note" style="margin-top:.6em">A token of this treasure is on its way to you by mail. 🎁</p>`}
+   </div>
+   ${CO.safety?`<div class="card" style="border-color:var(--red)"><b style="color:var(--red)">❤️ Always true:</b><div style="margin-top:.3em">${esc(CO.safety)}</div></div>`:''}`
+ :`
+ <p class="sub">${esc(CO.intro||'')}</p>
+ <div class="card note" style="padding:.6em 1em">📖 Scripture in this study is quoted from the <b>New King James Version (NKJV)</b>. Using a different Bible — or none at hand? Tap any reference to read the NKJV free online; the missing words come from that translation.</div>
+ <div class="progress"><div style="width:${pct}%"></div></div>
+ <p class="note" id="strikecount">${filled} of ${CO.questions.length} veins struck</p>
+ ${qhtml}
+ ${CO.safety?`<div class="card" style="border-color:var(--red)"><b style="color:var(--red)">❤️ Read this — it matters:</b><div style="margin-top:.3em">${esc(CO.safety)}</div></div>`:''}
+ <div id="finishzone" class="${filled===CO.questions.length?'':'hide'}">
+  ${CO.invite?`<div class="card" style="border-color:var(--gold)">
+    <h2 style="color:var(--gold)">An invitation — just for you</h2>
+    <p>${esc(CO.invite)}</p>
+    <label class="f" style="display:block;margin-top:.6em">My response</label>
+    <textarea id="m-invite" rows="2" placeholder="Write it in your own words — this goes privately to Pastor Josh with your claim."></textarea>
+  </div>`:''}
+  ${CO.memory?`<div class="card"><b style="color:var(--gold)">💛 Hide it in your heart — this study's memory verse</b>
+    <div class="verse" style="margin:.5em 0 0"><p>"${esc(CO.memory.verse)}"</p><cite>${esc(CO.memory.ref)} · NKJV</cite></div></div>`:''}
+  <div class="card" style="border-color:var(--gold)">
+    <h2 style="color:var(--gold)">⛏️ The final swing</h2>
+    <p class="note" style="margin-bottom:.6em">Claim your gem — and tell Pastor Josh where to mail your treasure token. Your details are private to him alone.</p>
+    <label>Your name</label><input type="text" id="m-name" placeholder="Full name">
+    <label>Email or phone</label><input type="text" id="m-contact" placeholder="Best way to reach you">
+    <label>Mailing address (for your gift)</label><textarea id="m-addr" rows="2" placeholder="Street, city, state, zip"></textarea>
+    <div id="m-err" class="err"></div>
+    <button class="btn" id="m-claim">${CO.gem} Claim the treasure</button>
+    <p class="note" style="margin-top:.9em;text-align:center">🕊️ Prefer to stay anonymous? <a href="#" id="m-quiet">Keep your gem without sharing your details</a> — no mail, no name, and that's completely okay.</p>
+  </div>
+ </div>
+ <div class="card note">💾 Your digging saves itself on this device — leave and return anytime.</div>
+ `}
+ ${footer()}`;
+
+if(!done){
+  const refresh=()=>{
+    localStorage.setItem('mine-'+CO.id,JSON.stringify({answers}));
+    const f=CO.questions.filter((qq,i)=>qDone(qq,i)).length;
+    document.querySelector('.progress div').style.width=Math.round(f/CO.questions.length*100)+'%';
+    const cnt=document.getElementById('strikecount'); if(cnt)cnt.textContent=f+' of '+CO.questions.length+' veins struck';
+    document.getElementById('finishzone').classList.toggle('hide',f!==CO.questions.length);
+  };
+  app.querySelectorAll('[data-reveal]').forEach(el=>{
+    el.addEventListener('click',e=>{
+      e.preventDefault();
+      const i=+el.dataset.reveal, qq=CO.questions[i];
+      if(!answers[i]||typeof answers[i]==='string')answers[i]={b:[],r:''};
+      app.querySelectorAll('input.blank[data-q="'+i+'"]').forEach(inp=>{
+        const b=+inp.dataset.b;
+        inp.value=qq.blanks[b]; answers[i].b[b]=qq.blanks[b];
+        inp.style.borderColor='var(--gold)'; inp.style.color='var(--gold)';
+      });
+      el.textContent='💡 Light shone — now read it in your Bible too';
+      refresh();
+    });
+  });
+  app.querySelectorAll('[data-exp]').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const box=document.getElementById('exp-'+el.dataset.exp);
+      box.classList.toggle('hide');
+      el.textContent=box.classList.contains('hide')?'📜 Read the commentary ▾':'📜 Commentary ▴';
+    });
+  });
+  app.querySelectorAll('input.blank').forEach(inp=>{
+    const i=+inp.dataset.q, b=+inp.dataset.b, qq=CO.questions[i];
+    const paint=()=>{const ok=norm(inp.value)===norm(qq.blanks[b]);
+      inp.style.borderColor=inp.value.trim()?(ok?'var(--gold)':'rgba(194,91,74,.7)'):'rgba(244,237,224,.25)';
+      inp.style.color=ok?'var(--gold)':'var(--ivory)';};
+    paint();
+    inp.addEventListener('input',()=>{
+      if(!answers[i]||typeof answers[i]==='string')answers[i]={b:[],r:(answers[i]&&answers[i].r)||''};
+      answers[i].b[b]=inp.value; paint(); refresh();
+    });
+  });
+  app.querySelectorAll('textarea[data-q]').forEach(tx=>{
+    tx.addEventListener('input',()=>{
+      answers[+tx.dataset.q]=tx.value;
+      refresh();
+    });
+  });
+  const quiet=document.getElementById('m-quiet');
+  if(quiet)quiet.onclick=async(e)=>{
+    e.preventDefault();
+    quiet.textContent='Setting your gem…';
+    try{ if(db)await db.ref('completions').push({course:CO.id,name:'(anonymous)',anon:true,time:new Date().toLocaleString(),ts:Date.now()}); }catch(err){}
+    localStorage.setItem('mine-'+CO.id,JSON.stringify({answers,completed:true,anon:true}));
+    render();
+  };
+  const claim=document.getElementById('m-claim');
+  if(claim)claim.onclick=async()=>{
+    const name=document.getElementById('m-name').value.trim();
+    const contact=document.getElementById('m-contact').value.trim();
+    const addr=document.getElementById('m-addr').value.trim();
+    const err=document.getElementById('m-err');
+    if(!name){err.textContent='Please add your name.';return}
+    claim.textContent='Claiming…';claim.disabled=true;
+    try{
+      const invite=(document.getElementById('m-invite')||{value:''}).value.trim();
+      if(db)await db.ref('completions').push({course:CO.id,name,contact,addr,invite,answers,time:new Date().toLocaleString(),ts:Date.now()});
+      localStorage.setItem('mine-'+CO.id,JSON.stringify({answers,completed:true,name}));
+      render();
+    }catch(e){err.textContent='Could not reach the vault — check connection and try again.';claim.textContent=CO.gem+' Claim the treasure';claim.disabled=false}
+  };
+}
+}
+
+function expeditions(){
+const ex=C.live.expedition;
+let media='';
+if(ex.on){
+  if(ex.source==='youtube'&&ex.youtubeId){
+    media=`<div class="videoframe"><iframe src="https://www.youtube.com/embed/${esc(ex.youtubeId)}?autoplay=1" allow="autoplay;encrypted-media;picture-in-picture" allowfullscreen></iframe></div>`;
+  }else if(ex.source==='jitsi'){
+    media=`<div class="videoframe"><iframe src="https://8x8.vc/vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb/${esc(ex.room)}#config.prejoinConfig.enabled=true&config.disableDeepLinking=true" allow="camera;microphone;fullscreen;display-capture"></iframe></div>
+    <p class="note">🧭 A round-table journey — you join <b>muted</b>; raise your hand 🖐 to speak. <a href="https://8x8.vc/vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb/${esc(ex.room)}#config.prejoinConfig.enabled=true&config.disableDeepLinking=true" target="_blank" rel="noopener">Open full-screen</a> if you prefer.</p>`;
+  }
+}
+app.innerHTML=`${crumb()}
+ <div class="eyebrow">🔥 The Watchfire · Worship & Presentations</div>
+ <h2>${ex.on?(esc(ex.title)||'The fire is lit — gather in'):'The fire is not lit'}</h2>
+ ${ex.on?`
+   ${media}
+   ${ex.deckUrl?`<p class="note" style="margin:.2em 0 .4em">🧭 The slides below follow the guide — they turn as he speaks.</p>
+   <div style="border:1.5px solid rgba(201,162,75,.35);border-radius:14px;overflow:hidden;height:72dvh"><iframe src="${esc(ex.deckUrl)}" style="width:100%;height:100%;border:0"></iframe></div>`:''}
+   ${ex.study?`<a class="door" href="#${esc(ex.study)}" style="margin-top:.8em;display:block"><div class="ico">⚒️</div><div class="name" style="font-size:1.1rem">Take this sermon to the Forge</div><div class="what">The five-part companion study for today's message — dig it this week.</div></a>`:''}
+ `:`<div class="card" style="text-align:center"><div style="font-size:2.6rem">🪵</div><p class="sub">${esc(ex.note)}</p></div>`}
+ <div class="verse"><p>"And thine ears shall hear a word behind thee, saying, This is the way, walk ye in it."</p><cite>Isaiah 30:21</cite></div>
+ ${footer()}`;
+}
+
+function klass(){
+const f=C.live.teaching;
+app.innerHTML=`<div class="crumb"><a href="#mine">⛏️ ← Back to the Mine</a></div>
+ <div class="eyebrow">📖 The Live Class · Teaching in Real Time</div>
+ <h2>${f.on?'Class is in session — take your seat':'Class is not in session'}</h2>
+ ${f.on?`<div class="videoframe"><iframe src="https://8x8.vc/vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb/${esc(f.room)}#config.prejoinConfig.enabled=true&config.disableDeepLinking=true" allow="camera;microphone;fullscreen;display-capture"></iframe></div>
+  <p class="note">🔥 You join <b>muted</b> — raise your hand 🖐 to ask your question, live. Prefer a bigger room? <a href="https://8x8.vc/vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb/${esc(f.room)}#config.prejoinConfig.enabled=true&config.disableDeepLinking=true" target="_blank" rel="noopener">Open full-screen</a>.</p>`
+ :`<div class="card" style="text-align:center"><div style="font-size:2.6rem">🪑</div><p class="sub">${esc(f.note)}</p></div>`}
+ <div class="verse"><p>"Then opened he their understanding, that they might understand the scriptures."</p><cite>Luke 24:45</cite></div>
+ ${footer()}`;
+}
+
+function prayerteam(){
+app.innerHTML=`<div class="crumb"><a href="#altar">🙏 ← Back to the Altar</a></div>
+ <div class="eyebrow">👥 The Prayer Team Room</div>
+ <h2>Keepers of the flame</h2>
+ <div class="card" id="pt-box">
+  <label>Team code</label><input type="text" id="pt-code" placeholder="Ask Pastor Josh for the code">
+  <div id="pt-err" class="err"></div>
+  <button class="btn" id="pt-go">Enter</button>
+ </div>
+ ${footer()}`;
+const tryEnter=()=>{
+  if(document.getElementById('pt-code').value.trim()!==C.config.teamcode){document.getElementById('pt-err').textContent='That is not the code.';return}
+  const box=document.getElementById('pt-box');
+  box.innerHTML='<p class="note">Drawing up the requests…</p>';
+  db.ref('prayerteam').limitToLast(100).on('value',s=>{
+    const v=s.val()||{};
+    const items=Object.values(v).sort((a,b)=>(b.ts||0)-(a.ts||0));
+    box.innerHTML= items.length
+      ? '<p class="note" style="margin-bottom:.6em">Newest first. Guard these as sacred — they were entrusted to this team.</p>'+
+        items.map(r=>`<div style="border-bottom:1px solid rgba(244,237,224,.12);padding:.7em 0"><b style="color:var(--gold)">${esc(r.name)}</b><div>${esc(r.msg)}</div><div class="note">${esc(r.time||'')}</div></div>`).join('')
+      : '<p class="note">No team-shared requests yet. When members choose to share with the team, they appear here the moment they are sent.</p>';
+  });
+};
+document.getElementById('pt-go').onclick=tryEnter;
+document.getElementById('pt-code').addEventListener('keydown',e=>{if(e.key==='Enter')tryEnter()});
+}
+
+function tent(){
+app.innerHTML=`${crumb()}
+ <div class="eyebrow">🏕️ The Guide's Tent · Connect</div>
+ <h2>The one drawing the map</h2>
+ <div class="card"><b>Pastor Joshua Mura</b> serves a two-church district in Pennsylvania. This hub is his workshop — every territory on this map exists to point people to Jesus, the Treasure Himself.</div>
+ <div class="card"><b>⛪ The churches he serves</b><div class="note" style="margin-top:.3em">
+ <b>Bucks County SDA Church</b> — Warminster, PA · with them most <b>2nd &amp; 4th Sabbaths</b> · <a href="https://bucksvision.netlify.app" target="_blank" rel="noopener">bucksvision.netlify.app</a> · <a href="${mapsUrl('Bucks County Seventh-day Adventist Church, 10 Greene Rd, Warminster PA 18974')}" target="_blank" rel="noopener">📍 map</a><br>
+ <b>Fairview Village SDA Church</b> — Fairview Village, PA · with them most <b>1st &amp; 3rd Sabbaths</b> · site coming to the map soon · <a href="${mapsUrl('Fairview Village Seventh-day Adventist Church, Fairview Village PA')}" target="_blank" rel="noopener">📍 map</a></div></div>
+ <div class="card"><b>🎒 Provisions & the Trading Post</b><div class="note" style="margin-top:.3em">Free study supplies and Pastor Josh's writings — <a href="#provisions">step into the supply tent</a>.</div></div>
+ <div class="card"><b>🕰️ Office hours & weekly gatherings</b><div class="note" style="margin-top:.3em">When and where the guide can always be found — <a href="#trail">see the Weekly Rhythm on the Trail</a>.</div></div>
+ <div class="card"><b>✉️ Reach the guide</b><div class="note" style="margin-top:.3em">Speaking, questions, or fellowship — send a note through <a href="#altar">the Altar</a> with your contact, and Pastor Josh will reply personally.</div></div>
+ <div class="verse"><p>"And he gave some, apostles; and some, prophets; and some, evangelists; and some, pastors and teachers; for the perfecting of the saints."</p><cite>Ephesians 4:11–12</cite></div>
+ ${footer()}`;
+}
+
+function trail(){
+const today=new Date();today.setHours(0,0,0,0);
+const horizon=new Date(today);horizon.setDate(horizon.getDate()+62);
+const all=(C.trail||[]).map(x=>({...x,d:new Date(x.date+'T12:00:00')})).sort((a,b)=>a.d-b.d);
+const up=all.filter(x=>x.d>=today&&x.d<=horizon);
+const beyond=all.filter(x=>x.d>horizon).length;
+const past=all.filter(x=>x.d<today).slice(-4);
+const ICONS={church:'⛪',tent:'🎪',camp:'🏕️',mic:'🎙️',fire:'🔥',study:'📖',youth:'🧑‍🤝‍🧑'};
+const mark=(x,i,dim)=>{
+  const ico=ICONS[(x.icon||'').toLowerCase()]||'⛪';
+  return `<div class="stop ${dim?'past':''}" data-i="${i}">
+    <div class="stopmark">${ico}</div>
+    <div class="stopcard">
+      <div class="stophead">
+        <b style="color:var(--gold)">${x.d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'})}</b>
+        <b>${esc(x.title)}</b>
+        <span class="note" style="margin-left:auto">tap ▾</span>
+      </div>
+      <div class="stopbody hide">
+        <div>📍 <a href="${mapsUrl(x.place)}" target="_blank" rel="noopener"><b>${esc(x.place)}</b></a> <span class="note">· tap for directions</span></div>
+        ${x.time?`<div>🕐 ${esc(x.time)}</div>`:''}
+        ${x.live?`<div>🔴 Also broadcast live — <a href="#watchfire">gather at the Watchfire</a></div>`:`<div class="note">In person only — come find the guide on the trail</div>`}
+        ${x.details?`<div class="note" style="margin-top:.4em">${esc(x.details)}</div>`:''}
+      </div>
+    </div>
+  </div>`;
+};
+app.innerHTML=`${crumb()}
+ <div class="eyebrow">🥾 The Trail · Schedule</div>
+ <h2>Where the guide walks next</h2>
+ <div class="verse"><p>"The steps of a good man are ordered by the LORD: and he delighteth in his way."</p><cite>Psalm 37:23</cite></div>
+ ${(C.rhythm&&C.rhythm.length)?`
+ <h2 style="margin-top:.6em;font-size:1.4rem">🕰️ The Weekly Rhythm</h2>
+ <p class="sub" style="margin-bottom:.4em">The guide's standing appointments — same time, every week.</p>
+ <div class="card" style="padding:.6em 1em">
+ ${C.rhythm.map(r=>`<div style="display:flex;gap:.8em;flex-wrap:wrap;align-items:baseline;padding:.45em 0;border-bottom:1px solid rgba(244,237,224,.08)">
+   <b style="color:var(--gold);min-width:6.5em">${esc(r.day)}</b>
+   <span style="min-width:7em">${esc(r.time)}</span>
+   <b>${esc(r.what)}</b>
+   <span class="note">${r.link==='plain'?esc(r.where):(r.link&&r.link!=='none'&&r.link!=='map')?`<a href="#${esc(r.link)}">${esc(r.where)}</a>`:`<a href="${mapsUrl(r.where)}" target="_blank" rel="noopener">📍 ${esc(r.where)}</a>`}</span>
+ </div>`).join('')}
+ </div>`:''}
+ <h2 style="margin-top:1.2em;font-size:1.4rem">🥾 Trail Stops Ahead</h2>
+ <p class="sub">The next two months of trail. Tap any marker to read the signpost.</p>
+ <style>
+  .trailwrap{position:relative;margin:1.2em 0;padding-left:8px}
+  .trailwrap::before{content:'';position:absolute;left:29px;top:10px;bottom:10px;width:0;
+    border-left:3px dashed rgba(201,162,75,.4)}
+  .stop{position:relative;display:flex;gap:14px;margin:1.1em 0;cursor:pointer}
+  .stopmark{flex:none;width:46px;height:46px;border-radius:50%;background:var(--card2);
+    border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;
+    font-size:1.4rem;z-index:1;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+  .stopcard{flex:1;background:var(--card);border:1px solid rgba(201,162,75,.28);border-radius:14px;padding:.8em 1em}
+  .stophead{display:flex;gap:.8em;align-items:baseline;flex-wrap:wrap}
+  .stopbody{margin-top:.6em;line-height:1.7}
+  .stop.past{opacity:.45}
+  .stop.past .stopmark{border-color:rgba(201,162,75,.4)}
+ </style>
+ <div class="trailwrap">
+  ${up.length?up.map((x,i)=>mark(x,i,false)).join(''):`<div class="card" style="text-align:center;margin-left:52px"><div style="font-size:2.2rem">🥾</div><p class="sub">The next stretch of trail is being marked. Check back — the guide is always walking.</p></div>`}
+  ${beyond?`<div class="stop" style="cursor:default"><div class="stopmark" style="border-style:dashed;opacity:.6">…</div><div class="stopcard note">${beyond} more stop${beyond>1?'s':''} further down the trail — markers appear as they come within two months.</div></div>`:''}
+ </div>
+ ${past.length?`<p class="note" style="margin-top:1.2em">Trail already walked:</p><div class="trailwrap">${past.reverse().map((x,i)=>mark(x,'p'+i,true)).join('')}</div>`:''}
+ ${footer()}`;
+app.querySelectorAll('.stop').forEach(el=>{
+  el.addEventListener('click',()=>{
+    const b=el.querySelector('.stopbody');if(b)b.classList.toggle('hide');
+    const tip=el.querySelector('.stophead .note');if(tip)tip.textContent=b&&b.classList.contains('hide')?'tap ▾':'tap ▴';
+  });
+});
+}
+
+function provisions(){
+app.innerHTML=`${crumb()}
+ <div class="eyebrow">🎒 The Provisions · Resources</div>
+ <h2>Supplies for your journey</h2>
+ <p class="sub">Study guides, sermon outlines, and ministry tools — free for the taking, as freely as they were received.</p>
+ <div class="card"><b>🎁 Free supplies — arriving soon.</b><div class="note">The shelves are built; Pastor Josh is stocking them. Check back shortly.</div></div>
+ <div class="verse"><p>"Freely ye have received, freely give."</p><cite>Matthew 10:8</cite></div>
+ <h2 style="margin-top:1.6em">🏪 The Trading Post</h2>
+ <p class="sub" style="margin-bottom:.4em">A separate corner of the camp — things Pastor Josh has written or made, available for purchase. All purchases happen securely on Amazon, never on this site.</p>
+ <div class="card">
+   <b>📖 Pastor Josh's book — at the bindery</b>
+   <div class="note" style="margin-top:.3em">The manuscript is nearly finished. When it releases, it will be available on Amazon, and this shelf will point you straight to it.</div>
+ </div>
+ ${footer()}`;
+}
+
+function altar(){
+const pc=C.live.prayer;
+app.innerHTML=`${crumb()}
+ <div class="eyebrow">🙏 The Altar · Prayer</div>
+ ${pc.on?`<div class="card" style="border-color:var(--red)"><b style="color:var(--red)">🔥 The Prayer Circle is open right now.</b>
+   <div class="videoframe" style="margin-top:.6em"><iframe src="https://8x8.vc/vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb/${esc(pc.room)}#config.prejoinConfig.enabled=true&config.disableDeepLinking=true" allow="camera;microphone;fullscreen;display-capture"></iframe></div>
+   <p class="note">You join <b>muted</b> — raise your hand 🖐 and Pastor Josh will call on you to pray. Prefer a bigger room? <a href="https://8x8.vc/vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb/${esc(pc.room)}#config.prejoinConfig.enabled=true&config.disableDeepLinking=true" target="_blank" rel="noopener">Open full-screen</a>.</p></div>`
+  :`<div class="card note">🕯️ <b>The Prayer Circle</b> — ${esc(pc.note)}</div>`}
+ <h2>Lay it down here</h2>
+ <p class="sub">Whatever you carry — send it. This goes <b>privately to Pastor Josh alone</b>, and he will pray over it personally.</p>
+ <div class="card">
+  <label>Your name</label><input type="text" id="p-name" placeholder="First name is fine">
+  <label>Your prayer request</label><textarea id="p-msg" rows="4" placeholder="Pour it out..."></textarea>
+  <label>Tell us a little about you</label>
+  <select id="p-home">
+    <option value="member">⛪ I'm a member of one of Pastor Josh's churches</option>
+    <option value="visitor">🚪 I've visited one of his churches</option>
+    <option value="other-church">🏛️ I attend another church</option>
+    <option value="no-church">🌱 I don't currently attend a church</option>
+    <option value="">🤍 I'd rather not say</option>
+  </select>
+  <div id="p-which-wrap" class="hide">
+    <label>Which church? (optional)</label><input type="text" id="p-which" placeholder="Church name & city">
+  </div>
+  <label>Who may see this?</label>
+  <select id="p-share">
+    <option value="pastor">🔒 Pastor Josh only</option>
+    <option value="team">👥 Pastor Josh + the Prayer Team</option>
+  </select>
+  <p class="note" style="margin:-.3em 0 .6em">Your contact details and address are <b>never</b> shared with the team — only your name and request.</p>
+  <label>Would you like someone to reach you?</label>
+  <div style="margin:.3em 0 .6em">
+    <label style="text-transform:none;font-size:.95em;display:block;margin:.25em 0"><input type="checkbox" id="p-call" style="width:auto;margin-right:.5em">📞 Please <b>call me</b> to pray with me</label>
+    <label style="text-transform:none;font-size:.95em;display:block;margin:.25em 0"><input type="checkbox" id="p-visit" style="width:auto;margin-right:.5em">🏠 <b>Schedule a visitation</b> — in-person prayer with Pastor Josh and an Elder</label>
+  </div>
+  <div id="p-contact-wrap" class="hide">
+    <label>Phone or email</label><input type="text" id="p-contact" placeholder="Best way to reach you">
+  </div>
+  <div id="p-addr-wrap" class="hide">
+    <label>Address for the visitation</label><textarea id="p-addr" rows="2" placeholder="Street, city — private to Pastor Josh alone"></textarea>
+    <label>Best days / times for the visit (optional)</label><input type="text" id="p-when" placeholder="e.g. weekday evenings, Sunday afternoon">
+  </div>
+  <div id="p-err" class="err"></div>
+  <button class="btn" id="p-send">🕊️ Send to the Altar</button>
+ </div>
+ <div class="verse"><p>"Casting all your care upon him; for he careth for you."</p><cite>1 Peter 5:7</cite></div>
+ <div class="card note">👥 <b>On the Prayer Team?</b> <a href="#prayerteam">Enter the team room</a> with your team code.</div>
+ ${footer()}`;
+document.getElementById('p-home').onchange=()=>{
+  document.getElementById('p-which-wrap').classList.toggle('hide',document.getElementById('p-home').value!=='other-church');
+};
+document.getElementById('p-call').onchange=document.getElementById('p-visit').onchange=()=>{
+  const call=document.getElementById('p-call').checked, visit=document.getElementById('p-visit').checked;
+  document.getElementById('p-contact-wrap').classList.toggle('hide',!(call||visit));
+  document.getElementById('p-addr-wrap').classList.toggle('hide',!visit);
+};
+document.getElementById('p-send').onclick=async()=>{
+  const name=document.getElementById('p-name').value.trim();
+  const msg=document.getElementById('p-msg').value.trim();
+  const share=document.getElementById('p-share').value;
+  const call=document.getElementById('p-call').checked;
+  const visit=document.getElementById('p-visit').checked;
+  const contact=document.getElementById('p-contact').value.trim();
+  const addr=document.getElementById('p-addr').value.trim();
+  const when=(document.getElementById('p-when')||{value:''}).value.trim();
+  const home=document.getElementById('p-home').value;
+  const which=document.getElementById('p-which').value.trim();
+  const err=document.getElementById('p-err');
+  const b=document.getElementById('p-send');
+  if(!name||!msg){err.textContent='A name and a request — that\'s all that\'s needed.';return}
+  if((call||visit)&&!contact){err.textContent='Add a phone or email so Pastor Josh can reach you.';return}
+  if(visit&&!addr){err.textContent='Add an address for the visit.';return}
+  b.textContent='Sending…';b.disabled=true;
+  try{
+    if(db){
+      await db.ref('prayer').push({name,msg,share,call,visit,contact,addr,when,home,which,time:new Date().toLocaleString(),ts:Date.now()});
+      if(share==='team')await db.ref('prayerteam').push({name,msg,time:new Date().toLocaleString(),ts:Date.now()});
+    }
+    app.querySelector('.card').innerHTML=`<div style="text-align:center;padding:1em"><div style="font-size:2.6rem">🕊️</div><h2>Laid down.</h2><p class="sub">${share==='team'?'Pastor Josh and the prayer team':'Pastor Josh'} will pray over this personally, ${esc(name.split(' ')[0])}.${call?' Expect a call.':''}${visit?' A visitation will be scheduled with Pastor Josh and an Elder.':''} You are not carrying it alone.</p></div>`;
+  }catch(e){err.textContent='Could not send — check your connection and try again.';b.textContent='🕊️ Send to the Altar';b.disabled=false}
+};
+}
+
+function treasury(){
+let gems='';
+COURSES.forEach(c=>{
+  const p=readProg(c.id);
+  if(p.completed){const vv=veinOf(c.id);gems+=`<div class="card" style="text-align:center"><span class="gem">${c.gem}</span><div><b>${c.name}</b></div><div class="note">${vv.gem} ${vv.label} · ${c.site}</div></div>`;}
+});
+app.innerHTML=`${crumb()}
+ <div class="eyebrow">👑 The Treasury · Your Treasures</div>
+ <h2>What you have found</h2>
+ ${gems||`<div class="card" style="text-align:center"><div style="font-size:2.6rem">🗝️</div><p><b>Your chest is open — and waiting.</b></p><p class="sub">Every dig completed in <a href="#mine">the Mine</a> places a gem here. Start digging.</p></div>`}
+ <div class="verse"><p>"Again, the kingdom of heaven is like unto a merchant man, seeking goodly pearls: who, when he had found one pearl of great price, went and sold all that he had, and bought it."</p><cite>Matthew 13:45–46</cite></div>
+ <p class="sub">Every gem in this chest points to that Pearl. The treasures here are markers on the way to the Treasure Himself.</p>
+ ${footer()}`;
+}
+
+/* ================= STEWARD'S PANEL ================= */
+function panel(){
+app.innerHTML=`${crumb()}
+ <div class="eyebrow">🗝️ The Steward's Panel</div>
+ <h2>Keeper's entrance</h2>
+ <div class="card" id="panelbox">
+  <label>Steward PIN</label><input type="text" id="pin" inputmode="numeric" placeholder="PIN">
+  <div id="pin-err" class="err"></div>
+  <button class="btn" id="pin-go">Unlock</button>
+ </div>
+ ${footer()}`;
+document.getElementById('pin-go').onclick=()=>{
+  if(document.getElementById('pin').value.trim()!==PANEL_PIN){document.getElementById('pin-err').textContent='Not the key.';return}
+  openPanel();
+};
+document.getElementById('pin').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('pin-go').click()});
+}
+
+function openPanel(){
+const dv=C.devotional,lv=C.live;
+document.getElementById('panelbox').innerHTML=`
+ <h2 style="color:var(--gold)">💧 The Spring — this week's devotional</h2>
+ <label>Title</label><input type="text" id="d-title" value="${esc(dv.title)}">
+ <label>YouTube video ID <span style="text-transform:none">(the part after v= in the link, e.g. dQw4w9WgXcQ)</span></label><input type="text" id="d-yt" value="${esc(dv.youtubeId)}">
+ <label>Verse (KJV text)</label><input type="text" id="d-verse" value="${esc(dv.verse)}">
+ <label>Verse reference</label><input type="text" id="d-ref" value="${esc(dv.verseref)}">
+ <label>A thought to carry</label><textarea id="d-thought" rows="3">${esc(dv.thought)}</textarea>
+ <button class="btn" id="save-d">Save the Spring</button> <span id="d-ok" class="ok"></span>
+ <hr style="border-color:rgba(244,237,224,.15);margin:1.5em 0">
+ <h2 style="color:var(--gold)">🔥 Live gatherings</h2>
+ <div class="card">
+  <b>🔥 The Watchfire — one fire, three shapes</b>
+  <label>Underway?</label><select id="e-on"><option value="no" ${!lv.expedition.on?'selected':''}>🧭 Not underway</option><option value="yes" ${lv.expedition.on?'selected':''}>🔥 UNDERWAY — live now</option></select>
+  <label>Journey title (shown at the top)</label><input type="text" id="e-title" value="${esc(lv.expedition.title||'')}" placeholder="e.g. Sabbath Worship · The God Who Sees">
+  <label>Shape of the journey</label>
+  <select id="e-src">
+    <option value="none" ${lv.expedition.source==='none'?'selected':''}>🏛️ In person — slides only (I'm in the room)</option>
+    <option value="youtube" ${lv.expedition.source==='youtube'?'selected':''}>🎙️ Sermon / broadcast — YouTube above the slides</option>
+    <option value="jitsi" ${lv.expedition.source==='jitsi'?'selected':''}>👥 Small group / seminar — Jitsi circle above the slides</option>
+  </select>
+  <label>YouTube live video ID (broadcast shape)</label><input type="text" id="e-yt" value="${esc(lv.expedition.youtubeId)}">
+  <label>Jitsi room name (small-group shape)</label><input type="text" id="e-room" value="${esc(lv.expedition.room||'JoshuaMuraExpedition')}">
+  <label>Synced deck URL (all shapes)</label><input type="text" id="e-deck" value="${esc(lv.expedition.deckUrl)}">
+  <label>Companion study link (e.g. dig-forge-1 · blank = none)</label><input type="text" id="e-study" value="${esc(lv.expedition.study||'')}">
+  <label>"Not underway" message</label><input type="text" id="e-note" value="${esc(lv.expedition.note)}">
+ </div>
+ <div class="card">
+  <b>🙏 The Prayer Circle (Jitsi — lives at the Altar)</b>
+  <label>Open?</label><select id="p2-on"><option value="no" ${!lv.prayer.on?'selected':''}>🕯️ Closed</option><option value="yes" ${lv.prayer.on?'selected':''}>🔥 OPEN — circle gathered</option></select>
+  <label>Room name</label><input type="text" id="p2-room" value="${esc(lv.prayer.room)}">
+  <label>"Closed" message</label><input type="text" id="p2-note" value="${esc(lv.prayer.note)}">
+ </div>
+ <div class="card">
+  <b>📖 Live Class (Jitsi — lives in the Mine)</b>
+  <label>In session?</label><select id="t-on"><option value="no" ${!lv.teaching.on?'selected':''}>🪑 Not in session</option><option value="yes" ${lv.teaching.on?'selected':''}>🔥 IN SESSION</option></select>
+  <label>Room name</label><input type="text" id="t-room" value="${esc(lv.teaching.room)}">
+  <label>"Not in session" message</label><input type="text" id="t-note" value="${esc(lv.teaching.note)}">
+ </div>
+ <button class="btn" id="save-l">Save live gatherings</button> <span id="l-ok" class="ok"></span>
+ <hr style="border-color:rgba(244,237,224,.15);margin:1.5em 0">
+ <h2 style="color:var(--gold)">👥 Prayer Team code</h2>
+ <label>Current team code (change anytime — old code stops working instantly)</label>
+ <input type="text" id="tc-code" value="${esc(C.config.teamcode)}">
+ <button class="btn" id="save-tc">Save team code</button> <span id="tc-ok" class="ok"></span>
+ <hr style="border-color:rgba(244,237,224,.15);margin:1.5em 0">
+ <h2 style="color:var(--gold)">🥾 The Trail — speaking schedule</h2>
+ <label>One stop per line: DATE | TITLE | PLACE | TIME | live yes/no | ICON | details<br>e.g. 2026-08-22 | From Coward to Warrior: John Mark | Bucks County SDA, Warminster PA | 11:00 AM | yes | church | Divine service — come early</label>
+ <textarea id="tr-items" rows="7">${(C.trail||[]).map(x=>[x.date,x.title,x.place,x.time||'',x.live?'yes':'no',x.icon||'church',x.details||''].join(' | ')).join('\n')}</textarea>
+ <button class="btn" id="save-tr">Save the Trail</button> <span id="tr-ok" class="ok"></span>
+ <label style="margin-top:1em;display:block">🕰️ Weekly Rhythm — one line per standing appointment: DAY | TIME | WHAT | WHERE | door(altar/class/watchfire) · none = 📍 map link · plain = no link<br>e.g. Wednesday | 7:00 PM | Prayer Circle online | The Altar | altar</label>
+ <textarea id="rh-items" rows="6">${(C.rhythm||[]).map(x=>[x.day,x.time,x.what,x.where,x.link||'none'].join(' | ')).join('\n')}</textarea>
+ <button class="btn" id="save-rh">Save the Rhythm</button> <span id="rh-ok" class="ok"></span>
+ <hr style="border-color:rgba(244,237,224,.15);margin:1.5em 0">
+ <h2 style="color:var(--gold)">📬 Reading the vault</h2>
+ <p class="note">Prayer requests → Firebase console → <b>prayer</b>. &nbsp; Mine completions & gift addresses → <b>completions</b>.<br>console.firebase.google.com → joshuamura → Realtime Database → Data</p>`;
+document.getElementById('save-d').onclick=async()=>{
+  try{
+    const old=C.devotional;
+    const nu={k:WRITE_KEY,title:v('d-title'),youtubeId:v('d-yt'),verse:v('d-verse'),verseref:v('d-ref'),thought:v('d-thought')};
+    if(old.youtubeId && old.youtubeId!==nu.youtubeId){
+      const items=[{title:old.title,youtubeId:old.youtubeId,verseref:old.verseref||''},...(C.archive||[])].slice(0,200);
+      await db.ref('content/archive').set({k:WRITE_KEY,items});
+    }
+    await db.ref('content/devotional').set(nu);
+    document.getElementById('d-ok').textContent='Saved ✓ — flowing now. Previous week lowered into the Deep Well.';
+  }catch(e){document.getElementById('d-ok').textContent='Save failed — rules published?';}
+};
+document.getElementById('save-l').onclick=async()=>{
+  try{await db.ref('content/live').set({k:WRITE_KEY,
+    expedition:{on:document.getElementById('e-on').value==='yes',title:v('e-title'),source:document.getElementById('e-src').value,youtubeId:v('e-yt'),room:v('e-room'),deckUrl:v('e-deck'),study:v('e-study'),note:v('e-note')},
+    prayer:{on:document.getElementById('p2-on').value==='yes',room:v('p2-room'),note:v('p2-note')},
+    teaching:{on:document.getElementById('t-on').value==='yes',room:v('t-room'),note:v('t-note')}
+  });
+  document.getElementById('l-ok').textContent='Saved ✓ — the map knows what is live.';}catch(e){document.getElementById('l-ok').textContent='Save failed — rules published?';}
+};
+document.getElementById('save-tc').onclick=async()=>{
+  try{await db.ref('content/config').set({k:WRITE_KEY,teamcode:v('tc-code')});
+  document.getElementById('tc-ok').textContent='Saved ✓ — new code in force.';}catch(e){document.getElementById('tc-ok').textContent='Save failed.';}
+};
+document.getElementById('save-tr').onclick=async()=>{
+  try{
+    const items=document.getElementById('tr-items').value.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{
+      const p=l.split('|').map(s=>s.trim());
+      return {date:p[0]||'',title:p[1]||'',place:p[2]||'',time:p[3]||'',live:(p[4]||'').toLowerCase().startsWith('y'),icon:p[5]||'church',details:p[6]||''};
+    }).filter(x=>/^\d{4}-\d{2}-\d{2}$/.test(x.date)&&x.title);
+    await db.ref('content/trail').set({k:WRITE_KEY,items});
+    document.getElementById('tr-ok').textContent='Saved ✓ — '+items.length+' stops marked on the trail.';
+  }catch(e){document.getElementById('tr-ok').textContent='Save failed.';}
+};
+document.getElementById('save-rh').onclick=async()=>{
+  try{
+    const items=document.getElementById('rh-items').value.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{
+      const p=l.split('|').map(s=>s.trim());
+      return {day:p[0]||'',time:p[1]||'',what:p[2]||'',where:p[3]||'',link:(p[4]||'none')};
+    }).filter(x=>x.day&&x.what);
+    await db.ref('content/rhythm').set({k:WRITE_KEY,items});
+    document.getElementById('rh-ok').textContent='Saved ✓ — '+items.length+' standing appointments.';
+  }catch(e){document.getElementById('rh-ok').textContent='Save failed.';}
+};
+function v(id){return document.getElementById(id).value.trim()}
+}
+
+/* ================= LIVE PILL ================= */
+function showLivePill(){
+  const lit=[];
+  if(C.live.expedition.on)lit.push(['watchfire','🔥 Worship']);
+  if(C.live.prayer.on)lit.push(['altar','🙏 Prayer']);
+  if(C.live.teaching.on)lit.push(['class','📖 Class']);
+  const p=document.getElementById('livepill');
+  if(lit.length){p.style.display='block';
+    p.innerHTML=`<a href="#${lit[0][0]}">🔥 LIVE NOW: ${lit.map(l=>l[1]).join(' · ')} — tap to gather</a>`;
+  } else p.style.display='none';
+}
+
+render();
+</script>
+</body>
+</html>

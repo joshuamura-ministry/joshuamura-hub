@@ -1,0 +1,7 @@
+{
+  "name": "joshuamura-hub",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Joshua Mura digital ministry hub with JaaS circle-token signer",
+  "functions": "netlify/functions"
+}
