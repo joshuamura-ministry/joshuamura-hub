@@ -175,6 +175,15 @@ footer .v{font-family:'Fraunces',serif;font-style:italic;font-size:1.05em;color:
 .iplive .dot{width:8px;height:8px;border-radius:50%;background:#57e06e;box-shadow:0 0 0 0 rgba(87,224,110,.7);animation:iplivepulse 1.4s infinite}
 @keyframes iplivepulse{0%{box-shadow:0 0 0 0 rgba(87,224,110,.6)}70%{box-shadow:0 0 0 7px rgba(87,224,110,0)}100%{box-shadow:0 0 0 0 rgba(87,224,110,0)}}
 .iplock{text-align:center;color:var(--green);font-weight:700;font-size:.82em;margin-bottom:.5em}
+/* ---- Sabbath countdown banner ---- */
+.sabbanner{max-width:560px;margin:.8em auto 0;text-align:center}
+.sabbanner .sab-in{background:linear-gradient(135deg,rgba(201,162,75,.14),rgba(201,162,75,.05));border:1px solid var(--gold-dk);border-radius:14px;padding:.7em 1em}
+.sabbanner.is-sabbath .sab-in{background:linear-gradient(135deg,rgba(120,180,130,.18),rgba(120,180,130,.06));border-color:#7fbf8a}
+.sab-title{font-family:'Fraunces',serif;font-weight:640;font-size:1.12rem;color:var(--gold)}
+.sabbanner.is-sabbath .sab-title{color:#bfe9c6}
+.sab-sub{font-size:.86rem;color:var(--ivory);opacity:.9;margin-top:.15em}
+.sab-loc{font-size:.72rem;color:var(--dim);margin-top:.4em}
+.sab-refine{background:none;border:none;color:var(--gold);text-decoration:underline;cursor:pointer;font-size:.72rem;padding:0}
 /* ---- The Library / Bible reader ---- */
 .shelf{display:flex;flex-wrap:wrap;gap:1em;margin-top:1.2em}
 .bookspine{display:block;width:150px;background:linear-gradient(135deg,var(--card2),var(--card));border:1px solid var(--gold-dk);border-left:6px solid var(--gold);border-radius:6px 12px 12px 6px;padding:1.1em .9em;text-decoration:none;color:var(--ivory);box-shadow:0 6px 20px rgba(0,0,0,.4);transition:transform .12s}
@@ -312,6 +321,125 @@ footer .v{font-family:'Fraunces',serif;font-style:italic;font-size:1.05em;color:
 var DEFERRED_INSTALL=null;               // holds Android/Chrome's install prompt
 window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); DEFERRED_INSTALL=e; });
 function isStandalone(){ try{ return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true; }catch(e){ return false; } }
+/* ===================== SABBATH COUNTDOWN ENGINE ===================== */
+/* Sunset is CALCULATED locally (no external service). Sabbath = Friday sunset → Saturday sunset. */
+// Representative coordinates per US time zone, used as an instant no-permission guess.
+var TZ_GUESS={
+  'America/New_York':{lat:40.0,lng:-75.5,label:'Eastern Time'},
+  'America/Detroit':{lat:42.3,lng:-83.0,label:'Eastern Time'},
+  'America/Chicago':{lat:39.1,lng:-94.6,label:'Central Time'},
+  'America/Denver':{lat:39.7,lng:-104.99,label:'Mountain Time'},
+  'America/Phoenix':{lat:33.45,lng:-112.07,label:'Arizona'},
+  'America/Los_Angeles':{lat:36.7,lng:-119.8,label:'Pacific Time'},
+  'America/Anchorage':{lat:61.2,lng:-149.9,label:'Alaska'},
+  'Pacific/Honolulu':{lat:21.3,lng:-157.85,label:'Hawaii'}
+};
+function guessLocation(){
+  // 1) exact location the visitor opted into (saved on their device)
+  try{ var saved=JSON.parse(localStorage.getItem('sab-loc')||'null'); if(saved&&saved.lat!=null) return saved; }catch(e){}
+  // 2) guess from the device time zone
+  var tz='';
+  try{ tz=Intl.DateTimeFormat().resolvedOptions().timeZone||''; }catch(e){}
+  if(TZ_GUESS[tz]) return {lat:TZ_GUESS[tz].lat,lng:TZ_GUESS[tz].lng,label:TZ_GUESS[tz].label,guess:true};
+  // 3) last resort — central US
+  return {lat:39.5,lng:-98.35,label:'your area',guess:true};
+}
+// Sunset (as a Date) for a given calendar day + location, using the standard sunrise/sunset equation.
+function sunsetOn(year,month,day,lat,lng){
+  var rad=Math.PI/180, deg=180/Math.PI;
+  // day of year
+  var N1=Math.floor(275*month/9);
+  var N2=Math.floor((month+9)/12);
+  var N3=(1+Math.floor((year-4*Math.floor(year/4)+2)/3));
+  var N=N1-(N2*N3)+day-30;
+  var lngHour=lng/15;
+  var t=N+((18-lngHour)/24);           // 18 = sunset approximation
+  var M=(0.9856*t)-3.289;
+  var L=M+(1.916*Math.sin(M*rad))+(0.020*Math.sin(2*M*rad))+282.634;
+  L=((L%360)+360)%360;
+  var RA=deg*Math.atan(0.91764*Math.tan(L*rad));
+  RA=((RA%360)+360)%360;
+  RA=RA+(((Math.floor(L/90))*90)-((Math.floor(RA/90))*90));
+  RA=RA/15;
+  var sinDec=0.39782*Math.sin(L*rad);
+  var cosDec=Math.cos(Math.asin(sinDec));
+  var zenith=90.833;                    // official sunset (includes refraction)
+  var cosH=(Math.cos(zenith*rad)-(sinDec*Math.sin(lat*rad)))/(cosDec*Math.cos(lat*rad));
+  if(cosH>1||cosH<-1) return null;      // sun doesn't set/rise that day (polar)
+  var H=(deg*Math.acos(cosH))/15;       // sunset hour angle
+  var T=H+RA-(0.06571*t)-6.622;
+  var UT=((T-lngHour)%24+24)%24;
+  return new Date(Date.UTC(year,month-1,day,0,0,0)+UT*3600*1000);
+}
+// Figure out where we are in the Sabbath cycle for a location.
+function sabbathState(loc){
+  var now=new Date();
+  for(var off=-2; off<=9; off++){
+    var d=new Date(now.getFullYear(),now.getMonth(),now.getDate()+off);
+    if(d.getDay()!==5) continue;        // 5 = Friday
+    var friSunset=sunsetOn(d.getFullYear(),d.getMonth()+1,d.getDate(),loc.lat,loc.lng);
+    var s=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1);
+    var satSunset=sunsetOn(s.getFullYear(),s.getMonth()+1,s.getDate(),loc.lat,loc.lng);
+    if(!friSunset||!satSunset) continue;
+    if(now<friSunset) return {phase:'countdown',begins:friSunset,ends:satSunset};
+    if(now>=friSunset&&now<satSunset) return {phase:'sabbath',begins:friSunset,ends:satSunset};
+  }
+  return null;
+}
+function fmtClock(dt){
+  try{ return dt.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}); }catch(e){ return ''; }
+}
+function fmtCountdown(ms){
+  var s=Math.max(0,Math.floor(ms/1000));
+  var days=Math.floor(s/86400); s-=days*86400;
+  var hrs=Math.floor(s/3600); s-=hrs*3600;
+  var mins=Math.floor(s/60); s-=mins*60;
+  if(days>=1) return days+' day'+(days>1?'s':'')+', '+hrs+' hr'+(hrs===1?'':'s');
+  if(hrs>=1) return hrs+' hr'+(hrs>1?'s':'')+', '+mins+' min';
+  if(mins>=1) return mins+' min'+(mins>1?'s':'');
+  return s+' sec';
+}
+function sabbathBannerHTML(){
+  return '<div id="sabbath-banner" class="sabbanner"></div>';
+}
+var SAB_TIMER=null;
+function paintSabbath(){
+  var el=document.getElementById('sabbath-banner'); if(!el){ if(SAB_TIMER){clearInterval(SAB_TIMER);SAB_TIMER=null;} return; }
+  var loc=guessLocation();
+  var st=sabbathState(loc);
+  var locNote = loc.guess ? ('~ '+(loc.label||'your area')) : '📍 your location';
+  var refineBtn = '<button class="sab-refine" id="sab-refine">📍 Use my exact location</button>';
+  if(!st){ el.innerHTML='<div class="sab-in">🌅 Sabbath times unavailable here.</div>'; return; }
+  if(st.phase==='sabbath'){
+    el.className='sabbanner is-sabbath';
+    el.innerHTML='<div class="sab-in"><div class="sab-title">🌟 It is the Sabbath</div>'
+      +'<div class="sab-sub">Rest and rejoice — the Sabbath ends at '+fmtClock(st.ends)+'</div>'
+      +'<div class="sab-loc">'+locNote+(loc.guess?' · '+refineBtn:'')+'</div></div>';
+  } else {
+    el.className='sabbanner';
+    var ms=st.begins-new Date();
+    el.innerHTML='<div class="sab-in"><div class="sab-title">🕯️ Sabbath begins in '+fmtCountdown(ms)+'</div>'
+      +'<div class="sab-sub">Friday sunset ≈ '+fmtClock(st.begins)+'</div>'
+      +'<div class="sab-loc">'+locNote+(loc.guess?' · '+refineBtn:'')+'</div></div>';
+  }
+  var rb=document.getElementById('sab-refine');
+  if(rb) rb.onclick=function(){ askExactLocation(); };
+}
+function askExactLocation(){
+  if(!navigator.geolocation){ return; }
+  var rb=document.getElementById('sab-refine'); if(rb)rb.textContent='📍 Locating…';
+  navigator.geolocation.getCurrentPosition(function(pos){
+    var loc={lat:pos.coords.latitude,lng:pos.coords.longitude,label:'your location',guess:false};
+    try{ localStorage.setItem('sab-loc',JSON.stringify(loc)); }catch(e){}
+    paintSabbath();
+  }, function(){ if(rb)rb.textContent='📍 Use my exact location'; }, {timeout:8000,maximumAge:3600000});
+}
+function startSabbath(){
+  if(!document.getElementById('sabbath-banner')) return;
+  paintSabbath();
+  if(SAB_TIMER)clearInterval(SAB_TIMER);
+  SAB_TIMER=setInterval(paintSabbath, 30000);   // refresh every 30s
+}
 window.onerror=function(msg,src,line){
   var d=document.createElement('div');
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99;background:#c25b4a;color:#fff;font:700 13px monospace;padding:8px 12px';
@@ -812,7 +940,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v71</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v72</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -1731,6 +1859,7 @@ function enterPresentStage(){
 }
 function map(){
 app.innerHTML=`
+ ${sabbathBannerHTML()}
  <div style="text-align:center;padding-top:1em">
   <div class="eyebrow">Pastor Joshua Mura · Digital Ministry</div>
   <h1>The Treasure Map</h1>
@@ -1755,6 +1884,7 @@ app.innerHTML=`
  ${footer()}`;
  var a2pBtn=document.getElementById('map-a2p');
  if(a2pBtn){ a2pBtn.dataset.slot='map-a2p-slot'; a2pBtn.onclick=function(){ triggerAddToPhone(a2pBtn); }; }
+ startSabbath();
 }
 
 function spring(){
