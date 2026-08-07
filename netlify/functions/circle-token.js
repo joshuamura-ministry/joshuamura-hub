@@ -29,11 +29,26 @@ function sign(payloadObj, privateKeyPem, kid) {
   const encHeader = b64url(JSON.stringify(header));
   const encPayload = b64url(JSON.stringify(payloadObj));
   const signingInput = encHeader + '.' + encPayload;
+
+  // Build an explicit KeyObject so OpenSSL knows exactly how to read the PEM.
+  // Try PKCS#8 ("BEGIN PRIVATE KEY") first, then PKCS#1 ("BEGIN RSA PRIVATE KEY").
+  let keyObject;
+  const isPkcs1 = /BEGIN RSA PRIVATE KEY/.test(privateKeyPem);
+  try {
+    keyObject = crypto.createPrivateKey({
+      key: privateKeyPem,
+      format: 'pem',
+      type: isPkcs1 ? 'pkcs1' : 'pkcs8',
+    });
+  } catch (e1) {
+    keyObject = crypto.createPrivateKey(privateKeyPem);
+  }
+
   const signer = crypto.createSign('RSA-SHA256');
   signer.update(signingInput);
   signer.end();
   const signature = signer
-    .sign(privateKeyPem)
+    .sign(keyObject)
     .toString('base64')
     .replace(/=/g, '')
     .replace(/\+/g, '-')
