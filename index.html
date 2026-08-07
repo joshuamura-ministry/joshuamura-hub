@@ -559,7 +559,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v56</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v57</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -1269,7 +1269,7 @@ if(ex.on){
     media=livePresentView();
   }else if(ex.source==='ipres'){
     media=ipRenderDeck(C.present.which,{follow:true})
-      + (PRESENT_OK?'':'<div class="card note" style="text-align:center;margin-top:.6em">🎤 <b>Presenting?</b> <a href="#present">Unlock presenter</a> with your code, then return here to swipe and drive the slides for everyone.</div>');
+      + (PRESENT_OK?'':'<div class="card note" style="text-align:center;margin-top:.6em">🎤 <b>Are you the presenter?</b><br><input type="password" id="ip-unlock-code" placeholder="Presenter code" style="max-width:200px;margin:.4em auto;display:block;text-align:center"><button class="btn" id="ip-unlock-go">Unlock — let me drive</button><div id="ip-unlock-err" class="err" style="margin-top:.3em"></div></div>');
   }
 }
 app.innerHTML=`${crumb()}
@@ -1282,14 +1282,21 @@ app.innerHTML=`${crumb()}
    ${ex.study?`<a class="door" href="#${esc(ex.study)}" style="margin-top:.8em;display:block"><div class="ico">⚒️</div><div class="name" style="font-size:1.1rem">Take this sermon to the Forge</div><div class="what">The five-part companion study for today's message — dig it this week.</div></a>`:''}
  `:`<div class="card" style="text-align:center"><div style="font-size:2.6rem">🪵</div><p class="sub">${esc(ex.note)}</p></div>`}
  <div class="verse"><p>"And thine ears shall hear a word behind thee, saying, This is the way, walk ye in it."</p><cite>Isaiah 30:21</cite></div>
- <div class="card note" style="text-align:center">📽️ <b>Presenting?</b> <a href="#present">Open Presenter mode</a> — full-screen slides for the projector (needs the presenter code).</div>
+ ${(ex.source==='present')?'<div class="card note" style="text-align:center">📽️ <b>Presenting the JPEG slides?</b> <a href="#present">Open Presenter mode</a> — full-screen for the projector.</div>':''}
  ${footer()}`;
 if(ex.on&&ex.source==='jitsi'){ mountCircle('circle-watchfire',ex.room,'Friend'); }
 if(ex.on&&ex.source==='ipres'){
   setTimeout(function(){
     ipShow(C.present.current||0,false);
-    // If this device is the presenter (unlocked with the presenter code), let swipes/taps drive everyone.
     if(PRESENT_OK){ ipEnablePresenterDrive(); }
+    var ug=document.getElementById('ip-unlock-go');
+    if(ug)ug.onclick=function(){
+      var code=(document.getElementById('ip-unlock-code').value||'').trim();
+      if(code!==(C.config.presentcode||'present2026')){
+        document.getElementById('ip-unlock-err').textContent='That is not the presenter code.'; return;
+      }
+      PRESENT_OK=true; render();  // re-render; now in presenter-drive mode
+    };
   },30);
 }
 }
