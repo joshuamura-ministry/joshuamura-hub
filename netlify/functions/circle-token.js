@@ -11,9 +11,6 @@ function b64url(input) {
     .replace(/\//g, '_');
 }
 
-// Netlify env storage can turn real newlines into the literal characters "\n",
-// or wrap the value in quotes, or add stray whitespace. Normalize all of that
-// back into a clean PEM block Node's crypto can parse.
 function normalizeKey(raw) {
   if (!raw) return raw;
   let k = raw.trim();
@@ -30,8 +27,6 @@ function sign(payloadObj, privateKeyPem, kid) {
   const encPayload = b64url(JSON.stringify(payloadObj));
   const signingInput = encHeader + '.' + encPayload;
 
-  // Build an explicit KeyObject so OpenSSL knows exactly how to read the PEM.
-  // Try PKCS#8 ("BEGIN PRIVATE KEY") first, then PKCS#1 ("BEGIN RSA PRIVATE KEY").
   let keyObject;
   const isPkcs1 = /BEGIN RSA PRIVATE KEY/.test(privateKeyPem);
   try {
@@ -100,6 +95,38 @@ exports.handler = async (event) => {
   const room = (params.room || '').trim();
   const name = (params.name || 'Friend').toString().slice(0, 60);
   const pass = (params.pass || '').toString();
+
+  // Safe diagnostic mode: ?diag=1 reports characteristics of the stored key
+  // WITHOUT ever revealing the key itself. Helps debug parse failures.
+  if (params.diag === '1') {
+    const k = normalizeKey(PRIVATE_KEY);
+    const firstLine = (k.split('\n')[0] || '').slice(0, 40);
+    const lastLine = (k.trim().split('\n').pop() || '').slice(0, 40);
+    const hasSmartQuotes = /[\u2018\u2019\u201C\u201D]/.test(k);
+    const hasCRLF = /\r/.test(PRIVATE_KEY);
+    const hasLiteralBackslashN = /\\n/.test(PRIVATE_KEY);
+    const nonAscii = (k.match(/[^\x00-\x7F]/g) || []).length;
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        ok: true,
+        diag: {
+          rawLength: PRIVATE_KEY.length,
+          normalizedLength: k.length,
+          firstLine,
+          lastLine,
+          lineCount: k.split('\n').length,
+          startsWithBegin: k.startsWith('-----BEGIN'),
+          endsWithEnd: k.trim().endsWith('KEY-----'),
+          hasSmartQuotes,
+          hasCRLF,
+          hasLiteralBackslashN,
+          nonAsciiCharCount: nonAscii,
+        },
+      }),
+    };
+  }
 
   if (!room) {
     return {
