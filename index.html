@@ -169,6 +169,15 @@ footer .v{font-family:'Fraunces',serif;font-style:italic;font-size:1.05em;color:
 .ipdot{width:8px;height:8px;border-radius:50%;background:rgba(201,162,75,.3)}
 .ipdot.on{background:var(--gold)}
 .ipfollow{text-align:center;color:var(--gold);font-weight:700;font-size:.85em;margin-bottom:.5em}
+/* Green upper-right LIVE badge on the live presentation */
+.ipres{position:relative}
+.iplive{position:absolute;top:10px;right:10px;z-index:6;display:flex;align-items:center;gap:.4em;background:rgba(20,40,22,.92);border:1px solid #7fbf8a;color:#c7f0cf;font-weight:800;font-size:.72rem;letter-spacing:.08em;padding:.32em .7em;border-radius:999px;box-shadow:0 3px 12px rgba(0,0,0,.4)}
+.iplive .dot{width:8px;height:8px;border-radius:50%;background:#57e06e;box-shadow:0 0 0 0 rgba(87,224,110,.7);animation:iplivepulse 1.4s infinite}
+@keyframes iplivepulse{0%{box-shadow:0 0 0 0 rgba(87,224,110,.6)}70%{box-shadow:0 0 0 7px rgba(87,224,110,0)}100%{box-shadow:0 0 0 0 rgba(87,224,110,0)}}
+.iplock{text-align:center;color:var(--green);font-weight:700;font-size:.82em;margin-bottom:.5em}
+/* Follower lock: slides can't be tapped/dragged to navigate (presenter drive re-enables) */
+.ipres.follow-locked .ipslide{pointer-events:none}
+.ipres.follow-locked{touch-action:pan-y}
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -776,7 +785,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v68</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v69</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -1007,9 +1016,11 @@ function ipRenderDeck(deckId, opts){
     return '<div class="ipslide'+(i===0?' active':'')+'" data-ip="'+i+'">'+s+'</div>';
   }).join('');
   var dots=deck.slides.map(function(s,i){return '<span class="ipdot'+(i===0?' on':'')+'" data-ipdot="'+i+'"></span>';}).join('');
-  var follow=opts.follow?'<div class="ipfollow">🔴 LIVE — following Pastor Josh</div>':'';
+  // Live badge sits INSIDE the presentation, pinned upper-right.
+  var liveBadge=opts.follow?'<div class="iplive"><span class="dot"></span>LIVE</div>':'';
+  var lockNote=opts.follow?'<div class="iplock">🔒 Following the presenter — the slides turn as he speaks</div>':'';
   var nav=opts.follow?'':('<div class="ipnav"><button id="ip-prev">◀ Back</button><div class="ipdots">'+dots+'</div><button id="ip-next">Next ▶</button></div>');
-  return follow+'<div class="ipres" id="ipres-host">'+slidesHtml+'</div>'+nav;
+  return lockNote+'<div class="ipres'+(opts.follow?' follow-locked':'')+'" id="ipres-host">'+liveBadge+slidesHtml+'</div>'+nav;
 }
 function ipShow(i, manual){
   var host=document.getElementById('ipres-host'); if(!host)return;
@@ -1719,6 +1730,9 @@ if(ex.on&&ex.source==='ipres'){
 }
 function ipEnablePresenterDrive(){
   var host=document.getElementById('ipres-host'); if(!host||host._driven)return; host._driven=true;
+  // Presenter is driving now — hide the "following" lock note (the green LIVE badge stays).
+  var lock=document.querySelector('.iplock'); if(lock)lock.style.display='none';
+  host.classList.remove('follow-locked'); // presenter may tap/swipe to drive
   var deck=presById(C.present.which); var max=deck?deck.slides.length-1:0;
   function go(n){ n=Math.max(0,Math.min(max,n)); if(n===C.present.current)return; ipShow(n,true); try{presentWrite({current:n});}catch(e){} }
   // Tap: right half = next, left half = previous
