@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Joshua Mura — Seek, and Ye Shall Find</title>
+<!-- Add-to-home-screen / installable web app -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pastor Josh">
+<meta name="application-name" content="Pastor Josh">
+<meta name="theme-color" content="#1d1510">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%231d1510'/%3E%3Cpath d='M40 128 Q90 90 140 52' stroke='%23c9a24b' stroke-width='4' stroke-dasharray='2 9' fill='none' stroke-linecap='round'/%3E%3Cg stroke='%23c9a24b' stroke-width='11' stroke-linecap='round'%3E%3Cline x1='118' y1='40' x2='150' y2='72'/%3E%3Cline x1='150' y1='40' x2='118' y2='72'/%3E%3C/g%3E%3Cg fill='%23c9a24b'%3E%3Ccircle cx='52' cy='128' r='6'/%3E%3Ccircle cx='88' cy='108' r='4'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%231d1510'/%3E%3Cg stroke='%23c9a24b' stroke-width='11' stroke-linecap='round'%3E%3Cline x1='118' y1='40' x2='150' y2='72'/%3E%3Cline x1='150' y1='40' x2='118' y2='72'/%3E%3C/g%3E%3C/svg%3E">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,340;0,9..144,540;0,9..144,640;1,9..144,340&family=Source+Sans+3:wght@400;600;700&display=swap');
 :root{
@@ -218,6 +227,10 @@ footer .v{font-family:'Fraunces',serif;font-style:italic;font-size:1.05em;color:
 <div class="livepill" id="livepill"><a href="#watchfire">🔥 The watchfire is lit — Pastor Josh is LIVE. Tap to gather.</a></div>
 
 <script>
+// --- Add-to-home-screen support ---
+var DEFERRED_INSTALL=null;               // holds Android/Chrome's install prompt
+window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); DEFERRED_INSTALL=e; });
+function isStandalone(){ try{ return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true; }catch(e){ return false; } }
 window.onerror=function(msg,src,line){
   var d=document.createElement('div');
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99;background:#c25b4a;color:#fff;font:700 13px monospace;padding:8px 12px';
@@ -718,7 +731,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v62</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v63</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -1070,6 +1083,48 @@ function render(){
 
 /* ================= PAGES ================= */
 let PRESENT_OK=false;
+// Renders the "Add to your phone" card, tailored to the visitor's device.
+function addToPhoneCard(){
+  if(isStandalone()){
+    return '<div class="subcard" style="text-align:center"><b>📲 You\u2019re all set</b>'
+      +'<div class="note" style="margin-top:.3em">This is already on your home screen — you\u2019re running it like an app. 🎉</div></div>';
+  }
+  var ua=navigator.userAgent||'';
+  var isIOS=/iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+  var isAndroid=/Android/.test(ua);
+  var steps;
+  if(isIOS){
+    steps='<ol style="text-align:left;line-height:1.7;margin:.4em 0 0;padding-left:1.2em">'
+      +'<li>Tap the <b>Share</b> button <span style="color:var(--gold)">\u2191</span> at the bottom of Safari</li>'
+      +'<li>Scroll down and tap <b>Add to Home Screen</b></li>'
+      +'<li>Tap <b>Add</b> — done! Look for it with your apps.</li></ol>'
+      +'<div class="note" style="margin-top:.5em">Tip: this works in <b>Safari</b>. If you\u2019re in another browser, open this page in Safari first.</div>';
+  }else if(isAndroid){
+    steps='<ol style="text-align:left;line-height:1.7;margin:.4em 0 0;padding-left:1.2em">'
+      +'<li>Tap the <b>\u22ee</b> menu (top-right of Chrome)</li>'
+      +'<li>Tap <b>Add to Home screen</b> (or <b>Install app</b>)</li>'
+      +'<li>Tap <b>Add</b> — done! Look for it with your apps.</li></ol>';
+  }else{
+    steps='<div class="note" style="margin-top:.4em">On a phone, open your browser\u2019s menu and choose <b>Add to Home Screen</b> (iPhone/Safari) or <b>Install app</b> (Android/Chrome). On a computer, look for an <b>install</b> \u2295 icon in the address bar.</div>';
+  }
+  var installBtn = (DEFERRED_INSTALL && !isIOS) ? '<button class="btn" id="a2p-install" style="margin-bottom:.5em">\u2795 Install now</button>' : '';
+  return '<div class="subcard" style="text-align:center">'
+    +'<b>📲 Keep it on your phone</b>'
+    +'<div class="note" style="margin:.3em 0 .5em">Add the map to your home screen and it opens like an app — one tap, full screen, always with you.</div>'
+    +installBtn
+    +steps
+    +'</div>';
+}
+function wireAddToPhone(){
+  var b=document.getElementById('a2p-install');
+  if(b&&DEFERRED_INSTALL){
+    b.onclick=async function(){
+      b.disabled=true;
+      try{ DEFERRED_INSTALL.prompt(); await DEFERRED_INSTALL.userChoice; }catch(e){}
+      DEFERRED_INSTALL=null; b.textContent='\u2713 Added'; 
+    };
+  }
+}
 function share(){
   const link=hubLink('');
   const cfg=C.config||{};
@@ -1108,12 +1163,15 @@ function share(){
      <div class="note" style="margin-top:.5em">Opens the secure giving page in a new tab.</div>
    </div>`:''}
 
+   ${addToPhoneCard()}
+
    <div class="verse" style="margin-top:1em">
      <p>"Freely ye have received, freely give."</p>
      <cite>Matthew 10:8</cite>
    </div>
    ${footer()}`;
 
+  wireAddToPhone();
   const done=(id)=>{const c=document.getElementById('sh-copied');if(c){c.style.display='block';c.textContent=id||'Copied — now paste it anywhere ✓';}};
   // Native share (mobile) — falls back gracefully
   const nb=document.getElementById('sh-native');
@@ -1660,8 +1718,10 @@ app.innerHTML=`${crumb()}
  <div class="card"><b>🎒 Provisions & the Trading Post</b><div class="note" style="margin-top:.3em">Free study supplies and Pastor Josh's writings — <a href="#provisions">step into the supply tent</a>.</div></div>
  <div class="card"><b>🕰️ Office hours & weekly gatherings</b><div class="note" style="margin-top:.3em">When and where the guide can always be found — <a href="#trail">see the Weekly Rhythm on the Trail</a>.</div></div>
  <div class="card"><b>✉️ Reach the guide</b><div class="note" style="margin-top:.3em">Speaking, questions, or fellowship — send a note through <a href="#altar">the Altar</a> with your contact, and Pastor Josh will reply personally.</div></div>
+ ${addToPhoneCard()}
  <div class="verse"><p>"And he gave some, apostles; and some, prophets; and some, evangelists; and some, pastors and teachers; for the perfecting of the saints."</p><cite>Ephesians 4:11–12</cite></div>
  ${footer()}`;
+ wireAddToPhone();
 }
 
 function trail(){
