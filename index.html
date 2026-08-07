@@ -64,6 +64,13 @@ label{font-size:.8em;font-weight:700;letter-spacing:.07em;text-transform:upperca
 footer{margin-top:3em;text-align:center;color:var(--dim);font-size:.8em}
 footer .v{font-family:'Fraunces',serif;font-style:italic;font-size:1.05em;color:var(--dim)}
 .hide{display:none!important}
+/* panel sections — clear visual zones */
+.psec{border:1.5px solid rgba(201,162,75,.35);border-radius:16px;padding:1.1em 1.15em 1.25em;margin:1.1em 0;background:linear-gradient(160deg,var(--card2),var(--card))}
+.psec>h2{color:var(--gold);margin:0 0 .2em;font-size:1.5rem}
+.psec .pdesc{color:var(--dim);font-size:.9em;margin-bottom:.8em}
+.psec .subcard{background:var(--card);border:1px solid rgba(244,237,224,.12);border-radius:12px;padding:.8em .9em;margin:.7em 0}
+.psec .subcard>b{color:var(--ivory);display:block;margin-bottom:.3em}
+.psave{margin-top:.5em}
 /* pinned live-class video that stays at the top of the Mine while lessons scroll below */
 #classpin{position:sticky;top:0;z-index:40;background:var(--walnut);
   padding:.5em 0 .6em;margin:-.4em 0 .8em;border-bottom:1px solid rgba(201,162,75,.3)}
@@ -415,7 +422,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v33</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v34</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -1122,84 +1129,129 @@ document.getElementById('pin').addEventListener('keydown',e=>{if(e.key==='Enter'
 function openPanel(){
 const dv=C.devotional,lv=C.live;
 document.getElementById('panelbox').innerHTML=`
- <h2 style="color:var(--gold)">💧 The Spring — this week's devotional</h2>
- <label>Title</label><input type="text" id="d-title" value="${esc(dv.title)}">
- <label>YouTube video ID <span style="text-transform:none">(the part after v= in the link, e.g. dQw4w9WgXcQ)</span></label><input type="text" id="d-yt" value="${esc(dv.youtubeId)}">
- <label>Verse (KJV text)</label><input type="text" id="d-verse" value="${esc(dv.verse)}">
- <label>Verse reference</label><input type="text" id="d-ref" value="${esc(dv.verseref)}">
- <label>A thought to carry</label><textarea id="d-thought" rows="3">${esc(dv.thought)}</textarea>
- <button class="btn" id="save-d">Save the Spring</button> <span id="d-ok" class="ok"></span>
- <hr style="border-color:rgba(244,237,224,.15);margin:1.5em 0">
- <h2 style="color:var(--gold)">🔥 Live gatherings</h2>
- <div class="card">
-  <b>🔥 The Watchfire — one fire, three shapes</b>
-  <label>Underway?</label><select id="e-on"><option value="no" ${!lv.expedition.on?'selected':''}>🧭 Not underway</option><option value="yes" ${lv.expedition.on?'selected':''}>🔥 UNDERWAY — live now</option></select>
-  <label>Journey title (shown at the top)</label><input type="text" id="e-title" value="${esc(lv.expedition.title||'')}" placeholder="e.g. Sabbath Worship · The God Who Sees">
-  <label>Shape of the journey</label>
-  <select id="e-src">
-    <option value="none" ${lv.expedition.source==='none'?'selected':''}>🏛️ In person — slides only (I'm in the room)</option>
-    <option value="youtube" ${lv.expedition.source==='youtube'?'selected':''}>🎙️ Sermon / broadcast — YouTube above the slides</option>
-    <option value="jitsi" ${lv.expedition.source==='jitsi'?'selected':''}>👥 Small group / seminar — Jitsi circle above the slides</option>
-  </select>
-  <label>YouTube live video ID (broadcast shape)</label><input type="text" id="e-yt" value="${esc(lv.expedition.youtubeId)}">
-  <label>Jitsi room name (small-group shape)</label><input type="text" id="e-room" value="${esc(lv.expedition.room||'JoshuaMuraExpedition')}">
-  <label>Synced deck URL (all shapes)</label><input type="text" id="e-deck" value="${esc(lv.expedition.deckUrl)}">
-  <label>Companion study link (e.g. dig-forge-1 · blank = none)</label><input type="text" id="e-study" value="${esc(lv.expedition.study||'')}">
-  <label>"Not underway" message</label><input type="text" id="e-note" value="${esc(lv.expedition.note)}">
+ <p class="note" style="margin-bottom:1em">Tap a section to fill it in, then hit its own <b>Save</b> button. Each section saves on its own.</p>
+
+ <!-- ========== 1. THIS WEEK'S CONTENT ========== -->
+ <div class="psec">
+  <h2>💧 The Spring — weekly devotional</h2>
+  <div class="pdesc">The video devotional shown at the Spring. Saving a new one lowers last week's into the Deep Well automatically.</div>
+  <label>Title</label><input type="text" id="d-title" value="${esc(dv.title)}">
+  <label>YouTube video ID <span style="text-transform:none">(the part after v= in the link)</span></label><input type="text" id="d-yt" value="${esc(dv.youtubeId)}">
+  <label>Verse (KJV text)</label><input type="text" id="d-verse" value="${esc(dv.verse)}">
+  <label>Verse reference</label><input type="text" id="d-ref" value="${esc(dv.verseref)}">
+  <label>A thought to carry</label><textarea id="d-thought" rows="3">${esc(dv.thought)}</textarea>
+  <button class="btn psave" id="save-d">Save the Spring</button> <span id="d-ok" class="ok"></span>
  </div>
- <div class="card">
-  <b>🙏 The Prayer Circle (Jitsi — lives at the Altar)</b>
-  <label>Open?</label><select id="p2-on"><option value="no" ${!lv.prayer.on?'selected':''}>🕯️ Closed</option><option value="yes" ${lv.prayer.on?'selected':''}>🔥 OPEN — circle gathered</option></select>
-  <label>Room name</label><input type="text" id="p2-room" value="${esc(lv.prayer.room)}">
-  <label>"Closed" message</label><input type="text" id="p2-note" value="${esc(lv.prayer.note)}">
+
+ <!-- ========== 2. LIVE GATHERINGS ========== -->
+ <div class="psec">
+  <h2>🔴 Live Gatherings — turn on / off</h2>
+  <div class="pdesc">Flip a gathering ON to open it live; the site shows the red banner and the circle appears in its home. One Save covers all three.</div>
+
+  <div class="subcard">
+   <b>🙏 Prayer Circle → lives at the Altar</b>
+   <label>Open?</label><select id="p2-on"><option value="no" ${!lv.prayer.on?'selected':''}>🕯️ Closed</option><option value="yes" ${lv.prayer.on?'selected':''}>🔥 OPEN — circle gathered</option></select>
+   <label>Room name</label><input type="text" id="p2-room" value="${esc(lv.prayer.room)}">
+   <label>"Closed" message</label><input type="text" id="p2-note" value="${esc(lv.prayer.note)}">
+  </div>
+
+  <div class="subcard">
+   <b>📖 Live Class → lives in the Mine</b>
+   <label>In session?</label><select id="t-on"><option value="no" ${!lv.teaching.on?'selected':''}>🪑 Not in session</option><option value="yes" ${lv.teaching.on?'selected':''}>🔥 IN SESSION</option></select>
+   <label>Room name</label><input type="text" id="t-room" value="${esc(lv.teaching.room)}">
+   <label>"Not in session" message</label><input type="text" id="t-note" value="${esc(lv.teaching.note)}">
+  </div>
+
+  <div class="subcard">
+   <b>🔥 The Watchfire → worship & presentations</b>
+   <label>Underway?</label><select id="e-on"><option value="no" ${!lv.expedition.on?'selected':''}>🧭 Not underway</option><option value="yes" ${lv.expedition.on?'selected':''}>🔥 UNDERWAY — live now</option></select>
+   <label>Journey title</label><input type="text" id="e-title" value="${esc(lv.expedition.title||'')}" placeholder="e.g. Sabbath Worship · The God Who Sees">
+   <label>Shape of the journey</label>
+   <select id="e-src">
+     <option value="none" ${lv.expedition.source==='none'?'selected':''}>🏛️ In person — slides only</option>
+     <option value="youtube" ${lv.expedition.source==='youtube'?'selected':''}>🎙️ Sermon / broadcast — YouTube</option>
+     <option value="jitsi" ${lv.expedition.source==='jitsi'?'selected':''}>👥 Small group / seminar — Jitsi</option>
+   </select>
+   <label>YouTube live video ID (broadcast)</label><input type="text" id="e-yt" value="${esc(lv.expedition.youtubeId)}">
+   <label>Jitsi room name (small-group)</label><input type="text" id="e-room" value="${esc(lv.expedition.room||'JoshuaMuraExpedition')}">
+   <label>Synced deck URL (all shapes)</label><input type="text" id="e-deck" value="${esc(lv.expedition.deckUrl)}">
+   <label>Companion study link (e.g. dig-forge-1 · blank = none)</label><input type="text" id="e-study" value="${esc(lv.expedition.study||'')}">
+   <label>"Not underway" message</label><input type="text" id="e-note" value="${esc(lv.expedition.note)}">
+  </div>
+
+  <button class="btn psave" id="save-l">Save live gatherings</button> <span id="l-ok" class="ok"></span>
  </div>
- <div class="card">
-  <b>📖 Live Class (Jitsi — lives in the Mine)</b>
-  <label>In session?</label><select id="t-on"><option value="no" ${!lv.teaching.on?'selected':''}>🪑 Not in session</option><option value="yes" ${lv.teaching.on?'selected':''}>🔥 IN SESSION</option></select>
-  <label>Room name</label><input type="text" id="t-room" value="${esc(lv.teaching.room)}">
-  <label>"Not in session" message</label><input type="text" id="t-note" value="${esc(lv.teaching.note)}">
+
+ <!-- ========== 3. LIVE SLIDES ========== -->
+ <div class="psec">
+  <h2>📽️ Live Slides — present during a gathering</h2>
+  <div class="pdesc">Export slides as JPEGs named <b>1.jpg, 2.jpg …</b> in the <b>/slides</b> folder of your repo. Set the count, flip ON, then use ◀ ▶ — everyone under a live circle follows you.</div>
+  <label>How many slides in the current deck? (0–50)</label>
+  <input type="number" id="sl-total" min="0" max="50" value="${(C.slides&&C.slides.total)||0}">
+  <label>Show slides under live circles?</label>
+  <select id="sl-on"><option value="no" ${(C.slides&&C.slides.on)?'':'selected'}>🚫 Off</option><option value="yes" ${(C.slides&&C.slides.on)?'selected':''}>📽️ On — showing now</option></select>
+  <button class="btn psave" id="save-sl">Save slide settings</button> <span id="sl-ok" class="ok"></span>
+  <div id="sl-live" style="margin-top:1em">
+    <div style="display:flex;align-items:center;gap:.6em;justify-content:center">
+      <button class="btn ghost" id="sl-prev" style="font-size:1.4rem;padding:.3em .9em">◀</button>
+      <b id="sl-now" style="font-size:1.2rem;min-width:7em;text-align:center">Slide ${(C.slides&&C.slides.current)||1} of ${(C.slides&&C.slides.total)||0}</b>
+      <button class="btn" id="sl-next" style="font-size:1.4rem;padding:.3em .9em">▶</button>
+    </div>
+    <p class="note" style="text-align:center;margin-top:.4em">Tapping ◀ ▶ advances the slide for everyone instantly.</p>
+  </div>
  </div>
- <button class="btn" id="save-l">Save live gatherings</button> <span id="l-ok" class="ok"></span>
- <hr style="border-color:rgba(244,237,224,.15);margin:1.5em 0">
- <h2 style="color:var(--gold)">👥 Prayer Team code</h2>
- <label>Current team code (change anytime — old code stops working instantly)</label>
- <input type="text" id="tc-code" value="${esc(C.config.teamcode)}">
- <button class="btn" id="save-tc">Save team code</button> <span id="tc-ok" class="ok"></span>
- <hr style="border-color:rgba(244,237,224,.15);margin:1.5em 0">
- <h2 style="color:var(--gold)">📖 Live Class — invitation code</h2>
- <p class="note" style="margin-bottom:.6em">Anyone can read lessons alone. To join the <b>live video class</b> in the Mine, they must enter this code — share it only with those you invite. Change it anytime; old codes stop working instantly.</p>
- <label>Class topic (optional — shows in the banner, e.g. "Counseling Youth · Overcoming Anger")</label>
- <input type="text" id="cl-topic" value="${esc((C.live.teaching&&C.live.teaching.topic)||'')}">
- <label>Class code</label>
- <input type="text" id="cl-code" value="${esc((C.config&&C.config.classcode)||'class2026')}">
- <button class="btn" id="save-cl">Save class settings</button> <span id="cl-ok" class="ok"></span>
- <hr style="border-color:rgba(244,237,224,.15);margin:1.5em 0">
- <h2 style="color:var(--gold)">📽️ Live Slides</h2>
- <p class="note" style="margin-bottom:.6em">Export your slides as JPEGs named <b>slide1.jpg, slide2.jpg…</b> and put them in the <b>/slides</b> folder of your GitHub repo. Then set the total below, flip slides ON, and use ◀ ▶ to advance — every viewer under a live circle follows you.</p>
- <label>How many slides in the current deck? (0–50)</label>
- <input type="number" id="sl-total" min="0" max="50" value="${(C.slides&&C.slides.total)||0}">
- <label>Show slides under live circles?</label>
- <select id="sl-on"><option value="no" ${(C.slides&&C.slides.on)?'':'selected'}>🚫 Off</option><option value="yes" ${(C.slides&&C.slides.on)?'selected':''}>📽️ On — showing now</option></select>
- <button class="btn" id="save-sl">Save slide settings</button> <span id="sl-ok" class="ok"></span>
- <div id="sl-live" style="margin-top:1em">
-   <div style="display:flex;align-items:center;gap:.6em;justify-content:center">
-     <button class="btn ghost" id="sl-prev" style="font-size:1.4rem;padding:.3em .9em">◀</button>
-     <b id="sl-now" style="font-size:1.2rem;min-width:7em;text-align:center">Slide ${(C.slides&&C.slides.current)||1} of ${(C.slides&&C.slides.total)||0}</b>
-     <button class="btn" id="sl-next" style="font-size:1.4rem;padding:.3em .9em">▶</button>
-   </div>
-   <p class="note" style="text-align:center;margin-top:.4em">Tapping ◀ ▶ advances the slide for everyone instantly.</p>
+
+ <!-- ========== 4. ACCESS CODES ========== -->
+ <div class="psec">
+  <h2>🔑 Access Codes — who can get in</h2>
+  <div class="pdesc">Share these only with the people you invite. Change any code anytime — old codes stop working instantly.</div>
+
+  <div class="subcard">
+   <b>👥 Prayer Team code</b>
+   <div class="note" style="margin-bottom:.3em">Opens the Prayer Team room (shared requests).</div>
+   <input type="text" id="tc-code" value="${esc(C.config.teamcode)}">
+   <button class="btn psave" id="save-tc">Save team code</button> <span id="tc-ok" class="ok"></span>
+  </div>
+
+  <div class="subcard">
+   <b>📖 Live Class code &amp; topic</b>
+   <div class="note" style="margin-bottom:.3em">Anyone can read lessons alone; this code is only to <b>join the live video class</b> in the Mine.</div>
+   <label>Class topic (optional — shows in the banner)</label>
+   <input type="text" id="cl-topic" value="${esc((C.live.teaching&&C.live.teaching.topic)||'')}" placeholder="e.g. Counseling Youth · Overcoming Anger">
+   <label>Class code</label>
+   <input type="text" id="cl-code" value="${esc((C.config&&C.config.classcode)||'class2026')}">
+   <button class="btn psave" id="save-cl">Save class settings</button> <span id="cl-ok" class="ok"></span>
+  </div>
  </div>
- <hr style="border-color:rgba(244,237,224,.15);margin:1.5em 0">
- <h2 style="color:var(--gold)">🥾 The Trail — speaking schedule</h2>
- <label>One stop per line: DATE | TITLE | PLACE | TIME | live yes/no | ICON | details<br>e.g. 2026-08-22 | From Coward to Warrior: John Mark | Bucks County SDA, Warminster PA | 11:00 AM | yes | church | Divine service — come early</label>
- <textarea id="tr-items" rows="7">${(C.trail||[]).map(x=>[x.date,x.title,x.place,x.time||'',x.live?'yes':'no',x.icon||'church',x.details||''].join(' | ')).join('\n')}</textarea>
- <button class="btn" id="save-tr">Save the Trail</button> <span id="tr-ok" class="ok"></span>
- <label style="margin-top:1em;display:block">🕰️ Weekly Rhythm — one line per standing appointment: DAY | TIME | WHAT | WHERE | door(altar/class/watchfire) · none = 📍 map link · plain = no link<br>e.g. Wednesday | 7:00 PM | Prayer Circle online | The Altar | altar</label>
- <textarea id="rh-items" rows="6">${(C.rhythm||[]).map(x=>[x.day,x.time,x.what,x.where,x.link||'none'].join(' | ')).join('\n')}</textarea>
- <button class="btn" id="save-rh">Save the Rhythm</button> <span id="rh-ok" class="ok"></span>
- <hr style="border-color:rgba(244,237,224,.15);margin:1.5em 0">
- <h2 style="color:var(--gold)">📬 Reading the vault</h2>
- <p class="note">Prayer requests → Firebase console → <b>prayer</b>. &nbsp; Mine completions & gift addresses → <b>completions</b>.<br>console.firebase.google.com → joshuamura → Realtime Database → Data</p>`;
+
+ <!-- ========== 5. SCHEDULE ========== -->
+ <div class="psec">
+  <h2>🥾 The Trail — schedule</h2>
+  <div class="pdesc">Where you'll be, and your weekly rhythm. Each saves separately.</div>
+
+  <div class="subcard">
+   <b>📍 Trail stops (dated events)</b>
+   <label>One per line: DATE | TITLE | PLACE | TIME | live yes/no | ICON | details</label>
+   <textarea id="tr-items" rows="6">${(C.trail||[]).map(x=>[x.date,x.title,x.place,x.time||'',x.live?'yes':'no',x.icon||'church',x.details||''].join(' | ')).join('\n')}</textarea>
+   <button class="btn psave" id="save-tr">Save the Trail</button> <span id="tr-ok" class="ok"></span>
+  </div>
+
+  <div class="subcard">
+   <b>🕰️ Weekly Rhythm (standing appointments)</b>
+   <label>One per line: DAY | TIME | WHAT | WHERE | door(altar/class/watchfire) · none = 📍 map · plain = no link</label>
+   <textarea id="rh-items" rows="5">${(C.rhythm||[]).map(x=>[x.day,x.time,x.what,x.where,x.link||'none'].join(' | ')).join('\n')}</textarea>
+   <button class="btn psave" id="save-rh">Save the Rhythm</button> <span id="rh-ok" class="ok"></span>
+  </div>
+ </div>
+
+ <!-- ========== 6. READING RESPONSES ========== -->
+ <div class="psec">
+  <h2>📬 Reading what comes in</h2>
+  <div class="pdesc">Responses are private — read them in your Firebase console.</div>
+  <p class="note">Prayer requests → <b>prayer</b> &nbsp;·&nbsp; Bible-school completions &amp; gift addresses → <b>completions</b><br>console.firebase.google.com → joshuamura → Realtime Database → Data</p>
+ </div>
+
+`;
 document.getElementById('save-d').onclick=async()=>{
   try{
     const old=C.devotional;
