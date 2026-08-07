@@ -731,7 +731,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v63</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v65</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -1325,6 +1325,7 @@ app.innerHTML=`
     <cite>Matthew 13:44</cite>
   </div>
   <p class="sub" style="max-width:540px;margin:0 auto">Seven territories. Every one holds treasure. Everything found here points to the Pearl of Great Price.</p>
+  ${ isStandalone() ? '' : '<div style="margin:1.1em auto 0;max-width:540px"><button class="btn ghost" id="map-a2p" style="font-size:.95em">📲 Add this to your phone</button><div id="map-a2p-slot" style="margin-top:.7em"></div></div>' }
  </div>
  <div class="map">
   <a class="door" href="#mine"><div class="ico">⛏️</div><div class="name">The Mine</div><div class="what">Bible studies to dig at your pace — and live classes in real time</div><div class="tagline">Bible School</div></a>
@@ -1337,6 +1338,15 @@ app.innerHTML=`
   <a class="door" href="#share" style="border-color:var(--gold)"><div class="ico">🤝</div><div class="name">Share the Treasure</div><div class="what">Freely you've received — freely give. Bring a friend to the journey, or help send it further.</div><div class="tagline">Share & Pay It Forward</div></a>
  </div>
  ${footer()}`;
+ var a2pBtn=document.getElementById('map-a2p');
+ if(a2pBtn)a2pBtn.onclick=function(){
+   var slot=document.getElementById('map-a2p-slot');
+   if(!slot)return;
+   if(slot.innerHTML.trim()){ slot.innerHTML=''; a2pBtn.textContent='📲 Add this to your phone'; return; }
+   slot.innerHTML=addToPhoneCard();
+   a2pBtn.textContent='📲 Hide instructions';
+   wireAddToPhone();
+ };
 }
 
 function spring(){
@@ -1973,6 +1983,17 @@ document.getElementById('panelbox').innerHTML=`
    <b>🔥 The Watchfire → worship & presentations</b>
    <label>Underway?</label><select id="e-on"><option value="no" ${!lv.expedition.on?'selected':''}>🧭 Not underway</option><option value="yes" ${lv.expedition.on?'selected':''}>🔥 UNDERWAY — live now</option></select>
    <label>Journey title</label><input type="text" id="e-title" value="${esc(lv.expedition.title||'')}" placeholder="e.g. Sabbath Worship · The God Who Sees">
+   <div class="subcard" style="background:var(--card2);border-color:var(--red);margin:.7em 0 .3em;text-align:center">
+     <b>📢 Announce we're live</b>
+     <div class="note" style="margin:.3em 0 .5em">One tap sends a ready-to-go message with the Watchfire link — text it to a person, a group, or paste into WhatsApp/Facebook. This is what actually gets people to show up.</div>
+     <div style="display:flex;gap:.5em;flex-wrap:wrap;justify-content:center">
+       <button class="btn" id="ann-share" type="button">📤 Send the announcement…</button>
+       <button class="btn ghost" id="ann-text" type="button">💬 Text it</button>
+       <button class="btn ghost" id="ann-copy" type="button">🔗 Copy message</button>
+     </div>
+     <div id="ann-copied" class="note" style="margin-top:.4em;color:var(--gold);display:none"></div>
+     <div class="note" style="margin-top:.5em;opacity:.8">Tip: it uses the journey title above. Set that first for the best message.</div>
+   </div>
    <label>Shape of the journey</label>
    <select id="e-src">
      <option value="present" ${lv.expedition.source==='present'||lv.expedition.source==='none'?'selected':''}>📱 Live Presentation (JPEG slides) — congregation follows on phones</option>
@@ -2176,6 +2197,29 @@ document.getElementById('save-l').onclick=async()=>{
   var pn=document.getElementById('ip-panel-next'), pp=document.getElementById('ip-panel-prev');
   if(pn)pn.onclick=async function(){ try{ await presentWrite({current:(C.present.current||0)+1}); upd(); }catch(e){} };
   if(pp)pp.onclick=async function(){ try{ await presentWrite({current:(C.present.current||0)-1}); upd(); }catch(e){} };
+})();
+// --- Announce we're live: build a ready-to-send message ---
+(function(){
+  function annMsg(){
+    var title=(document.getElementById('e-title')&&document.getElementById('e-title').value||'').trim();
+    var link=hubLink('watchfire');
+    var lead = title ? ('🔥 We\u2019re live now — '+title+'!') : '🔥 We\u2019re live now!';
+    return lead+' Join us at the Watchfire: '+link;
+  }
+  function annNote(txt){ var c=document.getElementById('ann-copied'); if(c){ c.style.display='block'; c.textContent=txt; } }
+  var sb=document.getElementById('ann-share');
+  if(sb){
+    if(navigator.share){
+      sb.onclick=function(){ navigator.share({title:'We\u2019re live now',text:annMsg()}).catch(function(){}); };
+    }else{
+      sb.textContent='🔗 Copy message'; // desktop: no share sheet — make it copy instead
+      sb.onclick=async function(){ try{ await navigator.clipboard.writeText(annMsg()); annNote('Copied — paste it into your text, group, or Facebook ✓'); }catch(e){ annNote(annMsg()); } };
+    }
+  }
+  var tb=document.getElementById('ann-text');
+  if(tb)tb.onclick=function(){ location.href='sms:?&body='+encodeURIComponent(annMsg()); };
+  var cb=document.getElementById('ann-copy');
+  if(cb)cb.onclick=async function(){ try{ await navigator.clipboard.writeText(annMsg()); annNote('Copied — paste it anywhere ✓'); }catch(e){ annNote(annMsg()); } };
 })();
 async function sermonWrite(patch){
   const cur={total:+(C.sermons.total||0),on:!!C.sermons.on,current:(C.sermons&&C.sermons.current)||1, ...patch};
