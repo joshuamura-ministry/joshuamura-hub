@@ -51,6 +51,10 @@ label{font-size:.8em;font-weight:700;letter-spacing:.07em;text-transform:upperca
   border-radius:16px;padding:1.2em 1.2em 1.1em;cursor:pointer;text-decoration:none;color:var(--ivory);
   transition:transform .15s,border-color .15s;position:relative;display:block}
 .door:hover{transform:translateY(-3px);border-color:var(--gold)}
+/* The two 'yours' doors — Treasury (your gems) & Share (send it forward) — set apart */
+.door.personal{background:linear-gradient(160deg,rgba(201,162,75,.16),rgba(56,42,29,.9));border-color:rgba(201,162,75,.6);box-shadow:0 0 0 1px rgba(201,162,75,.12) inset,0 6px 22px rgba(0,0,0,.3)}
+.door.personal:hover{border-color:var(--gold)}
+.door.personal .tagline{color:var(--gold)}
 .door .ico{font-size:2rem}
 .door .name{font-family:'Fraunces',serif;font-weight:640;font-size:1.35rem;margin:.25em 0 .1em}
 .door .what{font-size:.85em;color:var(--dim)}
@@ -940,7 +944,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v72</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v73</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -1867,7 +1871,7 @@ app.innerHTML=`
     <p>"The kingdom of heaven is like unto treasure hid in a field; the which when a man hath found, he hideth, and for joy thereof goeth and selleth all that he hath, and buyeth that field."</p>
     <cite>Matthew 13:44</cite>
   </div>
-  <p class="sub" style="max-width:540px;margin:0 auto">Seven territories. Every one holds treasure. Everything found here points to the Pearl of Great Price.</p>
+  <p class="sub" style="max-width:540px;margin:0 auto">Seven territories to explore, every one holding treasure — plus your own Treasury, and the door to share it. Everything here points to the Pearl of Great Price.</p>
   ${ isStandalone() ? '' : '<div style="margin:1.1em auto 0;max-width:540px"><button class="btn ghost" id="map-a2p" style="font-size:.95em">📲 Add this to your phone</button><div id="map-a2p-slot" style="margin-top:.7em"></div></div>' }
  </div>
  <div class="map">
@@ -1878,8 +1882,8 @@ app.innerHTML=`
   <a class="door" href="#watchfire"><div class="ico">🔥</div><div class="name">The Watchfire</div><div class="what">Gather at the fire — sermons, seminars & journeys, live: his voice above, slides in your hand</div><div class="tagline">Worship & Presentations</div></a>
   <a class="door" href="#trail"><div class="ico">🥾</div><div class="name">The Trail</div><div class="what">Where the guide walks next — churches, events & public speaking</div><div class="tagline">Schedule</div></a>
   <a class="door" href="#tent"><div class="ico">🏕️</div><div class="name">The Guide's Tent</div><div class="what">Who Pastor Josh is, the churches he serves, free supplies & the Trading Post</div><div class="tagline">Connect</div></a>
-  <a class="door" href="#treasury"><div class="ico">👑</div><div class="name">The Treasury</div><div class="what">Your collected gems and milestones</div><div class="tagline">Your Treasures</div></a>
-  <a class="door" href="#share" style="border-color:var(--gold)"><div class="ico">🤝</div><div class="name">Share the Treasure</div><div class="what">Freely you've received — freely give. Bring a friend to the journey, or help send it further.</div><div class="tagline">Share & Pay It Forward</div></a>
+  <a class="door personal" href="#treasury"><div class="ico">👑</div><div class="name">The Treasury</div><div class="what">Your collected gems and milestones</div><div class="tagline">Your Treasures</div></a>
+  <a class="door personal" href="#share"><div class="ico">🤝</div><div class="name">Share the Treasure</div><div class="what">Freely you've received — freely give. Bring a friend to the journey, or help send it further.</div><div class="tagline">Share & Pay It Forward</div></a>
  </div>
  ${footer()}`;
  var a2pBtn=document.getElementById('map-a2p');
