@@ -405,7 +405,71 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v23</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v24</span></p></footer>`}
+
+/* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
+const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
+const SIGNER_URL='/.netlify/functions/circle-token';
+/* remember a moderator pass for this browser session only (never stored to disk) */
+let SESSION_MOD_PASS=null;
+
+/* Build the public (unauthenticated) fallback URL — today's behaviour. */
+function publicCircleUrl(room){
+  return 'https://8x8.vc/'+JAAS_APPID+'/'+encodeURIComponent(room)
+    +'#config.prejoinConfig.enabled=true&config.disableDeepLinking=true';
+}
+/* Build the signed URL once we have a token. */
+function signedCircleUrl(room,token){
+  return 'https://8x8.vc/'+JAAS_APPID+'/'+encodeURIComponent(room)
+    +'?jwt='+token
+    +'#config.prejoinConfig.enabled=true&config.disableDeepLinking=true';
+}
+
+/*
+ mountCircle: fill a container with an embedded JaaS iframe for `room`.
+ - Asks the signer for a token (moderator if SESSION_MOD_PASS is set & correct).
+ - On ANY failure (signer down, network, non-ok) → silently loads the public room,
+   so a live service NEVER breaks mid-stream.
+ containerId: the id of a .videoframe div to fill.
+ name: display name to show in the circle.
+*/
+async function mountCircle(containerId,room,name){
+  const el=document.getElementById(containerId);
+  if(!el)return;
+  const frame=src=>`<iframe src="${src}" allow="camera;microphone;fullscreen;display-capture;autoplay" style="width:100%;height:100%;border:0"></iframe>`;
+  /* start on public fallback immediately so there's never a blank frame */
+  el.innerHTML=frame(publicCircleUrl(room));
+  try{
+    const qs='?room='+encodeURIComponent(room)+'&name='+encodeURIComponent(name||'Friend')
+      +(SESSION_MOD_PASS?('&pass='+encodeURIComponent(SESSION_MOD_PASS)):'');
+    const res=await fetch(SIGNER_URL+qs,{cache:'no-store'});
+    if(!res.ok)throw new Error('signer '+res.status);
+    const data=await res.json();
+    if(data&&data.ok&&data.token){
+      /* swap to the signed (sealed) room */
+      el.innerHTML=frame(signedCircleUrl(room,data.token));
+      el.dataset.mod=data.moderator?'1':'0';
+    }
+    /* if data.ok is false, we simply keep the public fallback already showing */
+  }catch(e){
+    /* keep the public fallback — nothing breaks */
+  }
+}
+/* Small UI to let Pastor Josh unlock moderator for this session. */
+function modUnlockCard(afterRoom,afterName,afterContainer){
+  return `<div class="card note" style="margin-top:.6em">
+    🔑 <b>Steward?</b> <a href="#" id="mod-unlock">Enter as moderator</a> to lead this circle (mute, lock, remove).
+  </div>`;
+}
+function wireModUnlock(room,name,containerId){
+  const link=document.getElementById('mod-unlock');
+  if(!link)return;
+  link.onclick=e=>{
+    e.preventDefault();
+    const p=prompt('Moderator passphrase (kept only for this session):');
+    if(p){ SESSION_MOD_PASS=p; mountCircle(containerId,room,name); link.textContent='Re-joining as moderator…'; }
+  };
+}
 
 function render(){
   const h=(location.hash||'#map').replace('#','');
@@ -695,8 +759,8 @@ if(ex.on){
   if(ex.source==='youtube'&&ex.youtubeId){
     media=`<div class="videoframe"><iframe src="https://www.youtube.com/embed/${esc(ex.youtubeId)}?autoplay=1" allow="autoplay;encrypted-media;picture-in-picture" allowfullscreen></iframe></div>`;
   }else if(ex.source==='jitsi'){
-    media=`<div class="videoframe"><iframe src="https://8x8.vc/vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb/${esc(ex.room)}#config.prejoinConfig.enabled=true&config.disableDeepLinking=true" allow="camera;microphone;fullscreen;display-capture"></iframe></div>
-    <p class="note">🧭 A round-table journey — you join <b>muted</b>; raise your hand 🖐 to speak. <a href="https://8x8.vc/vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb/${esc(ex.room)}#config.prejoinConfig.enabled=true&config.disableDeepLinking=true" target="_blank" rel="noopener">Open full-screen</a> if you prefer.</p>`;
+    media=`<div class="videoframe" id="circle-watchfire"></div>
+    <p class="note">🧭 A round-table journey — you join <b>muted</b>; raise your hand 🖐 to speak.</p>`;
   }
 }
 app.innerHTML=`${crumb()}
@@ -710,6 +774,7 @@ app.innerHTML=`${crumb()}
  `:`<div class="card" style="text-align:center"><div style="font-size:2.6rem">🪵</div><p class="sub">${esc(ex.note)}</p></div>`}
  <div class="verse"><p>"And thine ears shall hear a word behind thee, saying, This is the way, walk ye in it."</p><cite>Isaiah 30:21</cite></div>
  ${footer()}`;
+if(ex.on&&ex.source==='jitsi'){ mountCircle('circle-watchfire',ex.room,'Friend'); }
 }
 
 function klass(){
@@ -717,11 +782,13 @@ const f=C.live.teaching;
 app.innerHTML=`<div class="crumb"><a href="#mine">⛏️ ← Back to the Mine</a></div>
  <div class="eyebrow">📖 The Live Class · Teaching in Real Time</div>
  <h2>${f.on?'Class is in session — take your seat':'Class is not in session'}</h2>
- ${f.on?`<div class="videoframe"><iframe src="https://8x8.vc/vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb/${esc(f.room)}#config.prejoinConfig.enabled=true&config.disableDeepLinking=true" allow="camera;microphone;fullscreen;display-capture"></iframe></div>
-  <p class="note">🔥 You join <b>muted</b> — raise your hand 🖐 to ask your question, live. Prefer a bigger room? <a href="https://8x8.vc/vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb/${esc(f.room)}#config.prejoinConfig.enabled=true&config.disableDeepLinking=true" target="_blank" rel="noopener">Open full-screen</a>.</p>`
+ ${f.on?`<div class="videoframe" id="circle-class"></div>
+  <p class="note">🔥 You join <b>muted</b> — raise your hand 🖐 to ask your question, live.</p>
+  ${modUnlockCard()}`
  :`<div class="card" style="text-align:center"><div style="font-size:2.6rem">🪑</div><p class="sub">${esc(f.note)}</p></div>`}
  <div class="verse"><p>"Then opened he their understanding, that they might understand the scriptures."</p><cite>Luke 24:45</cite></div>
  ${footer()}`;
+if(f.on){ mountCircle('circle-class',f.room,'Friend'); wireModUnlock(f.room,'Pastor Josh','circle-class'); }
 }
 
 function prayerteam(){
@@ -859,8 +926,9 @@ const pc=C.live.prayer;
 app.innerHTML=`${crumb()}
  <div class="eyebrow">🙏 The Altar · Prayer</div>
  ${pc.on?`<div class="card" style="border-color:var(--red)"><b style="color:var(--red)">🔥 The Prayer Circle is open right now.</b>
-   <div class="videoframe" style="margin-top:.6em"><iframe src="https://8x8.vc/vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb/${esc(pc.room)}#config.prejoinConfig.enabled=true&config.disableDeepLinking=true" allow="camera;microphone;fullscreen;display-capture"></iframe></div>
-   <p class="note">You join <b>muted</b> — raise your hand 🖐 and Pastor Josh will call on you to pray. Prefer a bigger room? <a href="https://8x8.vc/vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb/${esc(pc.room)}#config.prejoinConfig.enabled=true&config.disableDeepLinking=true" target="_blank" rel="noopener">Open full-screen</a>.</p></div>`
+   <div class="videoframe" style="margin-top:.6em" id="circle-prayer"></div>
+   <p class="note">You join <b>muted</b> — raise your hand 🖐 and Pastor Josh will call on you to pray.</p>
+   ${modUnlockCard()}</div>`
   :`<div class="card note">🕯️ <b>The Prayer Circle</b> — ${esc(pc.note)}</div>`}
  <h2>Lay it down here</h2>
  <p class="sub">Whatever you carry — send it. This goes <b>privately to Pastor Josh alone</b>, and he will pray over it personally.</p>
@@ -902,6 +970,7 @@ app.innerHTML=`${crumb()}
  <div class="verse"><p>"Casting all your care upon him; for he careth for you."</p><cite>1 Peter 5:7</cite></div>
  <div class="card note">👥 <b>On the Prayer Team?</b> <a href="#prayerteam">Enter the team room</a> with your team code.</div>
  ${footer()}`;
+if(pc.on){ mountCircle('circle-prayer',pc.room,'Friend'); wireModUnlock(pc.room,'Pastor Josh','circle-prayer'); }
 document.getElementById('p-home').onchange=()=>{
   document.getElementById('p-which-wrap').classList.toggle('hide',document.getElementById('p-home').value!=='other-church');
 };
