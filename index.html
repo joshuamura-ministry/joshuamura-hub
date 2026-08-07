@@ -72,6 +72,8 @@ footer .v{font-family:'Fraunces',serif;font-style:italic;font-size:1.05em;color:
 .psec .subcard>b{color:var(--ivory);display:block;margin-bottom:.3em}
 .psave{margin-top:.5em}
 /* pinned live-class video that stays at the top of the Mine while lessons scroll below */
+#classpin-persist:empty{display:none}
+#classpin-persist{position:sticky;top:0;z-index:50;background:var(--walnut);padding:0 clamp(16px,4vw,40px)}
 #classpin{position:sticky;top:0;z-index:40;background:var(--walnut);
   padding:.5em 0 .6em;margin:-.4em 0 .8em;border-bottom:1px solid rgba(201,162,75,.3)}
 #classpin .pinvid{width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#000}
@@ -159,7 +161,7 @@ footer .v{font-family:'Fraunces',serif;font-style:italic;font-size:1.05em;color:
   <text x="600" y="1560" text-anchor="middle" fill="#c9a24b" fill-opacity=".12" font-family="Georgia,serif" font-size="19" font-style="italic" letter-spacing="6">HERE BE TREASURE · MATTHEW 13:44</text>
 </svg></div>
 <div class="glassbar"></div>
-<div class="wrap" id="app"></div>
+<div id="classpin-persist"></div><div class="wrap" id="app"></div>
 <div class="livepill" id="livepill"><a href="#watchfire">🔥 The watchfire is lit — Pastor Josh is LIVE. Tap to gather.</a></div>
 
 <script>
@@ -422,7 +424,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v36</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v37</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -486,63 +488,60 @@ function liveClassBanner(){
   </a>`;
 }
 /* ---- Live Class in the Mine: opt-in, code-gated video pinned above the lessons ---- */
-let CLASS_JOINED=false;   // this session has entered the live class video
-function classPin(){
-  const k=C.live.teaching;
-  if(!k||!k.on)return '';                 // nothing live -> no box at all
-  const topic=k.topic?(' — '+esc(k.topic)):'';
-  if(!CLASS_JOINED){
-    /* opt-in prompt: study alone, or join the live video with the class code */
-    return `<div id="classpin"><div class="pinbar"><b>🔥 Live class in session${topic}</b></div>
-      <div class="note" style="margin:.2em 0 .5em">You can read any lesson below on your own. To study <b>live with Pastor Josh</b>, join the class — you'll need the class code he shared with those invited.</div>
-      <div style="display:flex;gap:.5em;align-items:center;flex-wrap:wrap">
-        <input type="text" id="class-code" placeholder="Class code" style="max-width:12em;margin:0">
-        <button class="btn" id="class-join">📖 Join the live class</button>
-      </div>
-      <div id="class-code-err" class="err" style="margin-top:.3em"></div>
-      <div class="note" style="margin-top:.6em">🔑 <b>Pastor Josh?</b> Lead as moderator (mute, lock, remove):</div>
-      <div style="display:flex;gap:.5em;align-items:center;flex-wrap:wrap;margin-top:.3em">
-        <input type="password" id="class-modpass" placeholder="Moderator passphrase" style="max-width:14em;margin:0">
-        <button class="btn ghost" id="class-lead">🔑 Lead the class</button>
-      </div>
-    </div>`;
+let CLASS_JOINED=false;
+let CLASS_VIDEO_UP=false;
+let CLASS_ROOM_MOUNTED='';
+function syncClassPin(){
+  var host=document.getElementById('classpin-persist');
+  if(!host)return;
+  var k=C.live.teaching;
+  var h=(location.hash||'#map').replace('#','');
+  var inMine=(h==='mine'||h.indexOf('vein-')===0||h.indexOf('dig-')===0);
+  if(!k||!k.on||!inMine){
+    if(host.innerHTML!==''){host.innerHTML='';CLASS_VIDEO_UP=false;CLASS_ROOM_MOUNTED='';}
+    return;
   }
-  /* joined: pinned video + a clear Leave button */
-  const asMod=!!SESSION_MOD_PASS;
-  return `<div id="classpin">
-    <div class="pinbar"><b>🔥 ${asMod?'You are leading the class':"You're in the live class"}${topic}</b>
-      <button class="pinclose" id="class-leave">Leave class ✕</button></div>
-    <div class="pinvid" id="classpin-video"></div>
-    <div class="note" style="margin-top:.35em">${asMod
-      ?'You are the <b>moderator</b> — mute, lock, or remove from the video controls. Name the lesson for your students; open it below to walk through it together.'
-      :'Open the lesson Pastor Josh names below — the video stays here while you read. Raise your hand 🖐 to speak. <b>Leaving disconnects you</b>; you can rejoin anytime.'}</div>
-  </div>`;
+  var topic=k.topic?(' — '+esc(k.topic)):'';
+  if(CLASS_JOINED&&CLASS_VIDEO_UP&&CLASS_ROOM_MOUNTED===k.room)return;
+  if(!CLASS_JOINED){
+    if(CLASS_VIDEO_UP){CLASS_VIDEO_UP=false;CLASS_ROOM_MOUNTED='';}
+    host.innerHTML='<div id="classpin"><div class="pinbar"><b>🔥 Live class in session'+topic+'</b></div>'
+      +'<div class="note" style="margin:.2em 0 .5em">You can read any lesson on your own. To study <b>live with Pastor Josh</b>, join with the class code he shared with those invited.</div>'
+      +'<div style="display:flex;gap:.5em;align-items:center;flex-wrap:wrap">'
+      +'<input type="text" id="class-code" placeholder="Class code" style="max-width:12em;margin:0">'
+      +'<button class="btn" id="class-join">📖 Join the live class</button></div>'
+      +'<div id="class-code-err" class="err" style="margin-top:.3em"></div>'
+      +'<div class="note" style="margin-top:.6em">🔑 <b>Pastor Josh?</b> Lead as moderator (mute, lock, remove):</div>'
+      +'<div style="display:flex;gap:.5em;align-items:center;flex-wrap:wrap;margin-top:.3em">'
+      +'<input type="password" id="class-modpass" placeholder="Moderator passphrase" style="max-width:14em;margin:0">'
+      +'<button class="btn ghost" id="class-lead">🔑 Lead the class</button></div></div>';
+    var join=document.getElementById('class-join');
+    if(join)join.onclick=function(){
+      var code=(document.getElementById('class-code').value||'').trim();
+      if(code!==(C.config.classcode||'class2026')){document.getElementById('class-code-err').textContent='That is not the class code. Ask Pastor Josh for the code to this invited class.';return;}
+      CLASS_JOINED=true;syncClassPin();
+    };
+    var lead=document.getElementById('class-lead');
+    if(lead)lead.onclick=function(e){e.preventDefault();
+      var mp=document.getElementById('class-modpass');var p=(mp&&mp.value||'').trim();
+      if(!p){if(mp)mp.focus();return;}
+      SESSION_MOD_PASS=p;CLASS_JOINED=true;syncClassPin();
+    };
+    return;
+  }
+  var asMod=!!SESSION_MOD_PASS;
+  host.innerHTML='<div id="classpin"><div class="pinbar"><b>🔥 '+(asMod?'You are leading the class':"You're in the live class")+topic+'</b>'
+    +'<button class="pinclose" id="class-leave">Leave class ✕</button></div>'
+    +'<div class="pinvid" id="classpin-video"></div>'
+    +'<div class="note" style="margin-top:.35em">'+(asMod
+      ?'You are the <b>moderator</b> — mute, lock, or remove from the video controls. Name a lesson; open it below and the video stays put.'
+      :'Open the lesson Pastor Josh names — the video stays here while you read. Raise your hand 🖐 to speak. <b>Leaving disconnects you.</b>')+'</div></div>';
+  mountCircle('classpin-video',k.room,asMod?'Pastor Josh':'Friend');
+  CLASS_VIDEO_UP=true;CLASS_ROOM_MOUNTED=k.room;
+  var leave=document.getElementById('class-leave');
+  if(leave)leave.onclick=function(){CLASS_JOINED=false;CLASS_VIDEO_UP=false;CLASS_ROOM_MOUNTED='';syncClassPin();};
 }
-function wireClassPin(){
-  const k=C.live.teaching;
-  if(!k||!k.on)return;
-  const join=document.getElementById('class-join');
-  if(join)join.onclick=()=>{
-    const code=(document.getElementById('class-code').value||'').trim();
-    if(code!==(C.config.classcode||'class2026')){
-      document.getElementById('class-code-err').textContent='That is not the class code. Ask Pastor Josh for the code to this invited class.';
-      return;
-    }
-    CLASS_JOINED=true; render();
-  };
-  const lead=document.getElementById('class-lead');
-  if(lead)lead.onclick=e=>{
-    e.preventDefault();
-    const mp=document.getElementById('class-modpass');
-    const p=(mp&&mp.value||'').trim();
-    if(!p){ if(mp)mp.focus(); return; }
-    SESSION_MOD_PASS=p; CLASS_JOINED=true; render();
-  };
-  const host=document.getElementById('classpin-video');
-  if(host)mountCircle('classpin-video',k.room,'Friend');
-  const leave=document.getElementById('class-leave');
-  if(leave)leave.onclick=()=>{ CLASS_JOINED=false; render(); };
-}
+function wireClassPin(){syncClassPin();}
 function slidesPanel(){
   const s=C.slides;
   if(!s||!s.on||!s.total)return '';
@@ -657,7 +656,6 @@ const cards=VEINS.map(v=>{
   </a>`;
 }).join('');
 app.innerHTML=`${crumb()}
- ${classPin()}
  <div class="eyebrow">⛏️ The Mine · Bible School</div>
  <h2>Five veins run through this mountain</h2>
  <div class="verse"><p>"If thou seekest her as silver, and searchest for her as for hid treasures; then shalt thou understand the fear of the LORD, and find the knowledge of God."</p><cite>Proverbs 2:4–5</cite></div>
@@ -691,7 +689,6 @@ const cards=V.courses.map(c=>{
   </a>`;
 }).join('');
 app.innerHTML=`<div class="crumb"><a href="#mine">⛏️ ← All veins</a></div>
- ${classPin()}
  <div class="eyebrow">${V.gem} ${esc(V.name)}</div>
  <h2>${esc(V.label)}</h2>
  <div class="verse"><p>"${esc(V.verse)}"</p><cite>${esc(V.verseref)} · KJV</cite></div>
@@ -741,7 +738,6 @@ const filled=CO.questions.filter((qq,i)=>qDone(qq,i)).length;
 const pct=Math.round(filled/CO.questions.length*100);
 const VV=veinOf(CO.id);
 app.innerHTML=`<div class="crumb"><a href="#vein-${VV.id}">${VV.gem} ← Back to ${esc(VV.label)}</a></div>
- ${classPin()}
  <div class="eyebrow">${VV.gem} ${esc(VV.name)} · ${esc(CO.site)}</div>
  <h2>${esc(CO.name)}</h2>
  ${done?`
