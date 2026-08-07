@@ -51,10 +51,12 @@ label{font-size:.8em;font-weight:700;letter-spacing:.07em;text-transform:upperca
   border-radius:16px;padding:1.2em 1.2em 1.1em;cursor:pointer;text-decoration:none;color:var(--ivory);
   transition:transform .15s,border-color .15s;position:relative;display:block}
 .door:hover{transform:translateY(-3px);border-color:var(--gold)}
-/* The two 'yours' doors — Treasury (your gems) & Share (send it forward) — set apart */
-.door.personal{background:linear-gradient(160deg,rgba(201,162,75,.16),rgba(56,42,29,.9));border-color:rgba(201,162,75,.6);box-shadow:0 0 0 1px rgba(201,162,75,.12) inset,0 6px 22px rgba(0,0,0,.3)}
-.door.personal:hover{border-color:var(--gold)}
-.door.personal .tagline{color:var(--gold)}
+/* The two 'yours' doors — Treasury (your gems) & Share (send it forward) — clearly set apart in gold */
+.door.personal{background:linear-gradient(160deg,rgba(201,162,75,.42),rgba(138,108,44,.28));border:2px solid var(--gold);box-shadow:0 0 22px rgba(201,162,75,.28),0 6px 22px rgba(0,0,0,.35)}
+.door.personal:hover{transform:translateY(-3px);border-color:#e6c46a;box-shadow:0 0 30px rgba(201,162,75,.45),0 8px 26px rgba(0,0,0,.4)}
+.door.personal .name{color:#f7e7bf}
+.door.personal .what{color:#e9dcc0}
+.door.personal .tagline{color:#ffe08a;font-weight:700}
 .door .ico{font-size:2rem}
 .door .name{font-family:'Fraunces',serif;font-weight:640;font-size:1.35rem;margin:.25em 0 .1em}
 .door .what{font-size:.85em;color:var(--dim)}
@@ -944,7 +946,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v73</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v74</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
