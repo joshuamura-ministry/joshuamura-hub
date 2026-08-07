@@ -76,15 +76,17 @@ footer .v{font-family:'Fraunces',serif;font-style:italic;font-size:1.05em;color:
 #present-stage img{max-width:100%;max-height:100%;object-fit:contain;display:block;position:relative;z-index:0;pointer-events:none}
 #present-stage .pnav{position:fixed;inset:0;display:flex;z-index:1}
 #present-stage .pnav .l,#present-stage .pnav .r{flex:1;cursor:pointer}
-#present-stage .parrow{position:fixed;top:50%;transform:translateY(-50%);z-index:5;width:88px;height:88px;border-radius:50%;border:none;background:rgba(255,255,255,.22);color:#fff;font-size:2.4rem;cursor:pointer;backdrop-filter:blur(4px)}
-#present-stage .parrow.pl{left:16px}#present-stage .parrow.pr{right:16px}
-#present-stage.clean .parrow,#present-stage.clean .pnext,#present-stage.clean .pbar{display:none!important}
-#present-stage .pbar{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;gap:.8em;padding:.5em .8em;background:linear-gradient(#000a,transparent);color:#fff;font-size:.85rem;opacity:0;transition:opacity .25s;z-index:6}
-#present-stage:hover .pbar,#present-stage.show .pbar{opacity:1}
-#present-stage .pbar button{background:#fff2;border:1px solid #fff4;color:#fff;border-radius:8px;padding:.3em .8em;font-weight:700;cursor:pointer}
-#present-stage .pnext{position:fixed;right:16px;bottom:16px;width:32vw;max-width:420px;border:3px solid #fff8;border-radius:10px;overflow:hidden;background:#000;opacity:.95;z-index:4}
-#present-stage .pnext img{width:100%}
-#present-stage .pnext .lbl{position:absolute;top:2px;left:6px;color:#fff;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;text-shadow:0 1px 3px #000}
+#present-stage #ps-exit{position:fixed;top:10px;right:14px;z-index:6;width:34px;height:34px;border-radius:50%;border:none;background:rgba(255,255,255,.12);color:#fff8;font-size:1rem;cursor:pointer;opacity:.25}
+#present-stage #ps-exit:hover{opacity:1}
+
+
+
+
+
+
+
+
+
 #classpin-persist:empty{display:none}
 #classpin-persist{position:sticky;top:0;z-index:50;background:var(--walnut);padding:0 clamp(16px,4vw,40px)}
 #classpin{position:sticky;top:0;z-index:40;background:var(--walnut);
@@ -438,7 +440,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v48</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v49</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -746,42 +748,22 @@ function present(){
   document.getElementById('pr-full').onclick=()=>enterPresentStage();
 }
 function enterPresentStage(){
-  var showNext=true;
-  var cleanMode=false;
   var total=(C.sermons&&C.sermons.total)||0;
   var cur=Math.min(Math.max(1,(C.sermons&&C.sermons.current)||1),Math.max(1,total));
   var stage=document.getElementById('present-stage');
   if(!stage){ stage=document.createElement('div'); stage.id='present-stage'; document.body.appendChild(stage); }
   function paint(){
-    var nextN=(cur<total)?cur+1:null;
-    stage.innerHTML=
-      '<div class="pbar">'
-      +'<b>Slide '+cur+' of '+total+'</b>'
-      +'<button id="ps-toggle">'+(showNext?'Hide next-preview':'Show next-preview')+'</button>'
-      +'<button id="ps-clean">'+(cleanMode?'Show controls':'🖥️ Clean screen (for projector)')+'</button>'
-      +'<button id="ps-exit">Exit ✕</button>'
-      +'<span style="opacity:.7">Tap right = next · left = previous · arrows / clicker work</span>'
-      +'</div>'
+    // Pure slide only — nothing else shows (projector-clean at all times).
+    stage.innerHTML='<img src="'+SERMONS_PATH+cur+SLIDES_EXT+'" alt="Slide '+cur+'">'
       +'<div class="pnav"><div class="l" id="ps-prev"></div><div class="r" id="ps-next"></div></div>'
-      +'<img src="'+SERMONS_PATH+cur+SLIDES_EXT+'" alt="Slide '+cur+'">'
-      +'<button class="parrow pl" id="ps-prev-btn">◀</button>'
-      +'<button class="parrow pr" id="ps-next-btn">▶</button>'
-      +((showNext&&nextN)?('<div class="pnext"><span class="lbl">Next</span><img src="'+SERMONS_PATH+nextN+SLIDES_EXT+'" alt=""></div>'):'');
-    stage.className=cleanMode?'clean':'';
-    wire();
-  }
-  function syncFB(){ try{ sermonWrite({current:cur}); }catch(e){} }   // background, never blocks
-  function goNext(){ if(cur<total){ cur++; paint(); syncFB(); } }
-  function goPrev(){ if(cur>1){ cur--; paint(); syncFB(); } }
-  function wire(){
+      +'<button id="ps-exit" title="Exit">✕</button>';
     document.getElementById('ps-next').onclick=goNext;
     document.getElementById('ps-prev').onclick=goPrev;
-    document.getElementById('ps-next-btn').onclick=goNext;
-    document.getElementById('ps-prev-btn').onclick=goPrev;
     document.getElementById('ps-exit').onclick=function(){ stage.remove(); };
-    document.getElementById('ps-toggle').onclick=function(){ showNext=!showNext; paint(); };
-    var cb=document.getElementById('ps-clean'); if(cb)cb.onclick=function(){ cleanMode=!cleanMode; paint(); };
   }
+  function syncFB(){ try{ sermonWrite({current:cur}); }catch(e){} }
+  function goNext(){ if(cur<total){ cur++; paint(); syncFB(); } }
+  function goPrev(){ if(cur>1){ cur--; paint(); syncFB(); } }
   paint();
   document.addEventListener('keydown',function pk(e){
     if(!document.getElementById('present-stage')){document.removeEventListener('keydown',pk);return;}
