@@ -76,12 +76,12 @@ footer .v{font-family:'Fraunces',serif;font-style:italic;font-size:1.05em;color:
 #present-stage img{max-width:100%;max-height:100%;object-fit:contain;display:block;position:relative;z-index:0;pointer-events:none}
 #present-stage .pnav{position:fixed;inset:0;display:flex;z-index:1}
 #present-stage .pnav .l,#present-stage .pnav .r{flex:1;cursor:pointer}
-#present-stage .parrow{position:fixed;top:50%;transform:translateY(-50%);z-index:3;width:64px;height:64px;border-radius:50%;border:none;background:rgba(255,255,255,.15);color:#fff;font-size:1.8rem;cursor:pointer;backdrop-filter:blur(4px)}
+#present-stage .parrow{position:fixed;top:50%;transform:translateY(-50%);z-index:5;width:88px;height:88px;border-radius:50%;border:none;background:rgba(255,255,255,.22);color:#fff;font-size:2.4rem;cursor:pointer;backdrop-filter:blur(4px)}
 #present-stage .parrow.pl{left:16px}#present-stage .parrow.pr{right:16px}
-#present-stage .pbar{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;gap:.8em;padding:.5em .8em;background:linear-gradient(#000a,transparent);color:#fff;font-size:.85rem;opacity:0;transition:opacity .25s;z-index:2}
+#present-stage .pbar{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;gap:.8em;padding:.5em .8em;background:linear-gradient(#000a,transparent);color:#fff;font-size:.85rem;opacity:0;transition:opacity .25s;z-index:6}
 #present-stage:hover .pbar,#present-stage.show .pbar{opacity:1}
 #present-stage .pbar button{background:#fff2;border:1px solid #fff4;color:#fff;border-radius:8px;padding:.3em .8em;font-weight:700;cursor:pointer}
-#present-stage .pnext{position:fixed;right:12px;bottom:12px;width:22vw;max-width:260px;border:2px solid #fff6;border-radius:8px;overflow:hidden;background:#000;opacity:.9;z-index:2}
+#present-stage .pnext{position:fixed;right:16px;bottom:16px;width:32vw;max-width:420px;border:3px solid #fff8;border-radius:10px;overflow:hidden;background:#000;opacity:.95;z-index:4}
 #present-stage .pnext img{width:100%}
 #present-stage .pnext .lbl{position:absolute;top:2px;left:6px;color:#fff;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;text-shadow:0 1px 3px #000}
 #classpin-persist:empty{display:none}
@@ -437,7 +437,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v45</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v47</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -745,44 +745,44 @@ function present(){
   document.getElementById('pr-full').onclick=()=>enterPresentStage();
 }
 function enterPresentStage(){
-  let showNext=true;
-  const build=()=>{
-    const s=C.sermons||{total:0,current:1};
-    const n=Math.min(Math.max(1,s.current||1),Math.max(1,s.total||1));
-    const nextN=(n<(s.total||1))?n+1:null;
-    let stage=document.getElementById('present-stage');
-    if(!stage){ stage=document.createElement('div'); stage.id='present-stage'; document.body.appendChild(stage); }
-    stage.className=showNext?'':'';
-    stage.innerHTML=`
-      <div class="pbar">
-        <b>Slide ${n} of ${s.total||0}</b>
-        <button id="ps-toggle">${showNext?'Hide next-preview':'Show next-preview'}</button>
-        <button id="ps-exit">Exit ✕</button>
-        <span style="opacity:.7">Tap right = next · left = previous</span>
-      </div>
-      <div class="pnav"><div class="l" id="ps-prev"></div><div class="r" id="ps-next"></div></div>
-      <img src="${SERMONS_PATH}${n}${SLIDES_EXT}" alt="Slide ${n}">
-      <button class="parrow pl" id="ps-prev-btn">◀</button>
-      <button class="parrow pr" id="ps-next-btn">▶</button>
-      ${(showNext&&nextN)?`<div class="pnext"><span class="lbl">Next</span><img src="${SERMONS_PATH}${nextN}${SLIDES_EXT}" alt=""></div>`:''}`;
-    const goNext=async()=>{ if(n<(s.total||1)){ await sermonWrite({current:n+1}); build(); } };
-    const goPrev=async()=>{ if(n>1){ await sermonWrite({current:n-1}); build(); } };
+  var showNext=true;
+  var total=(C.sermons&&C.sermons.total)||0;
+  var cur=Math.min(Math.max(1,(C.sermons&&C.sermons.current)||1),Math.max(1,total));
+  var stage=document.getElementById('present-stage');
+  if(!stage){ stage=document.createElement('div'); stage.id='present-stage'; document.body.appendChild(stage); }
+  function paint(){
+    var nextN=(cur<total)?cur+1:null;
+    stage.innerHTML=
+      '<div class="pbar">'
+      +'<b>Slide '+cur+' of '+total+'</b>'
+      +'<button id="ps-toggle">'+(showNext?'Hide next-preview':'Show next-preview')+'</button>'
+      +'<button id="ps-exit">Exit ✕</button>'
+      +'<span style="opacity:.7">Tap right = next · left = previous · arrows / clicker work</span>'
+      +'</div>'
+      +'<div class="pnav"><div class="l" id="ps-prev"></div><div class="r" id="ps-next"></div></div>'
+      +'<img src="'+SERMONS_PATH+cur+SLIDES_EXT+'" alt="Slide '+cur+'">'
+      +'<button class="parrow pl" id="ps-prev-btn">◀</button>'
+      +'<button class="parrow pr" id="ps-next-btn">▶</button>'
+      +((showNext&&nextN)?('<div class="pnext"><span class="lbl">Next</span><img src="'+SERMONS_PATH+nextN+SLIDES_EXT+'" alt=""></div>'):'');
+    wire();
+  }
+  function syncFB(){ try{ sermonWrite({current:cur}); }catch(e){} }   // background, never blocks
+  function goNext(){ if(cur<total){ cur++; paint(); syncFB(); } }
+  function goPrev(){ if(cur>1){ cur--; paint(); syncFB(); } }
+  function wire(){
     document.getElementById('ps-next').onclick=goNext;
     document.getElementById('ps-prev').onclick=goPrev;
     document.getElementById('ps-next-btn').onclick=goNext;
     document.getElementById('ps-prev-btn').onclick=goPrev;
-    document.getElementById('ps-exit').onclick=()=>{ stage.remove(); };
-    document.getElementById('ps-toggle').onclick=()=>{ showNext=!showNext; build(); };
-  };
-  build();
-  // keyboard arrows for iPad keyboards / clickers
+    document.getElementById('ps-exit').onclick=function(){ stage.remove(); };
+    document.getElementById('ps-toggle').onclick=function(){ showNext=!showNext; paint(); };
+  }
+  paint();
   document.addEventListener('keydown',function pk(e){
     if(!document.getElementById('present-stage')){document.removeEventListener('keydown',pk);return;}
-    // Next: right arrow, space, down arrow, Page Down, Enter (covers most clickers)
-    if(e.key==='ArrowRight'||e.key===' '||e.key==='ArrowDown'||e.key==='PageDown'||e.key==='Enter'||e.key==='Spacebar'){e.preventDefault();document.getElementById('ps-next').click();}
-    // Previous: left arrow, up arrow, Page Up, Backspace
-    if(e.key==='ArrowLeft'||e.key==='ArrowUp'||e.key==='PageUp'||e.key==='Backspace'){e.preventDefault();document.getElementById('ps-prev').click();}
-    if(e.key==='Escape'){document.getElementById('ps-exit').click();}
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='Spacebar'||e.key==='ArrowDown'||e.key==='PageDown'||e.key==='Enter'){e.preventDefault();goNext();}
+    else if(e.key==='ArrowLeft'||e.key==='ArrowUp'||e.key==='PageUp'||e.key==='Backspace'){e.preventDefault();goPrev();}
+    else if(e.key==='Escape'){e.preventDefault();stage.remove();}
   });
 }
 function map(){
