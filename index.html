@@ -57,6 +57,15 @@ label{font-size:.8em;font-weight:700;letter-spacing:.07em;text-transform:upperca
 .door.personal .name{color:#f7e7bf}
 .door.personal .what{color:#e9dcc0}
 .door.personal .tagline{color:#ffe08a;font-weight:700}
+/* Spring: deeper study + Bible passages under a devotional */
+.devstudy{background:var(--card);border:1px solid rgba(201,162,75,.22);border-radius:12px;padding:1em 1.1em;margin:1em 0}
+.devstudy-lbl{font-family:'Fraunces',serif;color:var(--gold);font-weight:640;font-size:1.05rem;margin-bottom:.4em}
+.devstudy p{margin:.5em 0;line-height:1.7;color:var(--ivory)}
+.passages{margin:1em 0}
+.passages-lbl{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:.4em;font-weight:700}
+.passage-chip{display:inline-block;background:rgba(201,162,75,.12);border:1px solid rgba(201,162,75,.35);color:var(--gold);border-radius:999px;padding:.35em .8em;margin:0 .4em .4em 0;text-decoration:none;font-size:.9rem;font-weight:700}
+.passage-chip:hover{background:rgba(201,162,75,.22)}
+#well-expand:empty{display:none}
 .door .ico{font-size:2rem}
 .door .name{font-family:'Fraunces',serif;font-weight:640;font-size:1.35rem;margin:.25em 0 .1em}
 .door .what{font-size:.85em;color:var(--dim)}
@@ -352,30 +361,30 @@ function guessLocation(){
 }
 // Sunset (as a Date) for a given calendar day + location, using the standard sunrise/sunset equation.
 function sunsetOn(year,month,day,lat,lng){
-  var rad=Math.PI/180, deg=180/Math.PI;
-  // day of year
-  var N1=Math.floor(275*month/9);
-  var N2=Math.floor((month+9)/12);
-  var N3=(1+Math.floor((year-4*Math.floor(year/4)+2)/3));
-  var N=N1-(N2*N3)+day-30;
-  var lngHour=lng/15;
-  var t=N+((18-lngHour)/24);           // 18 = sunset approximation
-  var M=(0.9856*t)-3.289;
-  var L=M+(1.916*Math.sin(M*rad))+(0.020*Math.sin(2*M*rad))+282.634;
-  L=((L%360)+360)%360;
-  var RA=deg*Math.atan(0.91764*Math.tan(L*rad));
-  RA=((RA%360)+360)%360;
-  RA=RA+(((Math.floor(L/90))*90)-((Math.floor(RA/90))*90));
-  RA=RA/15;
-  var sinDec=0.39782*Math.sin(L*rad);
+  // Standard "sunrise equation" (Julian-date based) — returns the true absolute
+  // instant of sunset, with no UTC day-boundary ambiguity. Returns Date or null.
+  var rad=Math.PI/180;
+  function toJulian(y,m,d){
+    if(m<=2){ y-=1; m+=12; }
+    var A=Math.floor(y/100), B=2-A+Math.floor(A/4);
+    return Math.floor(365.25*(y+4716))+Math.floor(30.6001*(m+1))+d+B-1524.5;
+  }
+  var Jdate=toJulian(year,month,day);
+  var n=Math.round(Jdate-2451545.0+0.0008);  // integer days since J2000 (anchors to solar noon)
+  var Jstar=n-(lng/360.0);               // mean solar noon at this longitude
+  var M=(357.5291+0.98560028*Jstar)%360; // solar mean anomaly
+  var Mrad=M*rad;
+  var C=1.9148*Math.sin(Mrad)+0.0200*Math.sin(2*Mrad)+0.0003*Math.sin(3*Mrad); // equation of center
+  var lambda=(M+C+180+102.9372)%360;     // ecliptic longitude
+  var lrad=lambda*rad;
+  var Jtransit=2451545.0+Jstar+0.0053*Math.sin(Mrad)-0.0069*Math.sin(2*lrad);   // solar transit
+  var sinDec=Math.sin(lrad)*Math.sin(23.44*rad);
   var cosDec=Math.cos(Math.asin(sinDec));
-  var zenith=90.833;                    // official sunset (includes refraction)
-  var cosH=(Math.cos(zenith*rad)-(sinDec*Math.sin(lat*rad)))/(cosDec*Math.cos(lat*rad));
-  if(cosH>1||cosH<-1) return null;      // sun doesn't set/rise that day (polar)
-  var H=(deg*Math.acos(cosH))/15;       // sunset hour angle
-  var T=H+RA-(0.06571*t)-6.622;
-  var UT=((T-lngHour)%24+24)%24;
-  return new Date(Date.UTC(year,month-1,day,0,0,0)+UT*3600*1000);
+  var cosH=(Math.sin(-0.833*rad)-Math.sin(lat*rad)*sinDec)/(Math.cos(lat*rad)*cosDec); // -0.833° = refraction + sun's disc
+  if(cosH>1||cosH<-1) return null;       // polar day / night — sun doesn't set
+  var H=Math.acos(cosH)/rad;             // hour angle
+  var Jset=Jtransit+(H/360.0);           // Julian date of sunset
+  return new Date((Jset-2440587.5)*86400000);  // Julian → Unix ms
 }
 // Figure out where we are in the Sabbath cycle for a location.
 function sabbathState(loc){
@@ -418,8 +427,8 @@ function paintSabbath(){
   if(!st){ el.innerHTML='<div class="sab-in">🌅 Sabbath times unavailable here.</div>'; return; }
   if(st.phase==='sabbath'){
     el.className='sabbanner is-sabbath';
-    el.innerHTML='<div class="sab-in"><div class="sab-title">🌟 It is the Sabbath</div>'
-      +'<div class="sab-sub">Rest and rejoice — the Sabbath ends at '+fmtClock(st.ends)+'</div>'
+    el.innerHTML='<div class="sab-in"><div class="sab-title">🌟 This is the Lord\'s Day</div>'
+      +'<div class="sab-sub">The holy hours of the Sabbath — rest and rejoice. Sunset ≈ '+fmtClock(st.ends)+'</div>'
       +'<div class="sab-loc">'+locNote+(loc.guess?' · '+refineBtn:'')+'</div></div>';
   } else {
     el.className='sabbanner';
@@ -946,7 +955,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v74</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v76</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -1893,42 +1902,88 @@ app.innerHTML=`
  startSabbath();
 }
 
+function devPassagesHTML(passages){
+  if(!passages) return '';
+  var lines=String(passages).split(/\n+/).map(function(s){return s.trim();}).filter(Boolean);
+  if(!lines.length) return '';
+  var chips=lines.map(function(ref){
+    // Deep-link into the in-app Bible via reference search
+    return '<a class="passage-chip" href="#bible" data-passage="'+esc(ref)+'">📖 '+esc(ref)+'</a>';
+  }).join('');
+  return '<div class="passages"><div class="passages-lbl">Bible passages</div>'+chips+'</div>';
+}
+function devStudyHTML(study,passages){
+  var out='';
+  if(study){
+    // preserve paragraph breaks
+    var paras=String(study).split(/\n\s*\n/).map(function(p){return '<p>'+esc(p).replace(/\n/g,'<br>')+'</p>';}).join('');
+    out+='<div class="devstudy"><div class="devstudy-lbl">🔎 Go deeper</div>'+paras+'</div>';
+  }
+  out+=devPassagesHTML(passages);
+  return out;
+}
 function spring(){
 const dv=C.devotional;
 const arch=C.archive||[];
-const wellCards=arch.map(a=>`
-  <a class="door" href="#spring" data-play="${esc(a.youtubeId)}" data-title="${esc(a.title)}" style="padding:0;overflow:hidden">
-    <img src="https://i.ytimg.com/vi/${esc(a.youtubeId)}/hqdefault.jpg" alt="" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block">
-    <div style="padding:.7em .9em .9em">
-      <div class="name" style="font-size:1.05rem">${esc(a.title)}</div>
-      ${a.verseref?`<div class="what">${esc(a.verseref)}</div>`:''}
-    </div>
-  </a>`).join('');
+const wellCards=arch.map(function(a,i){
+  var hasMore = (a.study||a.passages);
+  return `
+    <a class="door" href="#spring" data-play="${esc(a.youtubeId)}" data-idx="${i}" style="padding:0;overflow:hidden">
+      <img src="https://i.ytimg.com/vi/${esc(a.youtubeId)}/hqdefault.jpg" alt="" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block">
+      <div style="padding:.7em .9em .9em">
+        <div class="name" style="font-size:1.05rem">${esc(a.title)}</div>
+        ${a.verseref?`<div class="what">${esc(a.verseref)}</div>`:''}
+        ${hasMore?`<div class="what" style="color:var(--gold);margin-top:.3em">▶ tap to watch${a.study?' + study':''}</div>`:''}
+      </div>
+    </a>`;}).join('');
 app.innerHTML=`${crumb()}
  <div class="eyebrow">💧 The Spring · Devotionals</div>
  <h2 id="spring-title">${esc(dv.title)}</h2>
  ${dv.youtubeId?`<div class="videoframe" id="spring-player"><iframe src="https://www.youtube.com/embed/${esc(dv.youtubeId)}" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture;web-share" allowfullscreen></iframe></div>`:''}
  <div class="verse"><p>"${esc(dv.verse)}"</p><cite>${esc(dv.verseref)}</cite></div>
  <p>${esc(dv.thought)}</p>
+ ${devStudyHTML(dv.study,dv.passages)}
  ${arch.length?`
  <h2 style="margin-top:1.6em">🕳️ The Deep Well</h2>
  <p class="sub" style="margin-bottom:.4em">Water already drawn — tap any week to drink again.</p>
+ <div id="well-expand"></div>
  <div class="map">${wellCards}</div>`
  :`<div class="card note">🕳️ <b>The deep well</b> — as weeks pass, every past devotional gathers here, each one a tap away.</div>`}
  ${footer()}`;
-/* tap a well thumbnail → it becomes the playing video up top */
-app.querySelectorAll('[data-play]').forEach(el=>{
-  el.addEventListener('click',e=>{
+/* tap a well thumbnail → it opens IN PLACE just above the grid: video + that devotion's study */
+app.querySelectorAll('[data-play]').forEach(function(el){
+  el.addEventListener('click',function(e){
     e.preventDefault();
-    const id=el.dataset.play;
-    document.getElementById('spring-title').textContent=el.dataset.title;
-    let p=document.getElementById('spring-player');
-    if(!p){p=document.createElement('div');p.className='videoframe';p.id='spring-player';
-      document.getElementById('spring-title').after(p);}
-    p.innerHTML=`<iframe src="https://www.youtube.com/embed/${id}?autoplay=1" allow="autoplay;encrypted-media;picture-in-picture" allowfullscreen></iframe>`;
-    window.scrollTo({top:0,behavior:'smooth'});
+    var idx=+el.dataset.idx;
+    var a=arch[idx];
+    var slot=document.getElementById('well-expand');
+    if(!slot) return;
+    var alreadyOpen = slot.dataset.open===String(idx) && slot.innerHTML.trim();
+    if(alreadyOpen){ slot.innerHTML=''; slot.dataset.open=''; return; }  // tap same one again to close
+    slot.dataset.open=String(idx);
+    slot.innerHTML='<div class="card" style="padding:1em;margin-bottom:1em">'
+      +'<div class="name" style="font-size:1.15rem;margin-bottom:.4em">'+esc(a.title)+'</div>'
+      +'<div class="videoframe"><iframe src="https://www.youtube.com/embed/'+esc(a.youtubeId)+'?autoplay=1" allow="autoplay;encrypted-media;picture-in-picture" allowfullscreen></iframe></div>'
+      + (a.verse?'<div class="verse"><p>"'+esc(a.verse)+'"</p><cite>'+esc(a.verseref||'')+'</cite></div>':'')
+      + (a.thought?'<p>'+esc(a.thought)+'</p>':'')
+      + devStudyHTML(a.study,a.passages)
+      +'</div>';
+    wirePassageLinks(slot);
+    slot.scrollIntoView({behavior:'smooth',block:'start'});
   });
 });
+wirePassageLinks(app);
+}
+// Passage chips jump into the in-app Bible and search the reference
+function wirePassageLinks(scope){
+  (scope||document).querySelectorAll('[data-passage]').forEach(function(el){
+    el.addEventListener('click',function(e){
+      e.preventDefault();
+      var ref=el.dataset.passage;
+      location.hash='#bible';
+      setTimeout(function(){ if(typeof doBibleSearch==='function'){ loadBible().then(function(){ doBibleSearch(ref); }); } },60);
+    });
+  });
 }
 
 function mine(){
@@ -2504,6 +2559,8 @@ document.getElementById('panelbox').innerHTML=`
   <label>Verse (KJV text)</label><input type="text" id="d-verse" value="${esc(dv.verse)}">
   <label>Verse reference</label><input type="text" id="d-ref" value="${esc(dv.verseref)}">
   <label>A thought to carry</label><textarea id="d-thought" rows="3">${esc(dv.thought)}</textarea>
+  <label>Deeper study <span style="text-transform:none">(optional — shows under the video for those who want to go further)</span></label><textarea id="d-study" rows="5">${esc(dv.study||'')}</textarea>
+  <label>Bible passages <span style="text-transform:none">(optional — one per line, e.g. John 3:16-21)</span></label><textarea id="d-passages" rows="3">${esc(dv.passages||'')}</textarea>
   <button class="btn psave" id="save-d">Save the Spring</button> <span id="d-ok" class="ok"></span>
  </div>
 
@@ -2718,9 +2775,9 @@ document.querySelectorAll('[data-qrdl]').forEach(function(b){
 document.getElementById('save-d').onclick=async()=>{
   try{
     const old=C.devotional;
-    const nu={k:WRITE_KEY,title:v('d-title'),youtubeId:v('d-yt'),verse:v('d-verse'),verseref:v('d-ref'),thought:v('d-thought')};
+    const nu={k:WRITE_KEY,title:v('d-title'),youtubeId:v('d-yt'),verse:v('d-verse'),verseref:v('d-ref'),thought:v('d-thought'),study:v('d-study'),passages:v('d-passages')};
     if(old.youtubeId && old.youtubeId!==nu.youtubeId){
-      const items=[{title:old.title,youtubeId:old.youtubeId,verseref:old.verseref||''},...(C.archive||[])].slice(0,200);
+      const items=[{title:old.title,youtubeId:old.youtubeId,verseref:old.verseref||'',verse:old.verse||'',thought:old.thought||'',study:old.study||'',passages:old.passages||''},...(C.archive||[])].slice(0,200);
       await db.ref('content/archive').set({k:WRITE_KEY,items});
     }
     await db.ref('content/devotional').set(nu);
