@@ -2657,8 +2657,8 @@ const VEINS=[
   desc:"What is heard at the fire is hammered here — a five-part dig alongside each sermon Pastor Josh preaches, so the Word doesn't end when the service does.",
   verse:"Is not my word like as a fire? saith the LORD; and like a hammer that breaketh the rock in pieces?", verseref:"Jeremiah 23:29",
   courses:[
-   { id:"forge-1", name:"First companion study · arrives with the next sermon", site:"Study 1", gem:"🔶", open:false,
-     blurb:"When the next sermon is preached, its five-part study opens here.", questions:[] }
+   { id:"forge-1", name:"The next companion · arrives with the next sermon", site:"Coming soon", gem:"🔶", open:false,
+     blurb:"When the next sermon is preached, its companion study opens here.", questions:[] }
   ]},
 { id:"practical-lessons", gem:"🧱", name:"The Quarry",
   label:"Practical Lessons",
@@ -2687,7 +2687,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v87</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v88</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -3470,22 +3470,11 @@ function library(){
       +'<div class="bk-sub">'+esc(b.sub)+'</div>'
       +'<div class="bk-meta">'+esc(b.meta)+'</div></a>';
   }).join('');
-  var guides=(GUIDES||[]).map(function(g){
-    return '<a class="guidecard" href="#guide-'+g.id+'">'
-      +'<div class="gc-emoji">'+g.emoji+'</div>'
-      +'<div class="gc-body"><div class="gc-title">'+esc(g.title)+'</div>'
-      +'<div class="gc-sub">'+esc(g.subtitle)+'</div>'
-      +'<div class="gc-meta">'+esc(g.tagline)+'</div></div>'
-      +'<div class="gc-go">Read ▸</div></a>';
-  }).join('');
   app.innerHTML=`${crumb()}
    <div class="eyebrow">📚 The Library</div>
    <h2>Read, and be filled</h2>
    <p class="sub" style="max-width:540px">A shelf of great books — yours to read right here, no need to leave. Your place is saved: close a book and open right back where you stopped.</p>
    <div class="shelf">${spines}</div>
-   ${guides?`<h2 style="margin-top:1.8em">📕 Study Guides</h2>
-   <p class="sub" style="max-width:540px;margin-bottom:.4em">Devotional guides and sermon companions — read here, or download to keep and print.</p>
-   <div class="guidelist">${guides}</div>`:''}
    ${footer()}`;
 }
 async function bible(){
@@ -3571,7 +3560,7 @@ function guideReader(){
   let id=rest, part=null;
   if(dash>0 && /^\d+$/.test(rest.slice(dash+1))){ id=rest.slice(0,dash); part=+rest.slice(dash+1); }
   const g=guideById(id);
-  if(!g){ app.innerHTML=`<div class="crumb"><a href="#library">📚 ← Library</a></div><div class="card note">That guide isn't on the shelf.</div>${footer()}`; return; }
+  if(!g){ app.innerHTML=`<div class="crumb"><a href="#vein-sermon-studies">🔶 ← The Forge</a></div><div class="card note">That companion study isn't here yet.</div>${footer()}`; return; }
   logRead('guide:'+id);
   if(part!==null){ renderGuidePart(id, part); return; }
   // Table of contents
@@ -3581,8 +3570,8 @@ function guideReader(){
       +'<span class="gtoc-go">▸</span></a>';
   }).join('');
   const resume=guideProg(id);
-  app.innerHTML=`<div class="crumb"><a href="#library">📚 ← Back to the Library</a></div>
-   <div class="eyebrow">${g.emoji} Study Guide · ${esc(g.trans||'')}</div>
+  app.innerHTML=`<div class="crumb"><a href="#vein-sermon-studies">🔶 ← The Forge</a></div>
+   <div class="eyebrow">${g.emoji} Sermon Companion · ${esc(g.trans||'')}</div>
    <h2 style="margin-bottom:.1em">${esc(g.title)}</h2>
    <p class="sub" style="margin-top:0"><b style="color:var(--gold)">${esc(g.subtitle)}</b> · ${esc(g.tagline)}</p>
    ${g.motto?`<p style="font-family:'Fraunces',serif;font-style:italic;color:var(--gold);font-size:1.1rem;margin:.4em 0">“${esc(g.motto)}”</p>`:''}
@@ -4157,6 +4146,22 @@ function vein(veinId){
 const V=veinById(veinId);
 if(!V){go('mine');return}
 
+// Sermon Companion guides live in The Forge — render them as reader cards (rich guide format kept)
+const guideCards = (V.id==='sermon-studies' ? (GUIDES||[]) : []).map(g=>{
+  const prog=guideProg(g.id);
+  const status = (prog&&prog.p)
+    ? `<span style="color:var(--gold);font-weight:700">📖 Reading · part ${prog.p}</span>`
+    : `<span class="note">Read · ${g.studies.length} parts</span>`;
+  const what = g.subtitle + (g.motto?` · "${g.motto}"`:'');
+  return `<a class="door" href="#guide-${g.id}">
+    <div class="ico">${g.emoji||'📕'}</div>
+    <div class="tagline">Sermon Companion</div>
+    <div class="name">${esc(g.title)}</div>
+    <div class="what">${esc(what)}</div>
+    <div style="margin-top:.5em;font-size:.85em">${status}</div>
+  </a>`;
+}).join('');
+
 const cards=V.courses.map(c=>{
   const prog=readProg(c.id);
   const done=prog.completed;
@@ -4182,7 +4187,7 @@ app.innerHTML=`<div class="crumb"><a href="#mine">⛏️ ← All veins</a></div>
  <h2>${esc(V.label)}</h2>
  <div class="verse"><p>"${esc(V.verse)}"</p><cite>${esc(V.verseref)} · KJV</cite></div>
  <p class="sub">${esc(V.desc)}</p>
- <div class="map">${cards}</div>
+ <div class="map">${guideCards}${cards}</div>
  ${footer()}`;
 }
 
