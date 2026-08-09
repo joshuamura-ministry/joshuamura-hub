@@ -108,11 +108,19 @@ footer{margin-top:3em;text-align:center;color:var(--dim);font-size:.8em}
 footer .v{font-family:'Fraunces',serif;font-style:italic;font-size:1.05em;color:var(--dim)}
 .hide{display:none!important}
 /* panel sections — clear visual zones */
-.psec{border:1.5px solid rgba(201,162,75,.35);border-radius:16px;padding:1.1em 1.15em 1.25em;margin:1.1em 0;background:linear-gradient(160deg,var(--card2),var(--card))}
-.psec>h2{color:var(--gold);margin:0 0 .2em;font-size:1.5rem}
+.psec{border:2px solid rgba(201,162,75,.5);border-radius:16px;padding:0 1.15em 1.35em;margin:2.6em 0;background:linear-gradient(160deg,var(--card2),var(--card));box-shadow:0 10px 28px rgba(0,0,0,.45);overflow:hidden}
+.psec:first-of-type{margin-top:1em}
+.psec+.psec{margin-top:2.6em}
+.psec>h2{margin:0 -1.15em .9em;padding:.55em 1.15em;background:linear-gradient(90deg,var(--gold),var(--gold-dk));color:#241a0d;font-size:1.28rem;border-bottom:4px solid rgba(0,0,0,.22)}
 .psec .pdesc{color:var(--dim);font-size:.9em;margin-bottom:.8em}
-.psec .subcard{background:var(--card);border:1px solid rgba(244,237,224,.12);border-radius:12px;padding:.8em .9em;margin:.7em 0}
-.psec .subcard>b{color:var(--ivory);display:block;margin-bottom:.3em}
+.psec .subcard{background:var(--card);border:1px solid rgba(244,237,224,.14);border-radius:12px;padding:.85em .95em;margin:.9em 0}
+.psec .subcard>b{color:var(--gold);display:block;margin-bottom:.4em;font-size:1.05rem}
+/* ---- Big on/off toggles (buttons, not dropdowns) ---- */
+.ptoggle{display:flex;gap:.55em;margin:.15em 0 .95em}
+.ptog{flex:1;padding:.8em .5em;border:2px solid rgba(244,237,224,.22);border-radius:12px;background:var(--card);color:var(--dim);font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;transition:transform .1s,background .12s,border-color .12s,color .12s}
+.ptog:active{transform:scale(.98)}
+.ptog.active.on{background:var(--green);color:#0f240e;border-color:var(--green);box-shadow:0 0 0 3px rgba(127,191,138,.3)}
+.ptog.active.off{background:var(--card2);color:var(--ivory);border-color:rgba(244,237,224,.55)}
 /* ---- Analytics dashboard ---- */
 .azbig{display:flex;align-items:baseline;gap:.5em;margin:.3em 0 1em}
 .azbig-n{font-family:'Fraunces',serif;font-size:2.6rem;font-weight:700;color:var(--gold);line-height:1}
@@ -280,6 +288,56 @@ h3.gsec{font-family:'Fraunces',serif;color:var(--gold);font-size:1.15rem;margin:
 /* Follower lock: slides can't be tapped/dragged to navigate (presenter drive re-enables) */
 .ipres.follow-locked .ipslide{pointer-events:none}
 .ipres.follow-locked{touch-action:pan-y}
+/* ---- Live audience Q&A ---- */
+.qa-ask textarea{width:100%;box-sizing:border-box}
+.qa-ask-h{font-family:'Fraunces',serif;color:var(--gold);font-weight:640;font-size:1.05rem;margin-bottom:.2em}
+.qa-ask-row{display:flex;align-items:center;justify-content:space-between;gap:.6em;margin-top:.4em}
+.qa-left{font-size:.85em;color:var(--gold-dk)}
+.qa-left.over{color:#b3402f;font-weight:700}
+.qa-spot{display:none}
+.qa-spot.on{display:block;background:linear-gradient(180deg,#241a0d,#3a2c15);color:var(--ivory);border:1.5px solid var(--gold);border-radius:16px;padding:18px 20px;margin:0 0 14px;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.35)}
+.qa-spot-k{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:.35em}
+.qa-spot-t{font-size:clamp(1.3rem,4.5vw,2.3rem);line-height:1.28;font-family:Georgia,serif;font-weight:600}
+#present-stage #ps-spot.on{position:absolute;left:4%;right:4%;bottom:4%;z-index:5;margin:0}
+#present-stage #ps-spot .qa-spot-t{font-size:clamp(1.6rem,3.4vw,3rem)}
+/* presenter floating badge + panel */
+.qa-fab{position:fixed;left:14px;bottom:14px;z-index:100000;font-family:inherit}
+.qa-fab-btn{background:#241a0d;color:var(--ivory);border:1.5px solid var(--gold);border-radius:999px;padding:.5em .95em;font-size:1rem;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.35)}
+.qa-fab.has .qa-fab-btn{background:#8a2b1e;border-color:#e0a94b}
+.qa-panel{display:none;position:absolute;left:0;bottom:52px;width:min(88vw,360px);max-height:62vh;overflow:auto;background:#faf6ec;color:#241a0d;border:1.5px solid var(--gold);border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+.qa-fab.open .qa-panel{display:block}
+.qa-panel-h{display:flex;align-items:center;gap:.4em;padding:.6em .7em;position:sticky;top:0;background:#f0e6cf;border-bottom:1px solid rgba(201,162,75,.4)}
+.qa-panel-h b{flex:1;font-size:.95rem}
+.qa-mini{font-size:.78rem;padding:.3em .6em;border:1px solid rgba(120,90,30,.4);border-radius:8px;background:#fff;cursor:pointer;color:#241a0d;line-height:1.2}
+.qa-live-bar{display:flex;gap:.5em;align-items:center;padding:.45em .6em;background:#fde7e2;border-bottom:1px solid #e6b7ab}
+.qa-live-bar .txt{flex:1;font-style:italic;color:#7a2417;font-size:.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qa-list{padding:.5em}
+.qa-empty{color:#8a7a58;text-align:center;padding:1.1em .5em;font-size:.9rem}
+.qa-item{background:#fff;border:1px solid rgba(201,162,75,.35);border-radius:10px;padding:.55em .6em;margin-bottom:.5em}
+.qa-item.live{border-color:#8a2b1e;box-shadow:0 0 0 2px rgba(138,43,30,.15)}
+.qa-item.done{opacity:.5}
+.qa-item-t{font-size:.95rem;line-height:1.35;margin-bottom:.45em}
+.qa-item-b{display:flex;gap:.4em;flex-wrap:wrap}
+.qa-item-b .push{background:#241a0d;color:var(--ivory);border-color:#241a0d}
+/* ---- Live prayer wall (Prayer Circle) ---- */
+.pw-box{background:linear-gradient(160deg,var(--card2),var(--card));border:1.5px solid rgba(201,162,75,.4);border-radius:16px;padding:1em 1.1em;margin:.9em 0}
+.pw-h{font-family:'Fraunces',serif;color:var(--gold);font-weight:640;font-size:1.15rem;margin-bottom:.15em}
+.pw-left{font-size:.85em;color:var(--gold-dk)}
+.pw-left.over{color:#b3402f;font-weight:700}
+.pw-count{font-size:.82em;color:var(--dim);text-align:center;margin:.2em 0 .55em;letter-spacing:.04em;text-transform:uppercase;font-weight:700}
+.pw-card{background:var(--card);border:1px solid rgba(201,162,75,.3);border-radius:12px;padding:.75em .9em;margin:.55em 0}
+.pw-card .pw-t{font-family:'Fraunces',serif;font-size:1.06em;line-height:1.55;color:var(--ivory)}
+.pw-card .pw-n{font-size:.76em;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gold);margin-top:.4em}
+.pw-empty{color:var(--dim);text-align:center;padding:1em .5em}
+.pw-actions{display:flex;gap:.5em;flex-wrap:wrap;margin-top:.75em}
+.pw-actions .btn{flex:1;min-width:9em}
+.pw-lead{border:1.5px dashed rgba(201,162,75,.55);border-radius:12px;padding:.7em .8em;margin:.7em 0 .2em;background:rgba(201,162,75,.07)}
+.pw-lead-h{font-size:.8em;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gold);margin-bottom:.5em}
+.pw-lead-row{display:flex;gap:.5em;align-items:center;flex-wrap:wrap;margin:.4em 0}
+.pw-lead-row .btn{flex:1;min-width:6em;padding:.55em .4em}
+.pw-lead-row.pw-nav .btn{min-width:5em}
+.pw-sz.active,#pw-ppl-go.active{background:var(--green);color:#0f240e;border-color:var(--green)}
+.pw-lead .btn:disabled{opacity:.4;cursor:default}
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -567,10 +625,12 @@ let C={
  },
  slides:{on:false,total:0,current:1},
  sermons:{on:false,total:0,current:1},
- present:{on:false,which:"vision-sanctuary",current:0}
+ present:{on:false,which:"vision-sanctuary",current:0,spotlight:""},
+ circle:{mode:"size",size:3,people:8,cur:0}
 };
 if(db){
-  db.ref('content').on('value',s=>{const v=s.val();if(v){if(v.devotional)C.devotional={...C.devotional,...v.devotional};if(v.live){['prayer','teaching','expedition'].forEach(f=>{if(v.live[f])C.live[f]={...C.live[f],...v.live[f]};});}if(v.archive&&v.archive.items)C.archive=v.archive.items;if(v.config)C.config={...C.config,...v.config};if(v.trail&&v.trail.items)C.trail=v.trail.items;if(v.rhythm&&v.rhythm.items)C.rhythm=v.rhythm.items;if(v.slides)C.slides={...C.slides,...v.slides};if(v.sermons)C.sermons={...C.sermons,...v.sermons};if(v.present)C.present={...C.present,...v.present};}
+  db.ref('content').on('value',s=>{const v=s.val();if(v){if(v.devotional)C.devotional={...C.devotional,...v.devotional};if(v.live){['prayer','teaching','expedition'].forEach(f=>{if(v.live[f])C.live[f]={...C.live[f],...v.live[f]};});}if(v.archive&&v.archive.items)C.archive=v.archive.items;if(v.config)C.config={...C.config,...v.config};if(v.trail&&v.trail.items)C.trail=v.trail.items;if(v.rhythm&&v.rhythm.items)C.rhythm=v.rhythm.items;if(v.slides)C.slides={...C.slides,...v.slides};if(v.sermons)C.sermons={...C.sermons,...v.sermons};if(v.present)C.present={...C.present,...v.present};if(v.circle)C.circle={...C.circle,...v.circle};}
+    qaListen(); qaMountPresenter(); qaPaintSpotlight();
     var ipHost=document.getElementById('ipres-host');
     if(ipHost && C.live.expedition.on && C.live.expedition.source==='ipres'){
       ipShow(C.present.current, false); showLivePill(); return;
@@ -583,6 +643,8 @@ if(db){
       if(lab)lab.textContent='Slide '+nn+' of '+C.sermons.total+' · the slides turn as he teaches';
       showLivePill(); return;   /* smooth in-place update, no full re-render */
     }
+    var pwWall=document.getElementById('pw-wall');
+    if(pwWall && C.live && C.live.prayer && C.live.prayer.on){ pwPaint(); showLivePill(); return; }
     render();showLivePill();});
 }
 
@@ -2687,7 +2749,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v88</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v92</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -3236,11 +3298,260 @@ function wireLordsPrayer(){
 }
 /* ---- Interactive presentation engine ---- */
 async function presentWrite(patch){
-  var cur={on:!!C.present.on,which:C.present.which,current:(C.present.current||0), ...patch};
+  var cur={on:!!C.present.on,which:C.present.which,current:(C.present.current||0),spotlight:(C.present.spotlight||''), ...patch};
   var deck=presById(cur.which); var max=deck?deck.slides.length-1:0;
   cur.current=Math.min(Math.max(0,cur.current),Math.max(0,max));
-  await db.ref('content/present').set({k:WRITE_KEY,on:cur.on,which:cur.which,current:cur.current});
+  await db.ref('content/present').set({k:WRITE_KEY,on:cur.on,which:cur.which,current:cur.current,spotlight:cur.spotlight||''});
   C.present={...C.present,...cur};
+}
+/* ================= LIVE PRAYER WALL (Prayer Circle) =================
+   During a live Prayer Circle, people add one-sentence requests → shared pool (Firebase 'circlewall').
+   Everyone sees them THREE at a time and taps "next three" to pray through at their own pace.
+   Each writer may add a first name or stay anonymous. The list can be downloaded to keep praying after. */
+var PW=[]; var PW_MAX=160;
+function pwCharsLeft(t){ return PW_MAX-((t||'').length); }
+function pwListen(){
+  if(!db||pwListen._on)return; pwListen._on=true;
+  db.ref('circlewall').limitToLast(300).on('value',function(s){
+    var v=s.val()||{};
+    PW=Object.keys(v).map(function(k){var q=v[k]||{};return {id:k,text:q.text||'',name:q.name||'',ts:q.ts||0};})
+            .sort(function(a,b){return a.ts-b.ts;});
+    pwPaint();
+  });
+}
+function pwSubmitHTML(){
+  return '<div class="card pw-box"><div class="pw-h">🕊️ Share a prayer request</div>'
+    +'<div class="note" style="margin:.1em 0 .5em">One sentence, so the circle can lift many together. Everyone here will see it and pray over it.</div>'
+    +'<label>Your first name <span style="text-transform:none">(optional — leave blank to stay anonymous)</span></label>'
+    +'<input type="text" id="pw-name" maxlength="24" placeholder="First name, or leave blank">'
+    +'<label>Your request (one sentence)</label>'
+    +'<textarea id="pw-text" rows="2" maxlength="'+PW_MAX+'" placeholder="Lord, please\u2026"></textarea>'
+    +'<div class="qa-ask-row"><span id="pw-left" class="pw-left">'+PW_MAX+' left</span>'
+    +'<button class="btn" id="pw-send" disabled>Add to the circle</button></div>'
+    +'<div id="pw-done" class="ok" style="margin-top:.35em"></div></div>';
+}
+function wirePWSubmit(){
+  var t=document.getElementById('pw-text'); if(!t)return;
+  var left=document.getElementById('pw-left'), send=document.getElementById('pw-send'), done=document.getElementById('pw-done');
+  function upd(){ var n=pwCharsLeft(t.value); left.textContent=(n<0?0:n)+' left'; left.classList.toggle('over',n<0); send.disabled=!t.value.trim()||n<0; }
+  t.addEventListener('input',upd); upd();
+  send.onclick=async function(){
+    var txt=t.value.trim(); if(!txt||pwCharsLeft(txt)<0)return;
+    var nm=((document.getElementById('pw-name')||{value:''}).value||'').trim().slice(0,24);
+    send.disabled=true; send.textContent='Adding\u2026';
+    try{
+      if(db)await db.ref('circlewall').push({text:txt.slice(0,PW_MAX),name:nm,ts:Date.now()});
+      t.value=''; var nmEl=document.getElementById('pw-name'); if(nmEl)nmEl.value=''; upd(); send.textContent='Add to the circle';
+      done.className='ok'; done.textContent='🕊️ Added — the circle will pray.';
+      setTimeout(function(){ if(done)done.textContent=''; },4000);
+    }catch(e){ send.textContent='Add to the circle'; send.disabled=false; done.className='err'; done.textContent='Could not add — check connection and try again.'; }
+  };
+}
+function pwWallHTML(){
+  return '<div class="card pw-box" id="pw-wall"><div class="pw-h">🙏 Pray for one another</div>'
+    +'<div class="note" id="pw-sub" style="margin:.1em 0 .35em">The circle prays together — one group at a time.</div>'
+    +'<div id="pw-body"></div>'
+    +'<div id="pw-lead" class="pw-lead" style="display:none">'
+      +'<div class="pw-lead-h">🔑 You\u2019re leading — divide &amp; advance for everyone</div>'
+      +'<div class="pw-lead-row"><button type="button" class="btn ghost pw-sz" data-size="2">Groups of 2</button>'
+        +'<button type="button" class="btn ghost pw-sz" data-size="3">Groups of 3</button></div>'
+      +'<div class="pw-lead-row"><span class="note" style="white-space:nowrap">or split among</span>'
+        +'<input type="number" id="pw-ppl" min="1" max="50" value="8" style="width:4.5em;margin:0">'
+        +'<button type="button" class="btn ghost" id="pw-ppl-go">people</button></div>'
+      +'<div class="pw-lead-row pw-nav"><button type="button" class="btn ghost" id="pw-prev">◀ Prev</button>'
+        +'<b id="pw-pos" style="flex:1;text-align:center">—</b>'
+        +'<button type="button" class="btn" id="pw-fwd">Next ▶</button></div>'
+      +'<button type="button" class="btn ghost" id="pw-restart" style="margin-top:.35em;width:100%">↺ Back to group 1</button>'
+    +'</div>'
+    +'<div class="pw-actions"><button class="btn ghost" id="pw-dl" type="button">⬇️ Save the list</button></div>'
+    +'</div>';
+}
+function pwGroups(){
+  var N=PW.length; if(!N)return [];
+  var mode=(C.circle&&C.circle.mode)||'size';
+  if(mode==='people'){
+    var P=Math.max(1,Math.min(50,(C.circle&&C.circle.people)||1)); P=Math.min(P,N);
+    var base=Math.floor(N/P), rem=N%P, groups=[], idx=0;
+    for(var i=0;i<P;i++){ var sz=base+(i<rem?1:0); groups.push(PW.slice(idx,idx+sz)); idx+=sz; }
+    return groups;
+  }
+  var S=Math.max(1,Math.min(10,(C.circle&&C.circle.size)||3)), g=[];
+  for(var j=0;j<N;j+=S)g.push(PW.slice(j,j+S));
+  return g;
+}
+function pwPaint(){
+  var body=document.getElementById('pw-body'); if(!body)return;
+  var isLeader=!!SESSION_MOD_PASS;
+  var lead=document.getElementById('pw-lead'); if(lead)lead.style.display=isLeader?'':'none';
+  var sub=document.getElementById('pw-sub');
+  var groups=pwGroups(), total=groups.length;
+  if(!total){ body.innerHTML='<div class="pw-empty">No requests yet — add one above to begin.</div>';
+    var pos0=document.getElementById('pw-pos'); if(pos0)pos0.textContent='—';
+    if(sub)sub.textContent='The circle prays together — one group at a time.'; return; }
+  var cur=Math.min(Math.max(0,(C.circle&&C.circle.cur)||0), total-1);
+  var group=groups[cur];
+  body.innerHTML='<div class="pw-count">Group '+(cur+1)+' of '+total+'</div>'
+    +group.map(function(q){ return '<div class="pw-card"><div class="pw-t">'+esc(q.text)+'</div>'
+        +'<div class="pw-n">— '+(q.name?esc(q.name):'a soul in the circle')+'</div></div>'; }).join('');
+  if(sub)sub.textContent = isLeader ? 'Tap Next to move the whole circle to the next group.' : 'Pray together over the group on screen.';
+  var pos=document.getElementById('pw-pos'); if(pos)pos.textContent='Group '+(cur+1)+' of '+total;
+  var pv=document.getElementById('pw-prev'); if(pv)pv.disabled=(cur<=0);
+  var fw=document.getElementById('pw-fwd'); if(fw)fw.disabled=(cur>=total-1);
+  var mode=(C.circle&&C.circle.mode)||'size', size=(C.circle&&C.circle.size)||3;
+  document.querySelectorAll('.pw-sz').forEach(function(b){ b.classList.toggle('active', mode==='size' && +b.getAttribute('data-size')===size); });
+  var pgo=document.getElementById('pw-ppl-go'); if(pgo)pgo.classList.toggle('active', mode==='people');
+}
+async function pwWrite(patch){
+  var cur={mode:(C.circle&&C.circle.mode)||'size',size:(C.circle&&C.circle.size)||3,people:(C.circle&&C.circle.people)||8,cur:(C.circle&&C.circle.cur)||0, ...patch};
+  C.circle={...C.circle,...cur}; pwPaint();
+  try{ if(db)await db.ref('content/circle').set({k:WRITE_KEY,mode:cur.mode,size:cur.size,people:cur.people,cur:cur.cur}); }catch(e){}
+}
+function wirePWWall(){
+  var dl=document.getElementById('pw-dl'); if(dl)dl.onclick=pwDownload;
+  document.querySelectorAll('.pw-sz').forEach(function(b){ b.onclick=function(){ pwWrite({mode:'size',size:+b.getAttribute('data-size'),cur:0}); }; });
+  var pg=document.getElementById('pw-ppl-go'); if(pg)pg.onclick=function(){ var p=Math.max(1,Math.min(50,+((document.getElementById('pw-ppl')||{value:8}).value||8))); pwWrite({mode:'people',people:p,cur:0}); };
+  var pv=document.getElementById('pw-prev'); if(pv)pv.onclick=function(){ pwWrite({cur:Math.max(0,((C.circle&&C.circle.cur)||0)-1)}); };
+  var fw=document.getElementById('pw-fwd'); if(fw)fw.onclick=function(){ var t=pwGroups().length; pwWrite({cur:Math.min(Math.max(0,t-1),((C.circle&&C.circle.cur)||0)+1)}); };
+  var rs=document.getElementById('pw-restart'); if(rs)rs.onclick=function(){ pwWrite({cur:0}); };
+}
+function pwDownload(){
+  if(!PW.length)return;
+  var d=new Date();
+  var lines=['Prayer Circle requests — '+d.toLocaleString(),'"Pray without ceasing." — 1 Thessalonians 5:17','',''];
+  PW.forEach(function(q,i){ lines.push((i+1)+'. '+q.text+(q.name?'   ('+q.name+')':'')); });
+  lines.push(''); lines.push('— Joshua Mura Ministry');
+  try{
+    var blob=new Blob([lines.join('\n')],{type:'text/plain'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a'); a.href=url; a.download='prayer-requests-'+d.toISOString().slice(0,10)+'.txt';
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ try{document.body.removeChild(a);}catch(e){} URL.revokeObjectURL(url); },1500);
+  }catch(e){}
+}
+/* ================= LIVE AUDIENCE Q&A (engine-level — works for every deck) =================
+   Follower: an "Ask a question" box (≈25 words) → pushes to Firebase 'questions' (anonymous, like prayer).
+   Presenter: a floating badge + panel to read them, mark answered, clear all, and PUSH one to the screen.
+   Push-to-screen rides the SAME live channel as slides: content/present.spotlight → every follower + projector. */
+var QA=[];                              // [{id,text,ts,answered}]  newest first
+var QA_MAX_CHARS=140, QA_MAX_WORDS=25;
+function qaWordsLeft(t){ var w=((t||'').trim().match(/\S+/g)||[]).length; return QA_MAX_WORDS-w; }
+function qaListen(){
+  if(!db||qaListen._on)return; qaListen._on=true;
+  db.ref('questions').limitToLast(200).on('value',function(s){
+    var v=s.val()||{};
+    QA=Object.keys(v).map(function(k){var q=v[k]||{};return {id:k,text:q.text||'',ts:q.ts||0,answered:!!q.answered};})
+              .sort(function(a,b){return b.ts-a.ts;});
+    qaRefreshPresenter();
+  });
+}
+/* ---- Follower side: the ask box ---- */
+function qaAskBoxHTML(){
+  return '<div class="card qa-ask" id="qa-ask">'
+    +'<div class="qa-ask-h">🙋 Ask a question</div>'
+    +'<div class="note" style="margin:.1em 0 .4em">Keep it short — about 25 words. It goes to Pastor Josh, who may put it on the screen. No name needed.</div>'
+    +'<textarea id="qa-text" rows="2" maxlength="'+QA_MAX_CHARS+'" placeholder="Type your question\u2026"></textarea>'
+    +'<div class="qa-ask-row"><span id="qa-left" class="qa-left">'+QA_MAX_WORDS+' words left</span>'
+    +'<button class="btn" id="qa-send" disabled>Send</button></div>'
+    +'<div id="qa-done" class="ok" style="margin-top:.35em"></div></div>';
+}
+function wireQAAsk(){
+  var t=document.getElementById('qa-text'); if(!t)return;
+  var left=document.getElementById('qa-left'), send=document.getElementById('qa-send'), done=document.getElementById('qa-done');
+  function upd(){
+    var n=qaWordsLeft(t.value); var shown=Math.max(0,n);
+    left.textContent=shown+' word'+(shown===1?'':'s')+' left';
+    left.classList.toggle('over', n<0);
+    send.disabled = !t.value.trim() || n<0;
+  }
+  t.addEventListener('input',upd); upd();
+  send.onclick=async function(){
+    var txt=t.value.trim(); if(!txt||qaWordsLeft(txt)<0)return;
+    send.disabled=true; send.textContent='Sending\u2026'; done.className='ok'; done.textContent='';
+    try{
+      if(db)await db.ref('questions').push({text:txt.slice(0,QA_MAX_CHARS),ts:Date.now(),answered:false});
+      t.value=''; upd(); send.textContent='Send';
+      done.className='ok'; done.textContent='\u2713 Sent \u2014 thank you!';
+      setTimeout(function(){ if(done)done.textContent=''; },4000);
+    }catch(e){
+      send.textContent='Send'; send.disabled=false;
+      done.className='err'; done.textContent='Could not send \u2014 check connection and try again.';
+    }
+  };
+}
+/* ---- The spotlight (the pushed question everyone sees) ---- */
+function qaSpotHTML(id){
+  var s=(C.present&&C.present.spotlight)||'';
+  return '<div class="qa-spot'+(s?' on':'')+'" id="'+(id||'qa-spot')+'">'
+    +'<div class="qa-spot-k">Now answering</div>'
+    +'<div class="qa-spot-t">'+esc(s)+'</div></div>';
+}
+function qaPaintSpotlight(){
+  var s=(C.present&&C.present.spotlight)||'';
+  ['qa-spot','ps-spot'].forEach(function(id){
+    var el=document.getElementById(id); if(!el)return;
+    var tt=el.querySelector('.qa-spot-t'); if(tt)tt.textContent=s;
+    el.classList.toggle('on', !!s);
+  });
+  qaRefreshPresenter();
+}
+function qaPushSpotlight(text){ if(C.present)C.present.spotlight=text; try{ presentWrite({spotlight:text}); }catch(e){} qaPaintSpotlight(); }
+function qaClearSpotlight(){ if(C.present)C.present.spotlight=''; try{ presentWrite({spotlight:''}); }catch(e){} qaPaintSpotlight(); }
+/* ---- Presenter side: floating badge + moderation panel ---- */
+function qaMountPresenter(){
+  if(!PRESENT_OK){ var ex=document.getElementById('qa-fab'); if(ex)ex.remove(); return; }
+  if(document.getElementById('qa-fab'))return;
+  var wrap=document.createElement('div');
+  wrap.innerHTML='<div id="qa-fab" class="qa-fab">'
+    +'<button id="qa-fab-btn" class="qa-fab-btn">\uD83D\uDCAC <span id="qa-fab-n">0</span></button>'
+    +'<div id="qa-panel" class="qa-panel">'
+    +'<div class="qa-panel-h"><b>Audience questions</b>'
+    +'<button id="qa-clear" class="qa-mini">Clear all</button>'
+    +'<button id="qa-close" class="qa-mini">\u2715</button></div>'
+    +'<div id="qa-list" class="qa-list"></div></div></div>';
+  document.body.appendChild(wrap.firstChild);
+  var fab=document.getElementById('qa-fab');
+  document.getElementById('qa-fab-btn').onclick=function(){ fab.classList.toggle('open'); qaRefreshPresenter(); };
+  document.getElementById('qa-close').onclick=function(){ fab.classList.remove('open'); };
+  document.getElementById('qa-clear').onclick=async function(){
+    if(!confirm('Clear ALL questions? This removes them for good.'))return;
+    try{ if(db)await db.ref('questions').remove(); }catch(e){}
+  };
+  qaRefreshPresenter();
+}
+function qaRefreshPresenter(){
+  var fab=document.getElementById('qa-fab'); if(!fab)return;
+  var unanswered=QA.filter(function(q){return !q.answered;}).length;
+  var n=document.getElementById('qa-fab-n'); if(n)n.textContent=unanswered;
+  fab.classList.toggle('has', unanswered>0);
+  var list=document.getElementById('qa-list'); if(!list)return;
+  var live=(C.present&&C.present.spotlight)||'';
+  var head = live ? '<div class="qa-live-bar"><span class="txt">\uD83D\uDD34 On screen: '+esc(live)+'</span><button class="qa-mini" id="qa-takedown">Take down</button></div>' : '';
+  if(!QA.length){ list.innerHTML=head+'<div class="qa-empty">No questions yet.<br>They\u2019ll appear here as people send them.</div>'; }
+  else{
+    list.innerHTML=head+QA.map(function(q){
+      var isLive = live && q.text===live;
+      return '<div class="qa-item'+(q.answered?' done':'')+(isLive?' live':'')+'" data-id="'+q.id+'">'
+        +'<div class="qa-item-t">'+esc(q.text)+'</div>'
+        +'<div class="qa-item-b">'
+        +'<button class="qa-mini push" data-push="'+q.id+'">'+(isLive?'On screen \u2713':'Push to screen')+'</button>'
+        +'<button class="qa-mini ans" data-ans="'+q.id+'">'+(q.answered?'Answered \u2713':'Mark answered')+'</button>'
+        +'</div></div>';
+    }).join('');
+  }
+  var td=document.getElementById('qa-takedown'); if(td)td.onclick=qaClearSpotlight;
+  list.querySelectorAll('[data-push]').forEach(function(b){
+    b.onclick=function(){
+      var q=QA.find(function(x){return x.id===b.getAttribute('data-push');}); if(!q)return;
+      var cur=(C.present&&C.present.spotlight)||'';
+      if(q.text===cur){ qaClearSpotlight(); } else { qaPushSpotlight(q.text); }
+    };
+  });
+  list.querySelectorAll('[data-ans]').forEach(function(b){
+    b.onclick=async function(){
+      var q=QA.find(function(x){return x.id===b.getAttribute('data-ans');});
+      try{ if(db)await db.ref('questions/'+b.getAttribute('data-ans')+'/answered').set(!(q&&q.answered)); }catch(e){}
+    };
+  });
 }
 function ipRenderDeck(deckId, opts){
   opts=opts||{};
@@ -3354,7 +3665,7 @@ function wireModUnlock(room,name,containerId){
   link.onclick=e=>{
     e.preventDefault();
     const p=prompt('Moderator passphrase (kept only for this session):');
-    if(p){ SESSION_MOD_PASS=p; mountCircle(containerId,room,name); link.textContent='Re-joining as moderator…'; }
+    if(p){ SESSION_MOD_PASS=p; mountCircle(containerId,room,name); link.textContent='Re-joining as moderator…'; if(typeof pwPaint==='function')pwPaint(); }
   };
 }
 
@@ -3369,6 +3680,7 @@ function render(){
     : (h==='trail')?'trail' : (h==='tent'||h==='provisions')?'tent'
     : (h==='altar')?'altar' : (h==='treasury')?'treasury' : (h==='share')?'share' : '';
   logDoor(_door);
+  qaListen(); qaMountPresenter();
   if(h==='deck'||h.indexOf('deck-')===0){deck();window.scrollTo(0,0);return}
   if(h==='library'){library();window.scrollTo(0,0);return}
   if(h==='bible'||h.indexOf('bible-')===0){bible();window.scrollTo(0,0);return}
@@ -3976,7 +4288,9 @@ function enterPresentStage(){
   // Build the stage ONCE with a persistent <img> we just swap src on (no full re-render, no flash).
   stage.innerHTML='<img id="ps-img" src="'+SERMONS_PATH+cur+SLIDES_EXT+'" alt="Slide '+cur+'">'
     +'<div class="pnav"><div class="l" id="ps-prev"></div><div class="r" id="ps-next"></div></div>'
+    +qaSpotHTML('ps-spot')
     +'<button id="ps-exit" title="Exit">✕</button>';
+  qaPaintSpotlight();
   var img=document.getElementById('ps-img');
   document.getElementById('ps-next').onclick=goNext;
   document.getElementById('ps-prev').onclick=goPrev;
@@ -4397,7 +4711,9 @@ app.innerHTML=`${crumb()}
  <div class="eyebrow">🔥 The Watchfire · Worship & Presentations</div>
  <h2>${ex.on?(esc(ex.title)||'The fire is lit — gather in'):'The fire is not lit'}</h2>
  ${ex.on?`
+   ${qaSpotHTML('qa-spot')}
    ${media}
+   ${(!PRESENT_OK)?qaAskBoxHTML():''}
    ${ex.deckUrl?`<p class="note" style="margin:.2em 0 .4em">🧭 The slides below follow the guide — they turn as he speaks.</p>
    <div style="border:1.5px solid rgba(201,162,75,.35);border-radius:14px;overflow:hidden;height:72dvh"><iframe src="${esc(ex.deckUrl)}" style="width:100%;height:100%;border:0"></iframe></div>`:''}
    ${ex.study?`<a class="door" href="#${esc(ex.study)}" style="margin-top:.8em;display:block"><div class="ico">⚒️</div><div class="name" style="font-size:1.1rem">Take this sermon to the Forge</div><div class="what">The five-part companion study for today's message — dig it this week.</div></a>`:''}
@@ -4405,6 +4721,7 @@ app.innerHTML=`${crumb()}
  <div class="verse"><p>"And thine ears shall hear a word behind thee, saying, This is the way, walk ye in it."</p><cite>Isaiah 30:21</cite></div>
  ${(ex.source==='present')?'<div class="card note" style="text-align:center">📽️ <b>Presenting the JPEG slides?</b> <a href="#present">Open Presenter mode</a> — full-screen for the projector.</div>':''}
  ${footer()}`;
+if(ex.on){ wireQAAsk(); qaPaintSpotlight(); }
 if(ex.on&&ex.source==='jitsi'){ mountCircle('circle-watchfire',ex.room,'Friend'); }
 if(ex.on&&ex.source==='ipres'){
   setTimeout(function(){
@@ -4608,6 +4925,7 @@ app.innerHTML=`${crumb()}
    <p class="note">You join <b>muted</b> — raise your hand 🖐 and Pastor Josh will call on you to pray.</p>
    ${modUnlockCard()}</div>`
   :`<div class="card note">🕯️ <b>The Prayer Circle</b> — ${esc(pc.note)}</div>`}
+ ${pc.on?pwSubmitHTML()+pwWallHTML():''}
  ${pc.on?slidesPanel():''}
  <h2>Lay it down here</h2>
  <p class="sub">Whatever you carry — send it. This goes <b>privately to Pastor Josh alone</b>, and he will pray over it personally.</p>
@@ -4650,7 +4968,7 @@ app.innerHTML=`${crumb()}
  ${lordsPrayerSection()}
  <div class="card note">👥 <b>On the Prayer Team?</b> <a href="#prayerteam">Enter the team room</a> with your team code.</div>
  ${footer()}`;
-if(pc.on){ mountCircle('circle-prayer',pc.room,'Friend'); wireModUnlock(pc.room,'Pastor Josh','circle-prayer'); }
+if(pc.on){ mountCircle('circle-prayer',pc.room,'Friend'); wireModUnlock(pc.room,'Pastor Josh','circle-prayer'); pwListen(); wirePWSubmit(); wirePWWall(); pwPaint(); }
 document.getElementById('p-home').onchange=()=>{
   document.getElementById('p-which-wrap').classList.toggle('hide',document.getElementById('p-home').value!=='other-church');
 };
@@ -4792,6 +5110,23 @@ document.getElementById('pin-go').onclick=()=>{
 document.getElementById('pin').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('pin-go').click()});
 }
 
+/* Two big side-by-side on/off buttons that behave like the old <select id> (a hidden input keeps the same id/value, so save code is unchanged). */
+function pToggle(id,on,offLabel,onLabel){
+  return '<div class="ptoggle">'
+    +'<input type="hidden" id="'+id+'" value="'+(on?'yes':'no')+'">'
+    +'<button type="button" class="ptog off'+(on?'':' active')+'" data-for="'+id+'" data-val="no">'+offLabel+'</button>'
+    +'<button type="button" class="ptog on'+(on?' active':'')+'" data-for="'+id+'" data-val="yes">'+onLabel+'</button>'
+    +'</div>';
+}
+function wirePanelToggles(){
+  document.querySelectorAll('.ptog').forEach(function(b){
+    b.onclick=function(){
+      var id=b.getAttribute('data-for'), val=b.getAttribute('data-val');
+      var inp=document.getElementById(id); if(inp)inp.value=val;
+      document.querySelectorAll('.ptog[data-for="'+id+'"]').forEach(function(x){ x.classList.toggle('active', x===b); });
+    };
+  });
+}
 function openPanel(){
 const dv=C.devotional,lv=C.live;
 document.getElementById('panelbox').innerHTML=`
@@ -4826,21 +5161,23 @@ document.getElementById('panelbox').innerHTML=`
 
   <div class="subcard">
    <b>🙏 Prayer Circle → lives at the Altar</b>
-   <label>Open?</label><select id="p2-on"><option value="no" ${!lv.prayer.on?'selected':''}>🕯️ Closed</option><option value="yes" ${lv.prayer.on?'selected':''}>🔥 OPEN — circle gathered</option></select>
+   <label>Open?</label>${pToggle('p2-on',lv.prayer.on,'🕯️ Closed','🔥 OPEN — gathered')}
    <label>Room name</label><input type="text" id="p2-room" value="${esc(lv.prayer.room)}">
    <label>"Closed" message</label><input type="text" id="p2-note" value="${esc(lv.prayer.note)}">
+   <button class="btn ghost" id="pw-clear" type="button" style="margin-top:.55em">🧹 Clear the live prayer wall</button> <span id="pw-clr-ok" class="ok"></span>
+   <div class="note" style="margin-top:.3em">Empties the shared "pray for one another" wall. Tell people to tap <b>Save the list</b> first if they want to keep praying for them.</div>
   </div>
 
   <div class="subcard">
    <b>📖 Live Class → lives in the Mine</b>
-   <label>In session?</label><select id="t-on"><option value="no" ${!lv.teaching.on?'selected':''}>🪑 Not in session</option><option value="yes" ${lv.teaching.on?'selected':''}>🔥 IN SESSION</option></select>
+   <label>In session?</label>${pToggle('t-on',lv.teaching.on,'🪑 Not in session','🔥 IN SESSION')}
    <label>Room name</label><input type="text" id="t-room" value="${esc(lv.teaching.room)}">
    <label>"Not in session" message</label><input type="text" id="t-note" value="${esc(lv.teaching.note)}">
   </div>
 
   <div class="subcard">
    <b>🔥 The Watchfire → worship & presentations</b>
-   <label>Underway?</label><select id="e-on"><option value="no" ${!lv.expedition.on?'selected':''}>🧭 Not underway</option><option value="yes" ${lv.expedition.on?'selected':''}>🔥 UNDERWAY — live now</option></select>
+   <label>Underway?</label>${pToggle('e-on',lv.expedition.on,'🧭 Not live','🔥 LIVE NOW')}
    <label>Journey title</label><input type="text" id="e-title" value="${esc(lv.expedition.title||'')}" placeholder="e.g. Sabbath Worship · The God Who Sees">
    <div class="subcard" style="background:var(--card2);border-color:var(--red);margin:.7em 0 .3em;text-align:center">
      <b>📢 Announce we're live</b>
@@ -4890,7 +5227,7 @@ document.getElementById('panelbox').innerHTML=`
    <label>How many slides? (0–50)</label>
    <input type="number" id="sl-total" min="0" max="50" value="${(C.slides&&C.slides.total)||0}">
    <label>Show under prayer / class circles?</label>
-   <select id="sl-on"><option value="no" ${(C.slides&&C.slides.on)?'':'selected'}>🚫 Off</option><option value="yes" ${(C.slides&&C.slides.on)?'selected':''}>📽️ On — showing now</option></select>
+   ${pToggle('sl-on',(C.slides&&C.slides.on),'🚫 Off','📽️ On — showing')}
    <button class="btn psave" id="save-sl">Save prayer/class slides</button> <span id="sl-ok" class="ok"></span>
    <div id="sl-live" style="margin-top:.8em">
      <div style="display:flex;align-items:center;gap:.6em;justify-content:center">
@@ -4907,7 +5244,7 @@ document.getElementById('panelbox').innerHTML=`
    <label>How many sermon slides? (0–50)</label>
    <input type="number" id="se-total" min="0" max="50" value="${(C.sermons&&C.sermons.total)||0}">
    <label>Show under the YouTube sermon?</label>
-   <select id="se-on"><option value="no" ${(C.sermons&&C.sermons.on)?'':'selected'}>🚫 Off</option><option value="yes" ${(C.sermons&&C.sermons.on)?'selected':''}>📽️ On — showing now</option></select>
+   ${pToggle('se-on',(C.sermons&&C.sermons.on),'🚫 Off','📽️ On — showing')}
    <label>⏱️ Online slide delay (seconds) — matches YouTube stream lag</label>
    <input type="number" id="se-delay" min="0" max="60" value="${(C.config&&C.config.slidedelay)||0}">
    <div class="note" style="margin:-.2em 0 .4em">In-church projector is <b>always instant</b>. This delay only holds the ONLINE viewers' slide back so it lands in time with your delayed YouTube video. Set to <b>0</b> for prayer circles or in-person-only events. Typical ultra-low-latency stream ≈ 3–5 seconds.</div>
@@ -5028,6 +5365,13 @@ document.querySelectorAll('[data-qrdl]').forEach(function(b){
   };
 })();
 /* ---- Analytics dashboard ---- */
+wirePanelToggles();
+var pwc=document.getElementById('pw-clear'); if(pwc)pwc.onclick=async function(){
+  if(!confirm('Clear ALL prayer-wall requests? People will no longer see them. (Download first if you want to keep them.)'))return;
+  var ok=document.getElementById('pw-clr-ok');
+  try{ if(db)await db.ref('circlewall').remove(); if(ok)ok.textContent='Cleared ✓'; }
+  catch(e){ if(ok){ ok.className='err'; ok.textContent='Failed'; } }
+};
 loadAnalytics();
 var azr=document.getElementById('az-refresh'); if(azr) azr.onclick=loadAnalytics;
 document.getElementById('save-d').onclick=async()=>{
