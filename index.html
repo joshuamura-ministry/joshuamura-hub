@@ -2749,7 +2749,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v92</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v93</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -5157,10 +5157,11 @@ document.getElementById('panelbox').innerHTML=`
  <!-- ========== 2. LIVE GATHERINGS ========== -->
  <div class="psec">
   <h2>🔴 Live Gatherings — turn on / off</h2>
-  <div class="pdesc">Flip a gathering ON to open it live; the site shows the red banner and the circle appears in its home. One Save covers all three.</div>
+  <div class="pdesc">Flip a gathering ON to open it live; the site shows the red banner and the gathering appears in its home. One Save covers all three.<br><br><b>The three gatherings, plainly:</b><br>🙏 <b>Prayer Circle</b> and 📖 <b>Live Class</b> are <b>group video calls</b> — people join on camera and talk (this is the "Jitsi" video). The Prayer Circle lives at the Altar; the Live Class lives in the Mine.<br>🔥 <b>The Watchfire</b> is your main live service, and it's flexible: it can be a <b>YouTube</b> sermon, a <b>group video call</b>, or a <b>slideshow</b> — you choose with "Shape of the journey" below.</div>
 
   <div class="subcard">
    <b>🙏 Prayer Circle → lives at the Altar</b>
+   <div class="note" style="margin:.15em 0 .5em">A live <b>group video call</b> (the Jitsi kind — people join on camera and pray aloud). Underneath it, people can post one-sentence requests and pray through them together, a few at a time.</div>
    <label>Open?</label>${pToggle('p2-on',lv.prayer.on,'🕯️ Closed','🔥 OPEN — gathered')}
    <label>Room name</label><input type="text" id="p2-room" value="${esc(lv.prayer.room)}">
    <label>"Closed" message</label><input type="text" id="p2-note" value="${esc(lv.prayer.note)}">
@@ -5170,6 +5171,7 @@ document.getElementById('panelbox').innerHTML=`
 
   <div class="subcard">
    <b>📖 Live Class → lives in the Mine</b>
+   <div class="note" style="margin:.15em 0 .5em">A live <b>group video call</b> (the Jitsi kind — people join on camera and ask questions), pinned above the Bible lessons in the Mine.</div>
    <label>In session?</label>${pToggle('t-on',lv.teaching.on,'🪑 Not in session','🔥 IN SESSION')}
    <label>Room name</label><input type="text" id="t-room" value="${esc(lv.teaching.room)}">
    <label>"Not in session" message</label><input type="text" id="t-note" value="${esc(lv.teaching.note)}">
@@ -5177,6 +5179,7 @@ document.getElementById('panelbox').innerHTML=`
 
   <div class="subcard">
    <b>🔥 The Watchfire → worship & presentations</b>
+   <div class="note" style="margin:.15em 0 .5em">Your main live service. The <b>"Shape of the journey"</b> below decides what people see when they open it — a YouTube sermon, a group video call, or a slideshow.</div>
    <label>Underway?</label>${pToggle('e-on',lv.expedition.on,'🧭 Not live','🔥 LIVE NOW')}
    <label>Journey title</label><input type="text" id="e-title" value="${esc(lv.expedition.title||'')}" placeholder="e.g. Sabbath Worship · The God Who Sees">
    <div class="subcard" style="background:var(--card2);border-color:var(--red);margin:.7em 0 .3em;text-align:center">
@@ -5197,18 +5200,24 @@ document.getElementById('panelbox').innerHTML=`
      <option value="youtube" ${lv.expedition.source==='youtube'?'selected':''}>🎙️ Sermon / broadcast — YouTube (video only)</option>
      <option value="jitsi" ${lv.expedition.source==='jitsi'?'selected':''}>👥 Small group / seminar — Jitsi circle</option>
    </select>
-   <div class="note" style="margin:-.2em 0 .5em">✨ <b>Interactive Presentation:</b> rich, scrollable, tappable decks (like the Bucks Vision). Pick which deck and drive it below. The congregation follows live on their phones.</div>
-   <label>Which interactive deck?</label>
+   <div class="note" style="margin:-.2em 0 .6em;line-height:1.65">
+     <b>What each shape means — pick what people see:</b><br>
+     📱 <b>Live Presentation (JPEG slides)</b> — <b>no video</b>. Your exported slide pictures from the <b>/sermons</b> folder; you flip them from <a href="#present">Presenter mode</a> and everyone follows the same slide on their phones. Good for a slides-only talk.<br>
+     ✨ <b>Interactive Presentation (rich deck)</b> — <b>no video</b>. A built-in, tappable deck (like the Bucks Vision); pick the deck just below and drive it with the ◀ ▶ buttons.<br>
+     🎙️ <b>Sermon / broadcast (YouTube)</b> — a live <b>YouTube</b> video of you preaching. Want slides under the video too? Turn on <b>Sermon slides</b> in the Live Slides section below.<br>
+     👥 <b>Small group / seminar (Jitsi)</b> — a live <b>group video call</b> (people join on camera and talk — the same kind as the Prayer Circle). Uses the Jitsi room name below.
+   </div>
+   <label>Which interactive deck? <span style="text-transform:none;font-weight:400;color:var(--dim)">(only for ✨ Interactive Presentation)</span></label>
    <select id="e-deckpick">${PRESENTATIONS.map(function(p){return '<option value="'+p.id+'" '+(C.present.which===p.id?'selected':'')+'>'+esc(p.title)+'</option>';}).join('')}</select>
    <div style="display:flex;align-items:center;gap:.6em;justify-content:center;margin:.6em 0">
      <button class="btn ghost" id="ip-panel-prev" style="font-size:1.2rem">◀</button>
      <b id="ip-panel-now" style="min-width:8em;text-align:center">Slide ${(C.present.current||0)+1}</b>
      <button class="btn" id="ip-panel-next" style="font-size:1.2rem">▶</button>
    </div>
-   <div class="note" style="margin:-.2em 0 .5em">📱 <b>Live Presentation:</b> you drive the slides full-screen from <a href="#present">Presenter mode</a> (with your clicker); the congregation opens the Watchfire and follows the same slides live on their phones. Set the sermon slide count in the Live Slides section above.</div>
-   <label>YouTube live video ID (broadcast)</label><input type="text" id="e-yt" value="${esc(lv.expedition.youtubeId)}">
-   <label>Jitsi room name (small-group)</label><input type="text" id="e-room" value="${esc(lv.expedition.room||'JoshuaMuraExpedition')}">
-   <label>Synced deck URL (all shapes)</label><input type="text" id="e-deck" value="${esc(lv.expedition.deckUrl)}">
+   <div class="note" style="margin:-.2em 0 .5em">↑ These ◀ ▶ buttons drive the <b>✨ Interactive</b> deck. For the <b>📱 Live Presentation (JPEG)</b> shape, you drive the slides from <a href="#present">Presenter mode</a> instead — set how many in <b>Live Slides</b> below.</div>
+   <label>YouTube live video ID (broadcast) <span style="text-transform:none;font-weight:400;color:var(--dim)">(only for 🎙️ YouTube sermon)</span></label><input type="text" id="e-yt" value="${esc(lv.expedition.youtubeId)}">
+   <label>Jitsi room name (small-group) <span style="text-transform:none;font-weight:400;color:var(--dim)">(only for 👥 Small group / Jitsi call)</span></label><input type="text" id="e-room" value="${esc(lv.expedition.room||'JoshuaMuraExpedition')}">
+   <label>Synced deck URL <span style="text-transform:none;font-weight:400;color:var(--dim)">(optional — embeds an outside Canva/Google Slides deck under any shape)</span></label><input type="text" id="e-deck" value="${esc(lv.expedition.deckUrl)}">
    <label>Companion study link (e.g. dig-forge-1 · blank = none)</label><input type="text" id="e-study" value="${esc(lv.expedition.study||'')}">
    <label>"Not underway" message</label><input type="text" id="e-note" value="${esc(lv.expedition.note)}">
   </div>
@@ -5219,7 +5228,7 @@ document.getElementById('panelbox').innerHTML=`
  <!-- ========== 3. LIVE SLIDES ========== -->
  <div class="psec">
   <h2>📽️ Live Slides</h2>
-  <div class="pdesc">Two separate decks. Each is JPEGs named <b>1.jpg, 2.jpg …</b> in its own folder. Set the count, flip ON, then use ◀ ▶ — viewers follow you.</div>
+  <div class="pdesc">Two separate decks of <b>regular picture slides</b> (JPEGs named <b>1.jpg, 2.jpg …</b> in each folder). Set the count, flip ON, then use ◀ ▶ — viewers follow you. <br><span style="opacity:.85">These are your own exported images — <b>different</b> from the built-in ✨ Interactive Presentation deck, which you pick in the Watchfire above.</span></div>
 
   <div class="subcard">
    <b>🙏 Prayer &amp; Class slides → /slides folder</b>
