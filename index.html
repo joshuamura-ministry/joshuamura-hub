@@ -637,8 +637,8 @@ let C={
    teaching:{on:false,room:"JoshuaMuraTeaching",topic:"",note:"Live class meets here. Next session: announced soon."},
    expedition:{on:false,title:"",source:"none",youtubeId:"",room:"JoshuaMuraExpedition",deckUrl:"",study:"",note:"When the fire is lit — a sermon, a seminar, a small-group journey — this is the gathering place: his voice above, the slides turning in your hand below."}
  },
- slides:{on:false,total:0,current:1},
- sermons:{on:false,total:0,current:1},
+ slides:{on:false,total:0,current:1,folder:""},
+ sermons:{on:false,total:0,current:1,folder:""},
  present:{on:false,which:"vision-sanctuary",current:0,spotlight:""},
  circle:{mode:"size",size:3,people:8,cur:0}
 };
@@ -652,7 +652,7 @@ if(db){
     var liveImg=document.getElementById('live-present-img');
     if(liveImg && C.live.expedition.on && C.live.expedition.source==='present' && C.sermons && C.sermons.total){
       var nn=Math.min(Math.max(1,C.sermons.current||1),C.sermons.total);
-      liveImg.src=SERMONS_PATH+nn+SLIDES_EXT;
+      liveImg.src=sermonSlideUrl(nn);
       var lab=liveImg.parentNode&&liveImg.parentNode.querySelector('.note');
       if(lab)lab.textContent='Slide '+nn+' of '+C.sermons.total+' · the slides turn as he teaches';
       showLivePill(); return;   /* smooth in-place update, no full re-render */
@@ -2784,7 +2784,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v104</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v106</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -2837,7 +2837,12 @@ async function mountCircle(containerId,room,name){
 /* ---- Live Slides: JPEGs in /slides folder, synced current slide ---- */
 const SLIDES_PATH='/PRAYER/';           // prayer slides live in the /PRAYER folder: 1.jpg, 2.jpg ...
 const SLIDES_EXT='.jpg';                // file extension of your exported slides
-const SERMONS_PATH='/SERMONS/';         // sermon slides live in /sermons: 1.jpg, 2.jpg ...
+const SERMONS_PATH='/SERMONS/';         // sermon slides live in /SERMONS: 1.jpg, 2.jpg ...
+/* A "set" is an optional sub-folder, e.g. set='john-mark' -> /SERMONS/john-mark/1.jpg
+   Blank set = the loose files straight in the folder, exactly as before. Case-sensitive. */
+function setSeg(v){ v=(v||'').trim().replace(/^\/+|\/+$/g,''); return v?v+'/':''; }
+function prayerSlideUrl(n){ return SLIDES_PATH+setSeg(C.slides&&C.slides.folder)+n+SLIDES_EXT; }
+function sermonSlideUrl(n){ return SERMONS_PATH+setSeg(C.sermons&&C.sermons.folder)+n+SLIDES_EXT; }
 /* ---- The Library: KJV Bible (public domain), text lives in /books/kjv.json ---- */
 const BIBLE_PATH='/books/kjv.json';     // the KJV text file, served from your own site
 // The Library shelf. Bible is special (verses+search); the rest are plain-text books (paragraphs).
@@ -3624,7 +3629,7 @@ function livePresentView(){
   var n=Math.min(Math.max(1,s.current||1),s.total);
   return '<div class="card" style="padding:.5em;border-color:var(--red)">'
     +'<div style="text-align:center;margin-bottom:.4em"><b style="color:var(--red)">🔴 LIVE — following Pastor Josh</b></div>'
-    +'<img src="'+SERMONS_PATH+n+SLIDES_EXT+'" alt="Slide '+n+'" style="width:100%;border-radius:10px;display:block;background:#000" '
+    +'<img src="'+sermonSlideUrl(n)+'" alt="Slide '+n+'" style="width:100%;border-radius:10px;display:block;background:#000" '
     +'onerror="this.style.opacity=.4;this.alt=\'Slide '+n+'\'">'
     +'<div class="note" style="text-align:center;margin-top:.4em">Slide '+n+' of '+s.total+' · the slides turn as he teaches</div></div>';
 }
@@ -3633,7 +3638,7 @@ function sermonsPanel(){
   if(!s||!s.on||!s.total)return '';
   var n=Math.min(Math.max(1,s.current||1),s.total);
   return '<div class="card" style="padding:.5em">'
-    +'<img src="'+SERMONS_PATH+n+SLIDES_EXT+'" alt="Sermon slide '+n+'" style="width:100%;border-radius:10px;display:block;background:#000" '
+    +'<img src="'+sermonSlideUrl(n)+'" alt="Sermon slide '+n+'" style="width:100%;border-radius:10px;display:block;background:#000" '
     +'onerror="this.style.opacity=.4;this.alt=\'Sermon slide '+n+' not found — expected /SERMONS/'+n+'.jpg\'">'
     +'<div class="note" style="text-align:center;margin-top:.4em">Slide '+n+' of '+s.total+' · follows the preacher live</div></div>';
 }
@@ -3682,7 +3687,7 @@ function slidesPanel(){
   if(!s||!s.on||!s.total)return '';
   const n=Math.min(Math.max(1,s.current||1),s.total);
   return `<div class="card" style="padding:.5em">
-    <img src="${SLIDES_PATH}${n}${SLIDES_EXT}" alt="Slide ${n}"
+    <img src="${prayerSlideUrl(n)}" alt="Slide ${n}"
       style="width:100%;border-radius:10px;display:block;background:#000"
       onerror="this.style.opacity=.4;this.alt='Slide ${n} not found — expected /PRAYER/${n}.jpg'">
     <div class="note" style="text-align:center;margin-top:.4em">Slide ${n} of ${s.total} · follows Pastor Josh live</div>
@@ -4317,11 +4322,11 @@ function enterPresentStage(){
 
   // Preload every slide in the background so advancing is instant (no black flash).
   var cache={};
-  function preload(i){ if(i<1||i>total||cache[i])return; var im=new Image(); im.src=SERMONS_PATH+i+SLIDES_EXT; cache[i]=im; }
+  function preload(i){ if(i<1||i>total||cache[i])return; var im=new Image(); im.src=sermonSlideUrl(i); cache[i]=im; }
   for(var i=1;i<=total;i++){ preload(i); }
 
   // Build the stage ONCE with a persistent <img> we just swap src on (no full re-render, no flash).
-  stage.innerHTML='<img id="ps-img" src="'+SERMONS_PATH+cur+SLIDES_EXT+'" alt="Slide '+cur+'">'
+  stage.innerHTML='<img id="ps-img" src="'+sermonSlideUrl(cur)+'" alt="Slide '+cur+'">'
     +'<div class="pnav"><div class="l" id="ps-prev"></div><div class="r" id="ps-next"></div></div>'
     +qaSpotHTML('ps-spot')
     +'<button id="ps-exit" title="Exit">✕</button>';
@@ -4333,7 +4338,7 @@ function enterPresentStage(){
 
   function show(){
     // swap src only; because it's preloaded, it appears immediately (INSTANT for the room)
-    if(img)img.src=SERMONS_PATH+cur+SLIDES_EXT;
+    if(img)img.src=sermonSlideUrl(cur);
     preload(cur+1); preload(cur-1);  // keep neighbours warm
   }
   var _pending=null;
@@ -5277,6 +5282,11 @@ document.getElementById('panelbox').innerHTML=`
   <div class="subcard" style="border-color:var(--gold)">
    <b>🔥 The Watchfire — your main live service</b>
    <div class="note" style="margin:.15em 0 .5em">A sermon (YouTube), a group video call, or a slideshow — you pick the shape below.</div>
+   <div class="subcard" style="background:var(--card2);border-color:var(--gold);margin:.5em 0 .6em;text-align:center">
+     <b>🎙️ Voice Preach — the pulpit desk</b>
+     <div class="note" style="margin:.3em 0 .5em">Paste your manuscript with <b>@@@</b> where slides change, then just preach — your voice turns the slides for the projector, the booth, and everyone following live. Your clicker still works.</div>
+     <a class="btn" href="/voice-preach.html" target="_blank" rel="noopener">🎙️ Open Voice Preach ↗</a>
+   </div>
    <label>Underway?</label>${pToggle('e-on',lv.expedition.on,'🧭 Not live','🔥 LIVE NOW')}
    <label>Journey title</label><input type="text" id="e-title" value="${esc(lv.expedition.title||'')}" placeholder="e.g. Sabbath Worship · The God Who Sees">
    <div class="subcard" style="background:var(--card2);border-color:var(--red);margin:.7em 0 .3em;text-align:center">
@@ -5318,6 +5328,9 @@ document.getElementById('panelbox').innerHTML=`
    <div class="subcard">
     <b>🎙️ Sermon slides <span style="text-transform:none;font-weight:400;color:var(--dim)">(shown under the YouTube video)</span></b>
     <div class="note" style="margin-bottom:.3em">Your /sermons JPEGs (1.jpg, 2.jpg …). Drive them from <a href="#present">Presenter mode</a>.</div>
+    <label>📁 Which sermon set? (folder name — leave blank for loose files)</label>
+    <input type="text" id="se-set" placeholder="e.g. john-mark" value="${esc((C.sermons&&C.sermons.folder)||'')}">
+    <div class="note" style="margin:-.2em 0 .5em">Type the folder name exactly as it appears in <b>/SERMONS</b> — <b>case-sensitive</b>. <code>john-mark</code> reads <b>/SERMONS/john-mark/1.jpg</b>. Blank reads <b>/SERMONS/1.jpg</b>.</div>
     <label>How many sermon slides? (0–50)</label>
     <input type="number" id="se-total" min="0" max="50" value="${(C.sermons&&C.sermons.total)||0}">
     <label>Show under the YouTube sermon?</label>
@@ -5354,6 +5367,9 @@ document.getElementById('panelbox').innerHTML=`
     <b>📽️ Prayer &amp; Class picture slides</b>
     <div class="note" style="margin-bottom:.3em">Your /slides JPEGs. Shown under <b>both</b> the Prayer Circle here <b>and</b> the Live Class in the Mine — one shared deck.</div>
     <label>How many slides? (0–50)</label>
+    <label>📁 Which prayer set? (folder name — leave blank for loose files)</label>
+    <input type="text" id="sl-set" placeholder="e.g. lords-prayer" value="${esc((C.slides&&C.slides.folder)||'')}">
+    <div class="note" style="margin:-.2em 0 .5em">Folder name inside <b>/PRAYER</b> — <b>case-sensitive</b>. Blank reads <b>/PRAYER/1.jpg</b>.</div>
     <input type="number" id="sl-total" min="0" max="50" value="${(C.slides&&C.slides.total)||0}">
     <label>Show under the prayer / class circles?</label>
     ${pToggle('sl-on',(C.slides&&C.slides.on),'🚫 Off','📽️ On — showing')}
@@ -5574,19 +5590,24 @@ document.getElementById('save-lc').onclick=async()=>{
   if(cb)cb.onclick=async function(){ try{ await navigator.clipboard.writeText(annMsg()); annNote('Copied — paste it anywhere ✓'); }catch(e){ annNote(annMsg()); } };
 })();
 async function sermonWrite(patch){
-  const cur={total:+(C.sermons.total||0),on:!!C.sermons.on,current:(C.sermons&&C.sermons.current)||1, ...patch};
+  const setEl=document.getElementById('se-set');
+  const cur={total:+(C.sermons.total||0),on:!!C.sermons.on,
+             folder:setEl?setEl.value.trim():((C.sermons&&C.sermons.folder)||''),
+             current:(C.sermons&&C.sermons.current)||1, ...patch};
   cur.total=Math.min(50,Math.max(0,cur.total));
   cur.current=Math.min(Math.max(1,cur.current),Math.max(1,cur.total));
-  await db.ref('content/sermons').set({k:WRITE_KEY,on:cur.on,total:cur.total,current:cur.current});
+  await db.ref('content/sermons').set({k:WRITE_KEY,on:cur.on,total:cur.total,current:cur.current,folder:cur.folder||''});
   C.sermons={...C.sermons,...cur};
 }
 async function slideWrite(patch){
+  const setEl=document.getElementById('sl-set');
   const cur={total:+(document.getElementById('sl-total').value||0),
              on:document.getElementById('sl-on').value==='yes',
+             folder:setEl?setEl.value.trim():((C.slides&&C.slides.folder)||''),
              current:(C.slides&&C.slides.current)||1, ...patch};
   cur.total=Math.min(50,Math.max(0,cur.total));
   cur.current=Math.min(Math.max(1,cur.current),Math.max(1,cur.total));
-  await db.ref('content/slides').set({k:WRITE_KEY,on:cur.on,total:cur.total,current:cur.current});
+  await db.ref('content/slides').set({k:WRITE_KEY,on:cur.on,total:cur.total,current:cur.current,folder:cur.folder||''});
   C.slides={...C.slides,...cur};
   const now=document.getElementById('sl-now'); if(now)now.textContent='Slide '+cur.current+' of '+cur.total;
 }
