@@ -388,7 +388,11 @@
 
     <div class="slides-loader" id="slidesLoader">
       <div class="slides-loader-head">
-        <strong>Sermon slides:</strong> these come from your hub's <b>/SERMONS</b> folder (1.jpg, 2.jpg…). Your @@@ marks below number the slides automatically — you begin on slide&nbsp;1. Just confirm how many slides this sermon has so the last one doesn't overrun.
+        <strong>Sermon slides:</strong> upload this sermon's JPEGs once into their own folder in your hub (e.g. <b>/SERMONS/john-mark/</b> with 1.jpg, 2.jpg…), then name that folder here. Nothing gets overwritten — each sermon keeps its own set. Leave the folder blank to use the plain <b>/SERMONS/</b> slides.
+      </div>
+      <div class="row">
+        <label class="hint" for="slideFolder">Sermon folder:</label>
+        <input type="text" id="slideFolder" placeholder="e.g. john-mark" style="width:11em;font-family:var(--mono);font-size:15px;padding:8px;border:1.5px solid var(--ink);border-radius:8px;">
       </div>
       <div class="row">
         <label class="hint" for="slideTotal">Slides in this sermon:</label>
@@ -484,15 +488,16 @@ try {
   db = firebase.database();
 } catch(e){ console.error('firebase init', e); }
 
-/* Mirror of the hub's sermonWrite: pushes {on,total,current} to content/sermons.
-   Slides advance for every follower the instant this runs. */
+/* Mirror of the hub's sermonWrite: pushes {on,total,current,folder} to
+   content/sermons. Slides advance for every follower the instant this runs. */
 async function sermonWrite(patch){
   if (!db) return false;
-  const cur = { total:+(S.slideTotal||0), on:true, current:(S.slide||1), ...patch };
+  const cur = { total:+(S.slideTotal||0), on:true, current:(S.slide||1), folder:(S.slideFolder||''), ...patch };
   cur.total   = Math.min(50, Math.max(0, cur.total));
   cur.current = Math.min(Math.max(1, cur.current), Math.max(1, cur.total));
+  cur.folder  = String(cur.folder||'').replace(/^\/+|\/+$/g,'');
   try {
-    await db.ref('content/sermons').set({ k:HUB.WRITE_KEY, on:cur.on, total:cur.total, current:cur.current });
+    await db.ref('content/sermons').set({ k:HUB.WRITE_KEY, on:cur.on, total:cur.total, current:cur.current, folder:cur.folder });
     return true;
   } catch(e){ console.error('sermonWrite', e); return false; }
 }
@@ -508,7 +513,8 @@ async function sermonStop(){
 const S = {
   tokens: [],        // [{raw, norm, para}] one per word
   cues: [],          // [{tokenIndex, fired, firedBy, clock, heard}] ordered by tokenIndex; cue k => advance to slide k+2
-  slideTotal: 1,     // number of JPEG slides in this sermon (/SERMONS/N.jpg)
+  slideTotal: 1,     // number of JPEG slides in this sermon
+  slideFolder: '',   // per-sermon folder name (blank = plain /SERMONS/N.jpg)
   committedPtr: 0,   // next expected token index, from finalized speech only
   provPtr: 0,        // provisional pointer incl. interim speech (drives highlight + cue firing)
   displayPtr: 0,     // forward-only high-water mark for the highlight (anti-flicker)
@@ -704,7 +710,9 @@ function saveState(){
   try{
     localStorage.setItem(LS_KEY, JSON.stringify({
       text: document.getElementById("manuscriptInput").value,
-      cueIdx: S.cues.map(c=>c.tokenIndex)
+      cueIdx: S.cues.map(c=>c.tokenIndex),
+      folder: S.slideFolder || "",
+      total: S.slideTotal || 1
     }));
     document.getElementById("saveHint").textContent = "Saved on this device.";
   }catch(e){}
@@ -717,6 +725,8 @@ function loadState(){
       S.pendingCueIdx = d.cueIdx || [];
       document.getElementById("saveHint").textContent = "Restored your last manuscript.";
     }
+    if (d && d.folder){ S.slideFolder = d.folder; const fi=document.getElementById("slideFolder"); if(fi) fi.value = d.folder; }
+    if (d && d.total){ S.slideTotal = d.total; }
   }catch(e){}
 }
 
@@ -796,7 +806,10 @@ function buildLiveScript(){
   for (let i=1;i<=S.slideTotal;i++){ const im=new Image(); im.src=slideSrc(i); S.slideCache[i]=im; }
   paintLive();
 }
-function slideSrc(n){ return HUB.SERMONS_PATH + n + HUB.SLIDES_EXT; }
+function slideSrc(n){
+  const f = (S.slideFolder||"").replace(/^\/+|\/+$/g,"");
+  return HUB.SERMONS_PATH + (f ? f+"/" : "") + n + HUB.SLIDES_EXT;
+}
 function paintLive(){
   // The highlight is a ratchet: it only ever moves FORWARD. The internal
   // provPtr can dip when the browser revises its live guess, but the visible
@@ -1224,10 +1237,15 @@ document.getElementById("slideTotal").addEventListener("input", (e)=>{
   e.target.dataset.touched = "1";
   S.slideTotal = Math.max(1, Math.min(50, +e.target.value || 1));
 });
+document.getElementById("slideFolder").addEventListener("input", (e)=>{
+  S.slideFolder = e.target.value.trim().replace(/^\/+|\/+$/g,"");
+  saveState();
+});
 
 document.getElementById("toLiveBtn").addEventListener("click", ()=>{
   if (!S.cues.length){ document.getElementById("cueCountHint").textContent="Tap a word first — mark at least one slide turn."; return; }
-  // Lock in the slide total (at least enough for the cues).
+  // Lock in the folder and slide total (at least enough for the cues).
+  S.slideFolder = (document.getElementById("slideFolder").value||"").trim().replace(/^\/+|\/+$/g,"");
   const need = S.cues.length + 1;
   S.slideTotal = Math.max(need, Math.min(50, +document.getElementById("slideTotal").value || need));
   resetRun(); buildLiveScript();
