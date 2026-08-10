@@ -870,12 +870,14 @@ function paintLive(){
   const hereEl = liveWordEls[Math.min(dp, liveWordEls.length-1)];
   if (hereEl && S.listening){
     const box = document.getElementById("liveScript");
-    // Keep the active line in the comfortable reading zone. On phones the
-    // controls sit above, so aim the current line ~48% down the script area
-    // (never tucked up under the header where it'd be cut off).
-    const zone = (window.innerWidth <= 960) ? 0.48 : 0.35;
-    const r = hereEl.offsetTop - box.clientHeight*zone;
-    if (Math.abs(box.scrollTop - r) > 40) box.scrollTop = Math.max(0, r);
+    // Hold the reading line LOW on the screen (~70% down). Because the target
+    // keeps the line near the bottom, the page naturally stays still until
+    // you've read a couple of lines down, THEN begins scrolling — and it only
+    // ever moves forward, so it lags gently behind your voice, never races ahead.
+    const zone = (window.innerWidth <= 960) ? 0.70 : 0.62;
+    const target = hereEl.offsetTop - box.clientHeight*zone;
+    // Only scroll DOWN (forward), and only once we're clearly past the trigger.
+    if (target > box.scrollTop + 24){ box.scrollTop = target; }
   }
   paintSlidePreview();
 }
