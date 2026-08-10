@@ -339,7 +339,7 @@
     .live-left .tiny{display:none;}          /* hide the long help text on phone */
     .reset-run, .exit{flex:1 1 46%;}
     .test-mic, #testMicBtn{font-size:12px;}
-    .live-script{padding:20px 18px 45vh; font-size:19px; line-height:1.95;}
+    .live-script{padding:28px 18px 45vh; font-size:19px; line-height:1.95; scroll-padding-top:30px;}
   }
   /* ---------- PHONE: landscape = small preview left, script right ---------- */
   @media (max-width:960px) and (orientation:landscape){
@@ -857,8 +857,12 @@ function paintLive(){
   const hereEl = liveWordEls[Math.min(dp, liveWordEls.length-1)];
   if (hereEl && S.listening){
     const box = document.getElementById("liveScript");
-    const r = hereEl.offsetTop - box.clientHeight*0.35;
-    if (Math.abs(box.scrollTop - r) > 60) box.scrollTop = r;
+    // Keep the active line in the comfortable reading zone. On phones the
+    // controls sit above, so aim the current line ~48% down the script area
+    // (never tucked up under the header where it'd be cut off).
+    const zone = (window.innerWidth <= 960) ? 0.48 : 0.35;
+    const r = hereEl.offsetTop - box.clientHeight*zone;
+    if (Math.abs(box.scrollTop - r) > 40) box.scrollTop = Math.max(0, r);
   }
   paintSlidePreview();
 }
