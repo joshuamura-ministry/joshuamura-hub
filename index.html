@@ -2784,7 +2784,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v102</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v104</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -2835,7 +2835,7 @@ async function mountCircle(containerId,room,name){
   }
 }
 /* ---- Live Slides: JPEGs in /slides folder, synced current slide ---- */
-const SLIDES_PATH='/slides/';           // slides live in the /slides folder: 1.jpg, 2.jpg ...
+const SLIDES_PATH='/PRAYER/';           // prayer slides live in the /PRAYER folder: 1.jpg, 2.jpg ...
 const SLIDES_EXT='.jpg';                // file extension of your exported slides
 const SERMONS_PATH='/SERMONS/';         // sermon slides live in /sermons: 1.jpg, 2.jpg ...
 /* ---- The Library: KJV Bible (public domain), text lives in /books/kjv.json ---- */
@@ -3684,7 +3684,7 @@ function slidesPanel(){
   return `<div class="card" style="padding:.5em">
     <img src="${SLIDES_PATH}${n}${SLIDES_EXT}" alt="Slide ${n}"
       style="width:100%;border-radius:10px;display:block;background:#000"
-      onerror="this.style.opacity=.4;this.alt='Slide ${n} not found — expected /slides/${n}.jpg'">
+      onerror="this.style.opacity=.4;this.alt='Slide ${n} not found — expected /PRAYER/${n}.jpg'">
     <div class="note" style="text-align:center;margin-top:.4em">Slide ${n} of ${s.total} · follows Pastor Josh live</div>
   </div>`;
 }
@@ -5064,8 +5064,8 @@ app.innerHTML=`${crumb()}
    <p class="note">You join <b>muted</b> — raise your hand 🖐 and Pastor Josh will call on you to pray.</p>
    ${modUnlockCard()}</div>`
   :`<div class="card note">🕯️ <b>The Prayer Circle</b> — ${esc(pc.note)}</div>`}
- ${pc.on?pwSubmitHTML()+pwWallHTML():''}
  ${pc.on?slidesPanel():''}
+ ${pc.on?pwSubmitHTML()+pwWallHTML():''}
  <h2>Lay it down here</h2>
  <p class="sub">Whatever you carry — send it. This goes <b>privately to Pastor Josh alone</b>, and he will pray over it personally.</p>
  <div class="card">
