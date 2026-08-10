@@ -322,14 +322,40 @@
     display:none;
   }
 
-  @media (max-width:700px){
+  /* ---------- PHONE: portrait = small preview on top, script below ---------- */
+  @media (max-width:820px) and (orientation:portrait){
     .live-top{flex-direction:column;}
-    .live-left{flex:0 0 auto; flex-direction:row; flex-wrap:wrap; border-right:none; border-bottom:1px solid var(--booth-line);}
-    .slide-card{flex:1 1 130px;}
-    #slideNum{font-size:64px;}
-    .listen-card{flex:1 1 180px;}
-    .live-left .tiny, .live-left .exit{flex:1 1 100%;}
-    .live-script{padding:22px 18px 40vh; font-size:18px;}
+    .live-left{
+      flex:0 0 auto; flex-direction:row; flex-wrap:wrap; align-items:center;
+      border-right:none; border-bottom:1px solid var(--booth-line);
+      padding:10px; gap:10px;
+    }
+    /* small slide preview strip on top */
+    .slide-preview{flex:0 0 128px; aspect-ratio:16/9; margin:0;}
+    /* compact controls next to the preview */
+    .listen-card{flex:1 1 160px; padding:8px;}
+    #listenBtn{font-size:15px; padding:12px;}
+    .manual-row{flex:1 1 100%; }
+    .live-left .tiny{display:none;}          /* hide the long help text on phone */
+    .reset-run, .exit{flex:1 1 46%;}
+    .test-mic, #testMicBtn{font-size:12px;}
+    .live-script{padding:20px 18px 45vh; font-size:19px; line-height:1.95;}
+  }
+  /* ---------- PHONE: landscape = small preview left, script right ---------- */
+  @media (max-width:960px) and (orientation:landscape){
+    .live-top{flex-direction:row;}
+    .live-left{
+      flex:0 0 190px; flex-direction:column; padding:10px; gap:8px;
+      border-right:1px solid var(--booth-line); border-bottom:none;
+      overflow-y:auto;
+    }
+    .slide-preview{width:100%; aspect-ratio:16/9; margin:0;}
+    .listen-card{padding:8px;}
+    #listenBtn{font-size:14px; padding:10px;}
+    .manual-row button{font-size:13px; padding:8px;}
+    .live-left .tiny{display:none;}
+    #testMicBtn{font-size:11px; padding:6px;}
+    .live-script{padding:18px 20px 40vh; font-size:18px; line-height:1.9;}
   }
   @media (prefers-reduced-motion:reduce){
     #slideNum.flash{animation:none;}
@@ -846,7 +872,7 @@ function paintSlidePreview(){
   if (img.dataset.src !== src){
     img.dataset.src = src;
     img.onload = ()=>{ img.style.display="block"; noimg.style.display="none"; };
-    img.onerror = ()=>{ img.style.display="none"; noimg.style.display="block"; noimg.textContent = "Slide "+S.slide+"  (image loads on the hub)"; };
+    img.onerror = ()=>{ img.style.display="none"; noimg.style.display="flex"; noimg.textContent = "Slide "+S.slide; };
     img.src = src;
     const pv = document.getElementById("slidePreview");
     pv.classList.remove("flash"); void pv.offsetWidth; pv.classList.add("flash");
