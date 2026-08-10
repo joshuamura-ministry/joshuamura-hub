@@ -2784,7 +2784,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v101</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v102</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -4528,11 +4528,33 @@ async function showVerseModal(ref){
   ov.querySelector('#vm-lib').onclick=function(e){ e.preventDefault(); closeVerseModal(); location.hash='#bible'; setTimeout(function(){ doBibleSearch(ref); },60); };
   document.addEventListener('keydown', vmodalEsc);
 }
+// Show a verse in a box using text we already have in the study — no external Bible file needed.
+function showVerseText(ref, text){
+  closeVerseModal();
+  var ov=document.createElement('div'); ov.className='vmodal'; ov.id='vmodal';
+  ov.innerHTML='<div class="vmodal-bg"></div><div class="vmodal-card">'
+    +'<div class="vmodal-head"><span class="vmodal-ref">'+esc(ref)+'</span>'
+    +'<button class="vmodal-x" aria-label="Close">\u00d7</button></div>'
+    +'<div id="vmodal-body"><p class="vv on">'+esc(text)+'</p></div>'
+    +'<div class="vmodal-actions"><button class="btn" id="vm-close">Close</button></div>'
+    +'<div class="vmodal-foot">King James Version \u00b7 read it, then fill in the missing words</div>'
+    +'</div>';
+  document.body.appendChild(ov);
+  ov.querySelector('.vmodal-x').onclick=closeVerseModal;
+  ov.querySelector('.vmodal-bg').onclick=closeVerseModal;
+  ov.querySelector('#vm-close').onclick=closeVerseModal;
+  document.addEventListener('keydown', vmodalEsc);
+}
 // Tap a reference → open the verse pop-up (used by studies AND devotionals)
 function wirePassageLinks(scope){
   (scope||document).querySelectorAll('[data-passage]').forEach(function(el){
     if(el.dataset.vwired) return; el.dataset.vwired='1';
-    el.addEventListener('click',function(e){ e.preventDefault(); showVerseModal(el.dataset.passage); });
+    el.addEventListener('click',function(e){
+      e.preventDefault();
+      // Prefer the verse text bundled on the link (works with no Bible file deployed).
+      if(el.dataset.versetext){ showVerseText(el.dataset.passage, el.dataset.versetext); }
+      else { showVerseModal(el.dataset.passage); }
+    });
   });
 }
 
@@ -4616,6 +4638,9 @@ const prog=readProg(CO.id);
 const answers=prog.answers||{};
 const done=prog.completed;
 const norm=s=>(s||'').toLowerCase().replace(/[^a-z]/g,'');
+// Rebuild the whole verse (blanks filled with their answers) so a tap can show it in a box,
+// with no dependency on an external Bible file being deployed.
+const fullVerse=(v,bl)=>{let k=0;return String(v||'').replace(/___/g,()=>(bl&&bl[k]!==undefined)?bl[k++]:'____');};
 const qDone=(qq,i)=>{
   const a=answers[i];
   if(qq.blanks){ if(!a||!a.b)return false; return qq.blanks.every((w,j)=>norm(a.b[j])===norm(w)); }
@@ -4624,7 +4649,7 @@ const qDone=(qq,i)=>{
 let qhtml=CO.questions.map((qq,i)=>{
  const TRANS=CO.trans||'NKJV';
  const refLink = TRANS==='KJV'
-   ? `⛏️ Open your Bible (KJV): <a href="#bible" class="study-ref" data-passage="${esc(qq.ref)}">${esc(qq.ref)}</a> — tap it to read here, then fill in the missing words`
+   ? `⛏️ Open your Bible (KJV): <a href="#bible" class="study-ref" data-passage="${esc(qq.ref)}" data-versetext="${esc(fullVerse(qq.verse,qq.blanks))}">${esc(qq.ref)}</a> — tap it to read here, then fill in the missing words`
    : `⛏️ Open your Bible (NKJV): <a href="${bibleUrl(qq.ref)}" target="_blank" rel="noopener">${esc(qq.ref)}</a> — fill in the missing words`;
  if(qq.blanks){
   const a=answers[i]||{b:[],r:''};
