@@ -5492,6 +5492,9 @@ document.getElementById('save-wf').onclick=async()=>{
   var ok=document.getElementById('wf-ok');
   try{
     await saveLive();
+    // Preserve the sermon folder set elsewhere (e.g. Voice Preach): pull the
+    // freshest value from Firebase first, so saving the panel never blanks it.
+    try{ var _snap=await db.ref('content/sermons/folder').get(); if(_snap&&_snap.exists()){ C.sermons=C.sermons||{}; C.sermons.folder=_snap.val()||''; } }catch(_e){}
     await sermonWrite({total:+(document.getElementById('se-total').value||0),on:document.getElementById('se-on').value==='yes'});
     await cfgSet({slidedelay:Math.max(0,Math.min(60,+(document.getElementById('se-delay').value||0))),presentcode:v('pr-codeset')});
     seUpd(); ok.className='ok'; ok.textContent='Saved \u2713 \u2014 the map knows what is live.';
