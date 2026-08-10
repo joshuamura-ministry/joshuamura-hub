@@ -140,6 +140,9 @@ footer .v{font-family:'Fraunces',serif;font-style:italic;font-size:1.05em;color:
 /* pinned live-class video that stays at the top of the Mine while lessons scroll below */
 #present-stage{position:fixed;inset:0;z-index:9999;background:#000;display:flex;align-items:center;justify-content:center}
 .live-slide-wrap:fullscreen{background:#000;display:flex;align-items:center;justify-content:center}
+#live-fs-overlay{position:fixed;inset:0;z-index:99999;background:#000;display:none;align-items:center;justify-content:center}
+#live-fs-overlay img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block}
+#live-fs-overlay #live-fs-overlay-x{position:fixed;top:16px;right:16px;width:48px;height:48px;border-radius:50%;border:2px solid rgba(255,255,255,.5);background:rgba(0,0,0,.55);color:#fff;font-size:1.3rem;cursor:pointer;backdrop-filter:blur(4px)}
 .live-slide-wrap:fullscreen img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;border-radius:0}
 .live-slide-wrap:-webkit-full-screen{background:#000;display:flex;align-items:center;justify-content:center}
 .live-slide-wrap:-webkit-full-screen img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;border-radius:0}
@@ -661,6 +664,7 @@ if(db){
       var lab=liveImg.closest('.card')&&liveImg.closest('.card').querySelector('.note');
       if(lab)lab.textContent='Slide '+nn+' of '+C.sermons.total+' · the slides turn as he teaches';
       var fb=document.getElementById('live-fs-btn'); if(fb && !fb._bound){ fb._bound=true; fb.onclick=liveEnterFullscreen; }
+      liveOverlaySync();
       showLivePill(); return;   /* smooth in-place update, no full re-render */
     }
     var pwWall=document.getElementById('pw-wall');
@@ -3646,9 +3650,43 @@ function livePreloadSlides(total){
 function liveEnterFullscreen(){
   var img=document.getElementById('live-present-img');
   if(!img)return;
+  // Try real fullscreen first (works on iPad, Mac, Android). If iOS iPhone
+  // blocks it, fall back to a CSS overlay that fills the whole screen —
+  // that works everywhere, including iPhone Safari.
   var el=img.closest('.live-slide-wrap')||img;
-  var req=el.requestFullscreen||el.webkitRequestFullscreen||el.webkitEnterFullscreen||img.webkitEnterFullscreen;
-  try{ if(req) req.call(el.requestFullscreen?el:img); }catch(e){ try{ if(img.webkitEnterFullscreen) img.webkitEnterFullscreen(); }catch(_e){} }
+  var real=el.requestFullscreen||el.webkitRequestFullscreen;
+  if(real){ try{ real.call(el); return; }catch(e){} }
+  liveOverlayFullscreen(sermonSlideURL(Math.min(Math.max(1,(C.sermons&&C.sermons.current)||1),(C.sermons&&C.sermons.total)||1)));
+}
+/* Universal full-screen: a black overlay filling the viewport with the slide,
+   kept in sync with the live position. Tap anywhere to close. Works on iPhone. */
+var _liveOverlayOn=false;
+function liveOverlayFullscreen(src){
+  var ov=document.getElementById('live-fs-overlay');
+  if(!ov){
+    ov=document.createElement('div'); ov.id='live-fs-overlay';
+    ov.innerHTML='<img id="live-fs-overlay-img" alt="Slide"><button id="live-fs-overlay-x" aria-label="Close">✕</button>';
+    document.body.appendChild(ov);
+    ov.addEventListener('click',liveExitOverlay);
+  }
+  ov.querySelector('#live-fs-overlay-img').src=src;
+  ov.style.display='flex';
+  _liveOverlayOn=true;
+  try{ if(screen.orientation&&screen.orientation.lock) screen.orientation.lock('landscape').catch(function(){}); }catch(e){}
+}
+function liveExitOverlay(){
+  var ov=document.getElementById('live-fs-overlay'); if(ov)ov.style.display='none';
+  _liveOverlayOn=false;
+  try{ if(screen.orientation&&screen.orientation.unlock) screen.orientation.unlock(); }catch(e){}
+}
+/* Keep the overlay image following the live slide while it's open. */
+function liveOverlaySync(){
+  if(!_liveOverlayOn)return;
+  var im=document.getElementById('live-fs-overlay-img');
+  if(im && C.sermons && C.sermons.total){
+    var nn=Math.min(Math.max(1,C.sermons.current||1),C.sermons.total);
+    var u=sermonSlideURL(nn); if(im.src!==u) im.src=u;
+  }
 }
 function sermonsPanel(){
   var s=C.sermons;
