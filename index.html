@@ -139,6 +139,10 @@ footer .v{font-family:'Fraunces',serif;font-style:italic;font-size:1.05em;color:
 .psave{margin-top:.5em}
 /* pinned live-class video that stays at the top of the Mine while lessons scroll below */
 #present-stage{position:fixed;inset:0;z-index:9999;background:#000;display:flex;align-items:center;justify-content:center}
+.live-slide-wrap:fullscreen{background:#000;display:flex;align-items:center;justify-content:center}
+.live-slide-wrap:fullscreen img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;border-radius:0}
+.live-slide-wrap:-webkit-full-screen{background:#000;display:flex;align-items:center;justify-content:center}
+.live-slide-wrap:-webkit-full-screen img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;border-radius:0}
 #present-stage img{max-width:100%;max-height:100%;object-fit:contain;display:block;position:relative;z-index:0;pointer-events:none;background:#000}
 #present-stage .pnav{position:fixed;inset:0;display:flex;z-index:1}
 #present-stage .pnav .l,#present-stage .pnav .r{flex:1;cursor:pointer}
@@ -652,9 +656,11 @@ if(db){
     var liveImg=document.getElementById('live-present-img');
     if(liveImg && C.live.expedition.on && C.live.expedition.source==='present' && C.sermons && C.sermons.total){
       var nn=Math.min(Math.max(1,C.sermons.current||1),C.sermons.total);
-      liveImg.src=sermonSlideURL(nn);
-      var lab=liveImg.parentNode&&liveImg.parentNode.querySelector('.note');
+      livePreloadSlides(C.sermons.total);
+      liveImg.src=sermonSlideURL(nn);   // instant: already preloaded
+      var lab=liveImg.closest('.card')&&liveImg.closest('.card').querySelector('.note');
       if(lab)lab.textContent='Slide '+nn+' of '+C.sermons.total+' · the slides turn as he teaches';
+      var fb=document.getElementById('live-fs-btn'); if(fb && !fb._bound){ fb._bound=true; fb.onclick=liveEnterFullscreen; }
       showLivePill(); return;   /* smooth in-place update, no full re-render */
     }
     var pwWall=document.getElementById('pw-wall');
@@ -3615,11 +3621,34 @@ function livePresentView(){
     return '<div class="card" style="text-align:center"><div style="font-size:2.2rem">📱</div><p class="sub">The live presentation is about to begin — the first slide will appear here shortly.</p></div>';
   }
   var n=Math.min(Math.max(1,s.current||1),s.total);
+  // Preload every slide so switching is instant (no network fetch, no flash).
+  livePreloadSlides(s.total);
   return '<div class="card" style="padding:.5em;border-color:var(--red)">'
     +'<div style="text-align:center;margin-bottom:.4em"><b style="color:var(--red)">🔴 LIVE — following Pastor Josh</b></div>'
-    +'<img src="'+sermonSlideURL(n)+'" alt="Slide '+n+'" style="width:100%;border-radius:10px;display:block;background:#000" '
+    +'<div class="live-slide-wrap" style="position:relative">'
+    +'<img id="live-present-img" src="'+sermonSlideURL(n)+'" alt="Slide '+n+'" style="width:100%;border-radius:10px;display:block;background:#000;transition:none" '
     +'onerror="this.style.opacity=.4;this.alt=\'Slide '+n+'\'">'
+    +'<button id="live-fs-btn" title="Full screen" aria-label="Full screen" '
+    +'style="position:absolute;bottom:10px;right:10px;width:42px;height:42px;border-radius:50%;border:none;'
+    +'background:rgba(0,0,0,.55);color:#fff;font-size:1.1rem;cursor:pointer;backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center">⛶</button>'
+    +'</div>'
     +'<div class="note" style="text-align:center;margin-top:.4em">Slide '+n+' of '+s.total+' · the slides turn as he teaches</div></div>';
+}
+/* Preload all sermon slides into the browser cache so src swaps are instant. */
+var _livePreloaded={};
+function livePreloadSlides(total){
+  for(var i=1;i<=total;i++){
+    if(_livePreloaded[i])continue;
+    var im=new Image(); im.src=sermonSlideURL(i); _livePreloaded[i]=im;
+  }
+}
+/* Full-screen the live slide (viewer taps the ⛶ button). */
+function liveEnterFullscreen(){
+  var img=document.getElementById('live-present-img');
+  if(!img)return;
+  var el=img.closest('.live-slide-wrap')||img;
+  var req=el.requestFullscreen||el.webkitRequestFullscreen||el.webkitEnterFullscreen||img.webkitEnterFullscreen;
+  try{ if(req) req.call(el.requestFullscreen?el:img); }catch(e){ try{ if(img.webkitEnterFullscreen) img.webkitEnterFullscreen(); }catch(_e){} }
 }
 function sermonsPanel(){
   var s=C.sermons;
@@ -4829,6 +4858,12 @@ app.innerHTML=`${crumb()}
  ${(ex.source==='present')?'<div class="card note" style="text-align:center">📽️ <b>Presenting the JPEG slides?</b> <a href="#present">Open Presenter mode</a> — full-screen for the projector.</div>':''}
  ${footer()}`;
 if(ex.on){ wireQAAsk(); qaPaintSpotlight(); }
+if(ex.on&&ex.source==='present'){
+  setTimeout(function(){
+    var fb=document.getElementById('live-fs-btn');
+    if(fb && !fb._bound){ fb._bound=true; fb.onclick=liveEnterFullscreen; }
+  },30);
+}
 if(ex.on&&ex.source==='jitsi'){ mountCircle('circle-watchfire',ex.room,'Friend'); }
 if(ex.on&&ex.source==='ipres'){
   setTimeout(function(){
