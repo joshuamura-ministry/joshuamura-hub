@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Voice Preach — Pastor Josh</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- Firebase (same SDK the hub uses) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<style>
+  :root{
+    --paper:#F1EEE3;
+    --paper-deep:#E7E2D2;
+    --ink:#1F241E;
+    --ink-soft:#5A5F53;
+    --brass:#A97A28;
+    --brass-soft:#E9DCBD;
+    --moss:#4A7A52;
+    --moss-deep:#2F5637;
+    --signal:#C24936;
+    --booth:#14161A;
+    --booth-panel:#1D2026;
+    --booth-line:#2C3039;
+    --booth-text:#E8E5DA;
+    --booth-dim:#8B8D84;
+    --radius:10px;
+    --serif:'Source Serif 4', Charter, Georgia, serif;
+    --display:'Fraunces', Georgia, serif;
+    --mono:'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;}
+
+  /* ---------- PIN gate ---------- */
+  #pinGate{
+    position:fixed; inset:0; z-index:10000; background:var(--booth);
+    display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  #pinGate.hide{display:none;}
+  .pin-box{
+    background:var(--booth-panel); border:1px solid var(--booth-line);
+    border-radius:16px; padding:30px 26px; max-width:340px; width:100%; text-align:center;
+    color:var(--booth-text);
+  }
+  .pin-title{font-family:var(--display); font-weight:700; font-size:32px; margin:6px 0 8px; color:var(--booth-text);}
+  .pin-sub{color:var(--booth-dim); font-size:14.5px; margin:0 0 18px;}
+  #pinInput{
+    width:100%; font-family:var(--mono); font-size:20px; text-align:center; letter-spacing:.3em;
+    padding:12px; border-radius:10px; border:1.5px solid var(--booth-line);
+    background:#0F1114; color:var(--booth-text); margin-bottom:12px;
+  }
+  #pinInput:focus{outline:2px solid var(--brass);}
+  .pin-box .btn{width:100%;}
+  .pin-err{color:var(--signal); font-family:var(--mono); font-size:12.5px; min-height:1.2em; margin:10px 0 0;}
+
+  .conn-dot{font-size:10px; vertical-align:middle; color:var(--booth-dim);}
+  .conn-dot.ok{color:var(--moss);}
+  .conn-dot.off{color:var(--signal);}
+  .conn-text{font-family:var(--mono); font-size:10px; letter-spacing:.08em; text-transform:none; color:var(--ink-soft);}
+  body.live-mode .conn-text, body.live-mode .conn-dot{}
+
+  /* ---------- live slide preview (presenter cockpit) ---------- */
+  .slide-preview{
+    background:#000; border:1px solid var(--booth-line); border-radius:12px;
+    overflow:hidden; position:relative; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center;
+  }
+  .slide-preview img{width:100%; height:100%; object-fit:contain; display:block;}
+  .slide-preview .noimg{color:var(--booth-dim); font-family:var(--mono); font-size:12px; text-align:center; padding:10px;}
+  .slide-preview .badge{
+    position:absolute; top:8px; left:8px; font-family:var(--mono); font-size:11px;
+    background:rgba(0,0,0,.6); color:#fff; padding:3px 8px; border-radius:6px;
+  }
+  .slide-preview.flash img{animation:slidepop .4s ease;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--serif);
+    font-size:17px;
+    line-height:1.55;
+    min-height:100vh;
+  }
+  body.live-mode{background:var(--booth); color:var(--booth-text);}
+
+  header.masthead{
+    padding:26px 24px 18px;
+    max-width:880px; margin:0 auto;
+  }
+  .eyebrow{
+    font-family:var(--mono); font-size:11px; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--brass); margin:0 0 6px;
+  }
+  h1{
+    font-family:var(--display); font-weight:700; font-size:clamp(26px,4.5vw,38px);
+    margin:0; line-height:1.12; letter-spacing:-0.01em;
+  }
+  .masthead p.sub{margin:10px 0 0; color:var(--ink-soft); max-width:56ch; font-size:15.5px;}
+  body.live-mode .masthead{display:none;}
+
+  /* ---------- Step rail ---------- */
+  nav.steps{
+    max-width:880px; margin:14px auto 0; padding:0 24px;
+    display:flex; gap:8px; flex-wrap:wrap;
+  }
+  nav.steps button{
+    font-family:var(--mono); font-size:12.5px; letter-spacing:.04em;
+    border:1.5px solid var(--ink); background:transparent; color:var(--ink);
+    padding:9px 14px; border-radius:999px; cursor:pointer;
+  }
+  nav.steps button[aria-current="true"]{background:var(--ink); color:var(--paper);}
+  nav.steps button:disabled{opacity:.35; cursor:default;}
+  body.live-mode nav.steps{display:none;}
+
+  main{max-width:880px; margin:0 auto; padding:20px 24px 80px;}
+  body.live-mode main{max-width:none; padding:0;}
+
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  /* ---------- Step 1: paste ---------- */
+  textarea#manuscriptInput{
+    width:100%; min-height:46vh; resize:vertical;
+    font-family:var(--serif); font-size:17px; line-height:1.6;
+    padding:18px; border:1.5px solid var(--ink); border-radius:var(--radius);
+    background:#FBFAF4; color:var(--ink);
+  }
+  textarea#manuscriptInput:focus{outline:3px solid var(--brass-soft);}
+  .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:14px;}
+  .btn{
+    font-family:var(--mono); font-size:14px; letter-spacing:.03em;
+    padding:12px 20px; border-radius:var(--radius); cursor:pointer;
+    border:1.5px solid var(--ink); background:var(--ink); color:var(--paper);
+  }
+  .btn.ghost{background:transparent; color:var(--ink);}
+  .btn:focus-visible{outline:3px solid var(--brass); outline-offset:2px;}
+  .hint{font-size:14px; color:var(--ink-soft);}
+
+  /* ---------- Step 2: mark cues ---------- */
+  .mark-help{
+    background:var(--paper-deep); border-radius:var(--radius);
+    padding:14px 16px; font-size:15px; margin-bottom:16px;
+  }
+  .mark-help strong{color:var(--moss-deep);}
+
+  /* ---------- slide loader (Mark step) ---------- */
+  .slides-loader{
+    background:#FBFAF4; border:1.5px solid var(--ink); border-radius:var(--radius);
+    padding:16px 18px; margin-top:18px;
+  }
+  .slides-loader-head{font-size:14.5px; color:var(--ink-soft); margin-bottom:12px;}
+  .slides-loader-head strong{color:var(--ink);}
+  .file-btn{position:relative; cursor:pointer;}
+  .slide-thumbs{
+    display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;
+  }
+  .slide-thumbs figure{
+    margin:0; width:74px; text-align:center;
+  }
+  .slide-thumbs img{
+    width:74px; height:52px; object-fit:cover; border-radius:6px;
+    border:1.5px solid var(--paper-deep); display:block;
+  }
+  .slide-thumbs figcaption{font-family:var(--mono); font-size:10.5px; color:var(--ink-soft); margin-top:3px;}
+
+  /* ---------- live slide image ---------- */
+  .slide-img-wrap{
+    width:100%; border-radius:10px; overflow:hidden; background:#000;
+    display:flex; align-items:center; justify-content:center;
+  }
+  #slideImg{width:100%; height:auto; display:block;}
+  #slideImg.flash{animation:slidepop .45s ease;}
+  @keyframes slidepop{0%{opacity:.35;} 100%{opacity:1;}}
+  .slide-num-box{text-align:center;}
+  #markSheet{
+    background:#FBFAF4; border:1.5px solid var(--ink); border-radius:var(--radius);
+    padding:26px 28px; font-size:18px; line-height:2.05;
+  }
+  #markSheet .w{
+    cursor:pointer; border-radius:4px; padding:1px 2px;
+  }
+  #markSheet .w:hover{background:var(--brass-soft);}
+  .cue-chip{
+    display:inline-block; font-family:var(--mono); font-size:12px; font-weight:500;
+    background:var(--brass); color:#FFF; border-radius:5px;
+    padding:2px 8px; margin:0 4px; cursor:pointer; user-select:none;
+    vertical-align:baseline; white-space:nowrap;
+  }
+  .cue-chip::before{content:"▸ ";}
+  .cue-chip:hover{background:var(--signal);}
+  .para-break{display:block; height:0.9em;}
+
+  /* ---------- Live mode ---------- */
+  #livePanel.active{display:flex;}
+  #livePanel{
+    flex-direction:column; height:100vh; height:100dvh;
+  }
+  .live-top{
+    display:flex; flex:1 1 auto; min-height:0;
+  }
+  .live-left{
+    flex:0 0 300px; display:flex; flex-direction:column; align-items:stretch;
+    border-right:1px solid var(--booth-line); padding:18px;
+    gap:14px;
+  }
+  .slide-card{
+    background:var(--booth-panel); border:1px solid var(--booth-line);
+    border-radius:14px; text-align:center; padding:18px 10px 22px;
+  }
+  .slide-card .lbl{font-family:var(--mono); font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--booth-dim);}
+  #slideNum{
+    font-family:var(--display); font-weight:700; font-size:110px; line-height:1;
+    color:var(--booth-text); display:block; margin-top:4px;
+    font-variant-numeric:tabular-nums;
+  }
+  #slideNum.flash{animation:pop .45s ease;}
+  @keyframes pop{0%{transform:scale(1);} 30%{transform:scale(1.12); color:var(--brass);} 100%{transform:scale(1);}}
+  .slide-card .of{font-family:var(--mono); font-size:13px; color:var(--booth-dim);}
+
+  .listen-card{
+    background:var(--booth-panel); border:1px solid var(--booth-line);
+    border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:10px;
+  }
+  #listenBtn{
+    font-family:var(--mono); font-size:15px; padding:14px;
+    border-radius:10px; border:none; cursor:pointer;
+    background:var(--moss); color:#fff; width:100%;
+  }
+  #listenBtn.on{background:var(--signal);}
+  .ear{
+    display:flex; align-items:center; gap:8px;
+    font-family:var(--mono); font-size:12px; color:var(--booth-dim);
+  }
+  .ear .dot{
+    width:9px; height:9px; border-radius:50%; background:var(--booth-line);
+    flex:0 0 auto;
+  }
+  .ear.hearing .dot{background:var(--moss); box-shadow:0 0 8px var(--moss);}
+  .manual-row{display:flex; gap:10px;}
+  .level-wrap{
+    height:8px; border-radius:5px; background:var(--booth-line); overflow:hidden;
+  }
+  .level-bar{
+    height:100%; width:0%; border-radius:5px;
+    background:linear-gradient(90deg,var(--moss),var(--brass));
+    transition:width .06s linear;
+  }
+  .mic-test{
+    font-family:var(--mono); font-size:12.5px; padding:9px;
+    border-radius:8px; border:1px solid var(--booth-line);
+    background:transparent; color:var(--booth-dim); cursor:pointer;
+  }
+  .mic-test.on{color:var(--booth-text); border-color:var(--moss);}
+  .file-warn{
+    margin:0 0 4px; font-family:var(--mono); font-size:11.5px; line-height:1.5;
+    color:#F0C36A; background:rgba(240,195,106,.10);
+    border:1px solid rgba(240,195,106,.4); border-radius:8px; padding:8px 10px;
+  }
+  .manual-row button{
+    flex:1; font-family:var(--mono); font-size:14px; padding:14px 0;
+    border-radius:10px; border:1px solid var(--booth-line);
+    background:transparent; color:var(--booth-text); cursor:pointer;
+  }
+  .manual-row button:active{background:var(--booth-line);}
+  .live-left .tiny{font-family:var(--mono); font-size:11.5px; color:var(--booth-dim); line-height:1.5;}
+  .live-left .exit{margin-top:auto;}
+  .exit button, .reset-run{
+    width:100%; font-family:var(--mono); font-size:12.5px; padding:10px;
+    border-radius:8px; border:1px solid var(--booth-line);
+    background:transparent; color:var(--booth-dim); cursor:pointer;
+  }
+
+  .live-script{
+    flex:1 1 auto; overflow-y:auto; padding:34px 40px 45vh;
+    font-size:20px; line-height:2.0; color:var(--booth-text);
+    scroll-behavior:smooth;
+  }
+  .live-script .w{border-radius:4px; padding:1px 2px; transition:color .3s; color:var(--booth-text);}
+  .live-script .w.read{color:var(--booth-dim);}   /* already spoken → fades back */
+  .live-script .w.here{
+    background:var(--brass); color:#14161A; font-weight:600;
+  }
+  .live-script .cue-chip{cursor:default; background:#3A3E48; color:var(--booth-dim);}
+  .live-script .cue-chip.armed{background:var(--brass); color:#fff;}
+  .live-script .cue-chip.hit{background:var(--moss); color:#fff;}
+  .live-script .cue-chip.hit.manual{background:#5A6B9E;}
+
+  .ticker{
+    flex:0 0 auto; border-top:1px solid var(--booth-line);
+    padding:10px 18px; display:flex; gap:14px; align-items:baseline;
+    font-family:var(--mono); font-size:13px; min-height:42px;
+  }
+  .ticker .lbl{color:var(--booth-dim); font-size:10.5px; letter-spacing:.15em; text-transform:uppercase; flex:0 0 auto;}
+  #tickerText{color:var(--booth-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; direction:rtl; text-align:left; flex:1;}
+  #tickerText bdi{unicode-bidi:plaintext;}
+
+  /* ---------- Log / report ---------- */
+  #logPanel .report-card{
+    background:#FBFAF4; border:1.5px solid var(--ink); border-radius:var(--radius);
+    padding:20px 22px; margin-bottom:16px;
+  }
+  .scoreline{
+    font-family:var(--display); font-size:30px; font-weight:600; margin:0 0 4px;
+  }
+  .scoreline .good{color:var(--moss-deep);}
+  table.cue-log{
+    width:100%; border-collapse:collapse; font-size:14.5px; margin-top:8px;
+  }
+  table.cue-log th{
+    font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+    text-align:left; color:var(--ink-soft); padding:6px 8px; border-bottom:1.5px solid var(--ink);
+  }
+  table.cue-log td{padding:7px 8px; border-bottom:1px solid var(--paper-deep); vertical-align:top;}
+  td.st-auto{color:var(--moss-deep); font-family:var(--mono); font-size:13px;}
+  td.st-manual{color:#3D4E8C; font-family:var(--mono); font-size:13px;}
+  td.st-miss{color:var(--signal); font-family:var(--mono); font-size:13px;}
+  .heard{font-family:var(--mono); font-size:12.5px; color:var(--ink-soft);}
+
+  .support-warn{
+    background:#F6E3DE; border:1.5px solid var(--signal); color:#7A2A1E;
+    border-radius:var(--radius); padding:14px 16px; font-size:15px; margin-bottom:16px;
+    display:none;
+  }
+
+  @media (max-width:700px){
+    .live-top{flex-direction:column;}
+    .live-left{flex:0 0 auto; flex-direction:row; flex-wrap:wrap; border-right:none; border-bottom:1px solid var(--booth-line);}
+    .slide-card{flex:1 1 130px;}
+    #slideNum{font-size:64px;}
+    .listen-card{flex:1 1 180px;}
+    .live-left .tiny, .live-left .exit{flex:1 1 100%;}
+    .live-script{padding:22px 18px 40vh; font-size:18px;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    #slideNum.flash{animation:none;}
+    .live-script{scroll-behavior:auto;}
+  }
+</style>
+</head>
+<body>
+
+<!-- PIN gate: same code as the hub's Steward panel -->
+<div id="pinGate">
+  <div class="pin-box">
+    <p class="eyebrow">Pastor Josh · private</p>
+    <h1 class="pin-title">Voice Preach</h1>
+    <p class="pin-sub">Enter your presenter code to open the voice-cued preaching tool.</p>
+    <input id="pinInput" type="password" inputmode="numeric" autocomplete="off" placeholder="code" aria-label="Presenter code">
+    <button class="btn" id="pinBtn">Unlock</button>
+    <p class="pin-err" id="pinErr"></p>
+  </div>
+</div>
+
+<header class="masthead">
+  <p class="eyebrow">Pastor Josh · voice-cued preaching <span id="connDot" class="conn-dot" title="Live sync">●</span> <span id="connText" class="conn-text">connecting…</span></p>
+  <h1>Voice Preach</h1>
+  <p class="sub">Paste your manuscript with the @@@ marks where slides change, then read aloud. As you reach each mark it advances the sermon slide — on the projector, the booth, and everyone following live. Your clicker always works too.</p>
+</header>
+
+<nav class="steps" aria-label="Steps">
+  <button id="tabPaste" aria-current="true">1 · Paste manuscript</button>
+  <button id="tabMark" disabled>2 · Mark slide turns</button>
+  <button id="tabLive" disabled>3 · Preach</button>
+  <button id="tabLog" disabled>Report</button>
+</nav>
+
+<main>
+  <div class="support-warn" id="supportWarn">
+    This browser doesn't offer speech recognition. On iPad, open this page in <strong>Safari</strong>. On a laptop, use Chrome, Edge, or Safari.
+  </div>
+
+  <!-- STEP 1 -->
+  <section class="panel active" id="pastePanel">
+    <textarea id="manuscriptInput" placeholder="Paste the full sermon manuscript here, exactly as it will be preached…" spellcheck="false"></textarea>
+    <div class="row">
+      <button class="btn" id="toMarkBtn">Mark slide turns →</button>
+      <button class="btn ghost" id="sampleBtn">Load the John Mark sermon</button>
+      <span class="hint" id="saveHint"></span>
+    </div>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" id="markPanel">
+    <div class="mark-help">
+      If your manuscript had <strong>@@@ marks</strong>, the slide turns below are already placed for you — each one sits on the last word before the @@@, so the slide flips right as you begin the new section. To adjust: tap a marker to remove it, or tap any word to add one there. Markers renumber themselves (you begin on slide&nbsp;1).
+    </div>
+    <div id="markSheet" aria-label="Manuscript with cue markers"></div>
+
+    <div class="slides-loader" id="slidesLoader">
+      <div class="slides-loader-head">
+        <strong>Sermon slides:</strong> these come from your hub's <b>/SERMONS</b> folder (1.jpg, 2.jpg…). Your @@@ marks below number the slides automatically — you begin on slide&nbsp;1. Just confirm how many slides this sermon has so the last one doesn't overrun.
+      </div>
+      <div class="row">
+        <label class="hint" for="slideTotal">Slides in this sermon:</label>
+        <input type="number" id="slideTotal" min="1" max="50" value="1" style="width:5em;font-family:var(--mono);font-size:16px;padding:8px;border:1.5px solid var(--ink);border-radius:8px;">
+        <span class="hint" id="slidesHint"></span>
+      </div>
+    </div>
+
+    <div class="row">
+      <button class="btn" id="toLiveBtn">Start preaching →</button>
+      <button class="btn ghost" id="backToPasteBtn">← Edit manuscript</button>
+      <span class="hint" id="cueCountHint">No slide turns marked yet.</span>
+    </div>
+  </section>
+
+  <!-- STEP 3: LIVE -->
+  <section class="panel" id="livePanel">
+    <div class="live-top">
+      <div class="live-left">
+        <div class="slide-preview" id="slidePreview">
+          <span class="badge" id="slideBadge">1 / 1</span>
+          <img id="slideImg" alt="Current sermon slide" style="display:none">
+          <div class="noimg" id="slideNoImg">Slide 1</div>
+        </div>
+        <div class="listen-card">
+          <p class="file-warn" id="fileWarn" style="display:none">⚠ You opened this as a downloaded file, so the browser keeps re-asking for the mic. Open it from the hub's https address and it'll ask only once.</p>
+          <button id="listenBtn">▶ Start listening</button>
+          <div class="ear" id="earIndicator"><span class="dot"></span><span id="earText">Mic off</span></div>
+          <div class="level-wrap" id="levelWrap"><div class="level-bar" id="levelBar"></div></div>
+          <button id="testMicBtn" class="mic-test">🎤 Test mic level</button>
+        </div>
+        <div class="manual-row">
+          <button id="prevBtn" aria-label="Previous slide">← Back</button>
+          <button id="nextBtn" aria-label="Next slide">Next →</button>
+        </div>
+        <p class="tiny">Clicker &amp; keyboard always advance the real slides: →, space, or page-down forward; ← or page-up back. Voice and clicker work together — either one drives the projector, booth, and everyone following live.</p>
+        <button class="reset-run" id="resetRunBtn">↺ Restart from slide 1</button>
+        <div class="exit"><button id="exitLiveBtn">✕ End &amp; see report</button></div>
+      </div>
+      <div class="live-script" id="liveScript"></div>
+    </div>
+    <div class="ticker">
+      <span class="lbl">Hearing</span>
+      <span id="tickerText"><bdi>—</bdi></span>
+    </div>
+  </section>
+
+  <!-- REPORT -->
+  <section class="panel" id="logPanel">
+    <div class="report-card">
+      <p class="scoreline" id="scoreLine">No rehearsal yet.</p>
+      <p class="hint" id="scoreSub"></p>
+      <table class="cue-log" id="cueTable" style="display:none">
+        <thead><tr><th>Slide turn</th><th>Result</th><th>Clock</th><th>What it heard at that moment</th></tr></thead>
+        <tbody id="cueTableBody"></tbody>
+      </table>
+    </div>
+    <div class="row">
+      <button class="btn" id="againBtn">Rehearse again</button>
+      <button class="btn ghost" id="copyLogBtn">Copy report as text</button>
+    </div>
+  </section>
+</main>
+
+<script>
+"use strict";
+
+/* ============================================================
+   HUB CONNECTION — matches joshuamura-hub exactly
+   The voice engine's ONLY link to the hub is sermonWrite({current:N}),
+   which writes content/sermons in Firebase. Every follower (projector,
+   booth tab, congregation phones, online viewers) is already listening
+   there and updates automatically — same channel the clicker uses.
+   ============================================================ */
+const HUB = {
+  PIN: '7777',                       // hub PANEL_PIN
+  WRITE_KEY: 'jm-2026-steward',      // hub WRITE_KEY
+  SERMONS_PATH: '/SERMONS/',         // hub SERMONS_PATH
+  SLIDES_EXT: '.jpg',                // hub SLIDES_EXT
+  firebaseConfig: {
+    apiKey:"AIzaSyDUBDjNkekomVzJ15fRbt4W53fUtmYQ9pc",
+    authDomain:"joshuamura.firebaseapp.com",
+    databaseURL:"https://joshuamura-default-rtdb.firebaseio.com",
+    projectId:"joshuamura",
+    storageBucket:"joshuamura.firebasestorage.app",
+    messagingSenderId:"907772957025",
+    appId:"1:907772957025:web:6671580d9acd9c3aeb7520"
+  }
+};
+let db = null;
+try {
+  firebase.initializeApp(HUB.firebaseConfig);
+  db = firebase.database();
+} catch(e){ console.error('firebase init', e); }
+
+/* Mirror of the hub's sermonWrite: pushes {on,total,current} to content/sermons.
+   Slides advance for every follower the instant this runs. */
+async function sermonWrite(patch){
+  if (!db) return false;
+  const cur = { total:+(S.slideTotal||0), on:true, current:(S.slide||1), ...patch };
+  cur.total   = Math.min(50, Math.max(0, cur.total));
+  cur.current = Math.min(Math.max(1, cur.current), Math.max(1, cur.total));
+  try {
+    await db.ref('content/sermons').set({ k:HUB.WRITE_KEY, on:cur.on, total:cur.total, current:cur.current });
+    return true;
+  } catch(e){ console.error('sermonWrite', e); return false; }
+}
+/* Turn the live sermon flag off when preaching ends (leaves slides where they are). */
+async function sermonStop(){
+  if (!db) return;
+  try { await db.ref('content/sermons').update({ k:HUB.WRITE_KEY, on:false }); } catch(e){}
+}
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const S = {
+  tokens: [],        // [{raw, norm, para}] one per word
+  cues: [],          // [{tokenIndex, fired, firedBy, clock, heard}] ordered by tokenIndex; cue k => advance to slide k+2
+  slideTotal: 1,     // number of JPEG slides in this sermon (/SERMONS/N.jpg)
+  committedPtr: 0,   // next expected token index, from finalized speech only
+  provPtr: 0,        // provisional pointer incl. interim speech (drives highlight + cue firing)
+  displayPtr: 0,     // forward-only high-water mark for the highlight (anti-flicker)
+  slide: 1,
+  listening: false,
+  runStarted: null,
+  recognition: null,
+  resultBase: 0,     // finalized result segments already consumed in current recognition instance
+  wordIndex: null,   // Map: normalized word -> [manuscript positions], for global anchor search
+  ctxFinal: [],      // rolling buffer of recent finalized words (phrase-tracker context)
+  gotAnyResult: false,
+  sawInterim: false,
+  lastResultAt: 0,
+  watchdog: null,
+  flushTimer: null,
+  metering: false, micStream: null, audioCtx: null, analyser: null, levelRAF: null,
+  wakeLock: null,
+  earTimer: null,
+};
+
+/* Matching windows. Deliberately tight so a single repeated word ("God", "the",
+   "Mark") can never yank the follower forward. A real jump ahead requires TWO
+   words in a row to confirm the new spot. */
+const OPTS = {
+  nearBack: 3,      // a lone word may re-match a few words he just said (repeats/stumbles)
+  nearAhead: 6,     // a lone word may advance only within this small window
+  pairJump: 30,     // a 2-word phrase may re-sync at most this far away
+  strongRun: 3,     // a run of this many words is a strong anchor
+  gapAllow: 1,      // words he may skip inside a phrase and still keep the lock
+  bufLen: 12,       // how many recent spoken words we keep as rolling context
+  // THE FENCE — even a strong phrase can only pull the follower this far from
+  // where it already is. Beyond this, a coincidental match (an ad-lib that
+  // happens to echo a line further down) is ignored, so it can't leap across
+  // the manuscript. Roughly a line ≈ 11 words, so these are ~5 lines each way.
+  fwdReach: 60,     // farthest it may jump AHEAD on a strong phrase
+  backReach: 45     // farthest it may jump BACK on a strong phrase
+};
+
+/* ============================================================
+   PHRASE-STRENGTH TRACKER
+
+   Instead of chasing one word at a time, we score WHERE he is by how long a
+   run of his recent words lines up with the manuscript:
+
+     · A run of 3-4+ words is distinctive — it pins his exact spot, so we trust
+       it and move there even if it's far away. This is what lets the tracker
+       find him wherever he starts reading, or recover after a big drift.
+     · A run of 2 words is moderate — trusted only within a nearby window.
+     · A lone word is weak — it only nudges the pointer a few words locally and
+       can never cause a jump (this is what stopped the "leap forward" problem).
+     · A word matching nothing is a mishearing — ignored, pointer stays put.
+     · One skipped/missed word inside a phrase is tolerated, so dropping a word
+       doesn't break the lock.
+
+   We keep a short rolling buffer of his most recent words and, each update,
+   re-score against that buffer — so groups of words vote on his position.
+   ============================================================ */
+function normWord(w){
+  return w.toLowerCase().replace(/[’']/g,"").replace(/[^a-z0-9]/g,"");
+}
+function parseManuscript(text){
+  const tokens = [], cueIdx = [];
+  const paras = text.replace(/\r/g,"").split(/\n\s*\n/);
+  paras.forEach((p, pi)=>{
+    p.split(/\s+/).forEach(raw=>{
+      let r = raw;
+      if (/^@{2,}/.test(r)){
+        let idx = tokens.length-1;
+        if (idx < 0) idx = 0;
+        while (cueIdx.includes(idx)) idx++;
+        cueIdx.push(idx);
+        r = r.replace(/^@+/,"");
+        if (!r) return;
+      }
+      const norm = normWord(r);
+      if (norm) tokens.push({raw:r, norm, para:pi});
+    });
+  });
+  return {tokens, cueIdx: cueIdx.sort((a,b)=>a-b)};
+}
+function lev(a,b){
+  if (a===b) return 0;
+  const m=a.length, n=b.length;
+  if (!m) return n; if (!n) return m;
+  let prev = new Array(n+1); for(let j=0;j<=n;j++) prev[j]=j;
+  for(let i=1;i<=m;i++){
+    let cur=[i];
+    for(let j=1;j<=n;j++){
+      cur[j]=Math.min(prev[j]+1, cur[j-1]+1, prev[j-1]+(a[i-1]===b[j-1]?0:1));
+    }
+    prev=cur;
+  }
+  return prev[n];
+}
+function similar(a,b){
+  if (a===b) return true;
+  const L = Math.min(a.length,b.length);
+  if (L>=4 && (a.startsWith(b)||b.startsWith(a))) return true;      // stems: preach/preaching
+  const tol = L>=7 ? 2 : L>=4 ? 1 : 0;                              // typo/ASR tolerance
+  return tol>0 && Math.abs(a.length-b.length)<=tol && lev(a,b)<=tol;
+}
+
+/* Word -> list of manuscript positions, so we can find a distinctive word
+   anywhere in the script instantly (for global re-location on strong anchors). */
+function buildWordIndex(){
+  const m = new Map();
+  S.tokens.forEach((t,i)=>{
+    if (!m.has(t.norm)) m.set(t.norm, []);
+    m.get(t.norm).push(i);
+  });
+  S.wordIndex = m;
+}
+
+/* Given the newest word sits at manuscript position tIdx, how long is the run
+   of his preceding buffered words that also line up just before it? Allows a
+   small number of skipped words so a missed word doesn't break the phrase. */
+function runLengthAt(buf, tIdx){
+  const T = S.tokens;
+  let run = 1, gaps = 0;
+  let bi = buf.length - 2, ti = tIdx - 1;
+  while (bi >= 0 && ti >= 0 && (buf.length - bi) <= OPTS.bufLen){
+    if (similar(buf[bi], T[ti].norm)){ run++; bi--; ti--; }
+    else if (gaps < OPTS.gapAllow){ gaps++; ti--; }   // treat as a word he skipped
+    else break;
+  }
+  return run;
+}
+
+/* Find the best-scoring manuscript position for the newest spoken word, but
+   ONLY within the fence around the current pointer. Longer runs win decisively;
+   ties break toward the nearest position. Because the search is confined, a
+   phrase that only appears far away (an ad-lib echoing a distant line) is never
+   even considered — the follower physically cannot leap across the manuscript. */
+function bestAnchor(buf, ptr){
+  const T = S.tokens, n = T.length;
+  const last = buf[buf.length-1];
+  if (!last) return null;
+
+  const lo = Math.max(0, ptr - OPTS.backReach);
+  const hi = Math.min(n, ptr + OPTS.fwdReach + 1);
+  let best = null;
+  for (let idx = lo; idx < hi; idx++){
+    if (!similar(last, T[idx].norm)) continue;
+    const run  = runLengthAt(buf, idx);
+    const dist = Math.abs(idx - ptr);
+    const score = run * 100000 - dist;     // run dominates; proximity is the tie-breaker
+    if (!best || score > best.score) best = { idx, run, dist, score };
+  }
+  return best;
+}
+
+/* Decide where the pointer goes given the anchor strength. */
+function trackStep(ptr, buf){
+  const a = bestAnchor(buf, ptr);
+  if (!a) return ptr;                                   // newest word matched nothing → hold
+  const np = a.idx + 1;                                 // pointer sits just past the matched word
+  if (a.run >= OPTS.strongRun) return np;               // strong phrase → trust (already fenced)
+  if (a.run === 2) return a.dist <= OPTS.pairJump ? np : ptr;  // pair → nearby only
+
+  // Lone word: accept only the NEAREST occurrence in the small window, and only
+  // if it's essentially where we already are (0-2 ahead) or a step back. A lone
+  // common word must never skip the reader over intervening manuscript words.
+  const T = S.tokens, last = buf[buf.length-1];
+  for (let k = 0; k <= 2; k++){
+    const idx = ptr + k;
+    if (idx < T.length && similar(last, T[idx].norm)) return idx + 1;
+  }
+  for (let k = 1; k <= OPTS.nearBack; k++){
+    const idx = ptr - k;
+    if (idx >= 0 && similar(last, T[idx].norm)) return idx + 1;
+  }
+  return ptr;
+}
+
+/* Feed a list of spoken words through the tracker, maintaining a rolling
+   context buffer so multi-word groups accumulate and vote. */
+function trackWords(ptr, words, ctx){
+  for (const raw of words){
+    const w = raw;
+    if (!w) continue;
+    ctx.push(w);
+    if (ctx.length > OPTS.bufLen) ctx.shift();
+    ptr = trackStep(ptr, ctx);
+  }
+  return ptr;
+}
+
+/* ============================================================
+   PERSISTENCE
+   ============================================================ */
+const LS_KEY = "voiceCuePrototype.v1";
+function saveState(){
+  try{
+    localStorage.setItem(LS_KEY, JSON.stringify({
+      text: document.getElementById("manuscriptInput").value,
+      cueIdx: S.cues.map(c=>c.tokenIndex)
+    }));
+    document.getElementById("saveHint").textContent = "Saved on this device.";
+  }catch(e){}
+}
+function loadState(){
+  try{
+    const d = JSON.parse(localStorage.getItem(LS_KEY));
+    if (d && d.text){
+      document.getElementById("manuscriptInput").value = d.text;
+      S.pendingCueIdx = d.cueIdx || [];
+      document.getElementById("saveHint").textContent = "Restored your last manuscript.";
+    }
+  }catch(e){}
+}
+
+/* ============================================================
+   NAVIGATION BETWEEN STEPS
+   ============================================================ */
+const panels = { paste:"pastePanel", mark:"markPanel", live:"livePanel", log:"logPanel" };
+const tabs   = { paste:"tabPaste",  mark:"tabMark",  live:"tabLive",  log:"tabLog" };
+function show(name){
+  for (const k in panels){
+    document.getElementById(panels[k]).classList.toggle("active", k===name);
+    document.getElementById(tabs[k]).setAttribute("aria-current", k===name ? "true":"false");
+  }
+  document.body.classList.toggle("live-mode", name==="live");
+  if (name!=="live"){ if (S.listening) stopListening(); if (S.metering) stopMicTest(); }
+}
+
+/* ============================================================
+   STEP 2 — MARK CUES
+   ============================================================ */
+function buildMarkSheet(){
+  const sheet = document.getElementById("markSheet");
+  sheet.innerHTML = "";
+  let lastPara = 0;
+  S.tokens.forEach((t,i)=>{
+    if (t.para !== lastPara){ sheet.appendChild(el("span","para-break")); lastPara = t.para; }
+    const w = el("span","w", t.raw+" ");
+    w.dataset.i = i;
+    w.addEventListener("click", ()=>toggleCue(i));
+    sheet.appendChild(w);
+    const cue = S.cues.find(c=>c.tokenIndex===i);
+    if (cue){
+      const chip = el("span","cue-chip","slide "+(S.cues.indexOf(cue)+2));
+      chip.addEventListener("click",(e)=>{e.stopPropagation(); toggleCue(i);});
+      sheet.appendChild(chip); sheet.appendChild(document.createTextNode(" "));
+    }
+  });
+  const n = S.cues.length;
+  document.getElementById("cueCountHint").textContent =
+    n===0 ? "No slide turns marked yet." :
+    n===1 ? "1 slide turn marked → rehearsal runs slides 1–2." :
+    n+" slide turns marked → rehearsal runs slides 1–"+(n+1)+".";
+}
+function toggleCue(i){
+  const at = S.cues.findIndex(c=>c.tokenIndex===i);
+  if (at>=0) S.cues.splice(at,1);
+  else { S.cues.push({tokenIndex:i, fired:false, firedBy:null, clock:null, heard:""}); S.cues.sort((a,b)=>a.tokenIndex-b.tokenIndex); }
+  buildMarkSheet(); saveState();
+}
+function el(tag, cls, txt){
+  const e=document.createElement(tag); if(cls) e.className=cls;
+  if (txt!==undefined) e.textContent=txt; return e;
+}
+
+/* ============================================================
+   STEP 3 — LIVE
+   ============================================================ */
+let liveWordEls = [];
+function buildLiveScript(){
+  buildWordIndex();
+  const box = document.getElementById("liveScript");
+  box.innerHTML = ""; liveWordEls = [];
+  let lastPara = 0;
+  S.tokens.forEach((t,i)=>{
+    if (t.para!==lastPara){ box.appendChild(el("span","para-break")); lastPara=t.para; }
+    const w = el("span","w", t.raw+" ");
+    box.appendChild(w); liveWordEls.push(w);
+    const ci = S.cues.findIndex(c=>c.tokenIndex===i);
+    if (ci>=0){
+      const chip = el("span","cue-chip","slide "+(ci+2));
+      chip.dataset.cue = ci;
+      box.appendChild(chip); box.appendChild(document.createTextNode(" "));
+    }
+  });
+  // Preload every sermon slide so the cockpit preview swaps instantly.
+  S.slideCache = {};
+  for (let i=1;i<=S.slideTotal;i++){ const im=new Image(); im.src=slideSrc(i); S.slideCache[i]=im; }
+  paintLive();
+}
+function slideSrc(n){ return HUB.SERMONS_PATH + n + HUB.SLIDES_EXT; }
+function paintLive(){
+  // The highlight is a ratchet: it only ever moves FORWARD. The internal
+  // provPtr can dip when the browser revises its live guess, but the visible
+  // white trail and amber marker never snap back — that backward jitter was the
+  // flicker. Cue firing and the fence still use the precise provPtr underneath.
+  if (S.provPtr > S.displayPtr) S.displayPtr = S.provPtr;
+  const dp = S.displayPtr;
+  liveWordEls.forEach((w,i)=>{
+    w.classList.toggle("read", i < dp);
+    w.classList.toggle("here", i === dp);
+  });
+  const nextUnfired = S.cues.findIndex(c=>!c.fired);
+  document.querySelectorAll("#liveScript .cue-chip").forEach(chip=>{
+    const c = S.cues[+chip.dataset.cue];
+    chip.classList.toggle("hit", !!c.fired);
+    chip.classList.toggle("manual", c.firedBy==="manual");
+    chip.classList.toggle("armed", !c.fired && +chip.dataset.cue===nextUnfired);
+  });
+  const hereEl = liveWordEls[Math.min(dp, liveWordEls.length-1)];
+  if (hereEl && S.listening){
+    const box = document.getElementById("liveScript");
+    const r = hereEl.offsetTop - box.clientHeight*0.35;
+    if (Math.abs(box.scrollTop - r) > 60) box.scrollTop = r;
+  }
+  paintSlidePreview();
+}
+/* The cockpit preview mirrors the slide the audience is on (/SERMONS/N.jpg). */
+function paintSlidePreview(){
+  const total = S.slideTotal || (S.cues.length+1);
+  document.getElementById("slideBadge").textContent = S.slide + " / " + total;
+  const img = document.getElementById("slideImg");
+  const noimg = document.getElementById("slideNoImg");
+  const src = slideSrc(S.slide);
+  if (img.dataset.src !== src){
+    img.dataset.src = src;
+    img.onload = ()=>{ img.style.display="block"; noimg.style.display="none"; };
+    img.onerror = ()=>{ img.style.display="none"; noimg.style.display="block"; noimg.textContent = "Slide "+S.slide+"  (image loads on the hub)"; };
+    img.src = src;
+    const pv = document.getElementById("slidePreview");
+    pv.classList.remove("flash"); void pv.offsetWidth; pv.classList.add("flash");
+  }
+}
+
+/* ---------- cue firing & manual moves ---------- */
+function clock(){
+  if (!S.runStarted) return "0:00";
+  const s = Math.round((Date.now()-S.runStarted)/1000);
+  return Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
+}
+/* THE ONE WIRE TO THE HUB. Whenever the slide number changes — by voice OR by
+   clicker — push it to content/sermons so the projector, booth, and every
+   follower move to the same slide. Debounced so rapid revisions send once. */
+let _lastPushed = -1, _pushTimer = null;
+function pushSlide(){
+  if (S.slide === _lastPushed) return;
+  _lastPushed = S.slide;
+  const target = S.slide;
+  clearTimeout(_pushTimer);
+  _pushTimer = setTimeout(()=>{ sermonWrite({ current: target }); }, 60);
+}
+
+/* Fire the NEXT unfired cue as soon as the LIVE position (fast interim text)
+   reaches it — so the slide turns right when he speaks the cue, not a paragraph
+   later. Still one cue at a time, so a stray match can't skip several slides,
+   and the phrase tracker keeps the live position from leaping ahead. */
+function checkCues(heardTail){
+  const c = S.cues.find(x => !x.fired);
+  if (c && S.provPtr > c.tokenIndex){
+    c.fired = true; c.firedBy = "auto"; c.clock = clock(); c.heard = heardTail;
+    S.slide = Math.min(S.slide+1, S.cues.length+1);
+    pushSlide();
+  }
+}
+function manualNext(){
+  const idx = S.cues.findIndex(c=>!c.fired);
+  if (idx>=0){
+    const c = S.cues[idx];
+    c.fired = true; c.firedBy = "manual"; c.clock = clock(); c.heard = lastHeardTail;
+    S.slide = Math.min(S.slide+1, S.cues.length+1);
+    // Re-sync tracker to just past this cue point
+    const jump = c.tokenIndex+1;
+    if (jump > S.committedPtr){ S.committedPtr = jump; S.provPtr = jump; }
+    if (jump > S.displayPtr) S.displayPtr = jump;
+    S.ctxFinal = [];   // forget prior context so it follows locally from here
+  } else {
+    S.slide = Math.min(S.slide+1, S.cues.length+1);
+  }
+  pushSlide();
+  paintLive();
+}
+function manualBack(){
+  if (S.slide<=1) return;
+  S.slide--;
+  // Unfire the most recent fired cue and rewind the tracker
+  for (let i=S.cues.length-1;i>=0;i--){
+    if (S.cues[i].fired){
+      S.cues[i].fired=false; S.cues[i].firedBy=null; S.cues[i].clock=null; S.cues[i].heard="";
+      const prev = i>0 ? S.cues[i-1].tokenIndex+1 : 0;
+      S.committedPtr = prev; S.provPtr = prev; S.displayPtr = prev;
+      S.ctxFinal = [];   // forget prior context so it follows locally from here
+      break;
+    }
+  }
+  pushSlide();
+  paintLive();
+}
+function resetRun(){
+  S.slide=1; S.committedPtr=0; S.provPtr=0; S.displayPtr=0; S.runStarted=null;
+  S.ctxFinal=[];
+  S.cues.forEach(c=>{c.fired=false;c.firedBy=null;c.clock=null;c.heard="";});
+  lastHeardTail="";
+  _lastPushed=-1;
+  document.getElementById("tickerText").innerHTML="<bdi>—</bdi>";
+  pushSlide();
+  paintLive();
+  document.getElementById("liveScript").scrollTop=0;
+}
+
+/* ---------- speech recognition ---------- */
+let lastHeardTail = "";
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+function setEar(text, hearing){
+  document.getElementById("earText").textContent = text;
+  document.getElementById("earIndicator").classList.toggle("hearing", !!hearing);
+}
+
+/* iOS Safari buffers speech while you talk continuously and only commits it when
+   you PAUSE. To stop the follower from waiting on that pause, we watch for a
+   stall: if no recognition update arrives for a short spell while listening, we
+   nudge the recognizer to commit (stop → it flushes a final → onend restarts it).
+   That caps the lag at ~1.5s even through a fast, unbroken paragraph. */
+const FLUSH_STALL_MS = 1200;   // force a commit if this long passes with no update
+
+function beginRecognition(){
+  let rec;
+  try { rec = new SR(); }
+  catch(err){ setEar("Couldn't start recognition — reload the page"); return; }
+
+  rec.lang = "en-US";
+  rec.continuous = true;
+  rec.interimResults = true;
+  S.resultBase = 0;
+
+  rec.onstart = ()=>{ if (S.listening && !S.gotAnyResult) setEar("Mic on — start reading…"); };
+  rec.onspeechstart = ()=>{ setEar("Hearing you", true); };
+  rec.onspeechend = ()=>{ if (S.listening) setEar("Listening…"); };
+  rec.onnomatch = ()=>{};
+
+  rec.onresult = (e)=>{
+    try{
+      S.gotAnyResult = true;
+      S.lastResultAt = Date.now();
+      let newFinal = [], interim = [];
+      for (let i=0;i<e.results.length;i++){
+        const seg = e.results[i];
+        const words = seg[0].transcript.trim().split(/\s+/).map(normWord).filter(Boolean);
+        if (seg.isFinal){ if (i>=S.resultBase) newFinal.push(...words); }
+        else interim.push(...words);
+      }
+      if (interim.length) S.sawInterim = true;   // this browser streams live text
+      let finalCount=0;
+      for (let i=0;i<e.results.length;i++) if (e.results[i].isFinal) finalCount=i+1;
+      if (newFinal.length){
+        S.committedPtr = trackWords(S.committedPtr, newFinal, S.ctxFinal);
+        S.resultBase = finalCount;
+      }
+      // Live position follows the fast interim text; the phrase tracker prevents
+      // it from leaping ahead, so no lag cap is needed.
+      const ctxProv = S.ctxFinal.slice();
+      let prov = trackWords(S.committedPtr, interim, ctxProv);
+      S.provPtr = Math.max(prov, S.committedPtr);
+
+      const rawTail = [];
+      for (let i=Math.max(0,e.results.length-3); i<e.results.length; i++)
+        rawTail.push(e.results[i][0].transcript);
+      lastHeardTail = rawTail.join(" ").trim().split(/\s+/).slice(-14).join(" ");
+      document.getElementById("tickerText").innerHTML = "<bdi>"+escapeHtml(lastHeardTail||"—")+"</bdi>";
+      hearingPulse();
+      checkCues(lastHeardTail);
+      paintLive();
+    }catch(err){ console.error("tracker error", err); }
+  };
+
+  rec.onerror = (e)=>{
+    const msg = {
+      "not-allowed":        "Mic blocked — allow microphone access in Safari settings",
+      "service-not-allowed":"Mic blocked — allow microphone access in Safari settings",
+      "audio-capture":      "No mic found — check the DJI mic is connected & selected",
+      "network":            "Speech needs internet — check the connection",
+      "no-speech":          null,   // normal during a pause; ignore
+      "aborted":            null    // normal on our forced flush / restart; ignore
+    }[e.error];
+    if (e.error==="not-allowed" || e.error==="service-not-allowed" || e.error==="audio-capture"){
+      stopListening();
+    }
+    if (msg) setEar(msg, false);
+  };
+
+  // When a session ends (iOS ends them often, and our flush stops them on
+  // purpose), immediately spin up a fresh one — keeping his place — so there's
+  // no gap in listening.
+  rec.onend = ()=>{
+    if (!S.listening) return;
+    S.resultBase = 0;
+    try{ beginRecognition(); }
+    catch(err){ setTimeout(()=>{ if (S.listening) beginRecognition(); }, 200); }
+  };
+
+  try{ rec.start(); }
+  catch(err){
+    // .start() can throw if the previous instance hasn't fully released; retry shortly.
+    setTimeout(()=>{ if (S.listening) beginRecognition(); }, 200);
+    return;
+  }
+  S.recognition = rec;
+}
+
+function startListening(){
+  if (!SR){ setEar("This browser has no speech recognition — use Safari"); return; }
+  if (!S.wordIndex) buildWordIndex();
+  if (S.metering) stopMicTest();     // never run the mic test and listening at once
+
+  S.listening = true;
+  S.gotAnyResult = false;
+  S.sawInterim = false;
+  S.lastResultAt = Date.now();
+  if (!S.runStarted) S.runStarted = Date.now();
+  document.getElementById("listenBtn").textContent = "■ Stop listening";
+  document.getElementById("listenBtn").classList.add("on");
+  setEar("Turning mic on…");
+  requestWake();
+  armWatchdog();
+
+  beginRecognition();
+
+  // Stall-flush is ONLY for browsers that don't stream live text (iOS Safari):
+  // there, we force a commit so slides don't wait for a pause. Browsers that DO
+  // stream interim text (desktop Chrome/Safari) never need it — and forcing a
+  // restart on them just makes the browser re-ask for the mic, so we skip it.
+  clearInterval(S.flushTimer);
+  S.flushTimer = setInterval(()=>{
+    if (!S.listening || !S.recognition) return;
+    if (S.sawInterim) return;                   // live text is flowing; no flush needed
+    if (Date.now() - S.lastResultAt >= FLUSH_STALL_MS){
+      S.lastResultAt = Date.now();
+      try{ S.recognition.stop(); }catch(e){}
+    }
+  }, 400);
+}
+
+/* If nothing is heard shortly after starting, tell him what to check. */
+function armWatchdog(){
+  clearTimeout(S.watchdog);
+  S.watchdog = setTimeout(()=>{
+    if (S.listening && !S.gotAnyResult){
+      setEar("Not hearing anything — tap “Test mic level” to check the mic", false);
+    }
+  }, 6000);
+}
+
+function stopListening(){
+  S.listening = false;
+  clearTimeout(S.watchdog);
+  clearInterval(S.flushTimer);
+  if (S.recognition){ try{ S.recognition.onend=null; S.recognition.stop(); }catch(e){} S.recognition=null; }
+  document.getElementById("listenBtn").textContent = "▶ Start listening";
+  document.getElementById("listenBtn").classList.remove("on");
+  setEar("Mic off", false);
+  releaseWake();
+}
+function hearingPulse(){
+  setEar("Hearing you", true);
+  clearTimeout(S.earTimer);
+  S.earTimer = setTimeout(()=>{
+    if (S.listening) setEar("Listening…", false);
+  }, 1600);
+}
+
+/* ---------- independent mic-level test (Web Audio, proves the mic works) ----------
+   This runs separately from speech recognition so Pastor can confirm the DJI mic
+   is actually feeding audio into the iPad, even if recognition is being finicky. */
+async function toggleMicTest(){
+  if (S.metering){ stopMicTest(); return; }
+  if (S.listening) stopListening();        // don't run both at once
+  const btn = document.getElementById("testMicBtn");
+  try{
+    S.micStream = await navigator.mediaDevices.getUserMedia({ audio:true });
+  }catch(err){
+    setEar("Mic access denied — allow the microphone in Safari settings", false);
+    return;
+  }
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  S.audioCtx = new Ctx();
+  try{ await S.audioCtx.resume(); }catch(e){}
+  const src = S.audioCtx.createMediaStreamSource(S.micStream);
+  S.analyser = S.audioCtx.createAnalyser();
+  S.analyser.fftSize = 512;
+  src.connect(S.analyser);
+  const data = new Uint8Array(S.analyser.frequencyBinCount);
+  S.metering = true;
+  btn.textContent = "■ Stop mic test";
+  btn.classList.add("on");
+  setEar("Speak now — watch the bar", false);
+  const bar = document.getElementById("levelBar");
+  let peak = 0;
+  const loop = ()=>{
+    if (!S.metering) return;
+    S.analyser.getByteTimeDomainData(data);
+    let sum = 0;
+    for (let i=0;i<data.length;i++){ const v = (data[i]-128)/128; sum += v*v; }
+    const rms = Math.sqrt(sum/data.length);
+    const pct = Math.min(100, Math.round(rms*260));
+    bar.style.width = pct + "%";
+    peak = Math.max(peak, pct);
+    if (pct > 8) setEar("Mic is working ✓ ("+pct+"%)", true);
+    S.levelRAF = requestAnimationFrame(loop);
+  };
+  loop();
+}
+function stopMicTest(){
+  S.metering = false;
+  cancelAnimationFrame(S.levelRAF);
+  if (S.micStream){ S.micStream.getTracks().forEach(t=>t.stop()); S.micStream=null; }
+  if (S.audioCtx){ try{ S.audioCtx.close(); }catch(e){} S.audioCtx=null; }
+  document.getElementById("levelBar").style.width = "0%";
+  const btn = document.getElementById("testMicBtn");
+  btn.textContent = "🎤 Test mic level";
+  btn.classList.remove("on");
+  setEar("Mic off", false);
+}
+async function requestWake(){
+  try{ S.wakeLock = await navigator.wakeLock.request("screen"); }catch(e){}
+}
+function releaseWake(){ try{ S.wakeLock && S.wakeLock.release(); }catch(e){} S.wakeLock=null; }
+document.addEventListener("visibilitychange", ()=>{ if (document.visibilityState==="visible" && S.listening) requestWake(); });
+
+function escapeHtml(s){ return s.replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+/* ============================================================
+   REPORT
+   ============================================================ */
+function buildReport(){
+  const total = S.cues.length;
+  const auto = S.cues.filter(c=>c.firedBy==="auto").length;
+  const manual = S.cues.filter(c=>c.firedBy==="manual").length;
+  const missed = total - auto - manual;
+  const line = document.getElementById("scoreLine");
+  if (!S.runStarted && auto+manual===0){
+    line.textContent = "No rehearsal yet."; document.getElementById("scoreSub").textContent="";
+    document.getElementById("cueTable").style.display="none"; return;
+  }
+  line.innerHTML = "Caught <span class='good'>"+auto+" of "+total+"</span> slide turns by voice.";
+  document.getElementById("scoreSub").textContent =
+    (manual?manual+" advanced by hand. ":"") + (missed?missed+" never reached. ":"") +
+    "Rehearse the same manuscript a few times before trusting a pattern.";
+  const body = document.getElementById("cueTableBody");
+  body.innerHTML="";
+  S.cues.forEach((c,i)=>{
+    const tr=document.createElement("tr");
+    const phrase = S.tokens.slice(Math.max(0,c.tokenIndex-4), c.tokenIndex+1).map(t=>t.raw).join(" ");
+    tr.appendChild(tdEl("→ slide "+(i+2)+" after “…"+phrase+"”"));
+    const st = tdEl(c.firedBy==="auto"?"caught by voice":c.firedBy==="manual"?"advanced by hand":"not reached");
+    st.className = c.firedBy==="auto"?"st-auto":c.firedBy==="manual"?"st-manual":"st-miss";
+    tr.appendChild(st);
+    tr.appendChild(tdEl(c.clock||"—"));
+    const h = tdEl(c.heard||"—"); h.className="heard"; tr.appendChild(h);
+    body.appendChild(tr);
+  });
+  document.getElementById("cueTable").style.display="table";
+}
+function tdEl(t){ const td=document.createElement("td"); td.textContent=t; return td; }
+function reportAsText(){
+  const total=S.cues.length, auto=S.cues.filter(c=>c.firedBy==="auto").length,
+        manual=S.cues.filter(c=>c.firedBy==="manual").length;
+  let out = "Voice cue rehearsal — "+new Date().toLocaleString()+"\n";
+  out += "Caught by voice: "+auto+"/"+total+"  ·  by hand: "+manual+"  ·  not reached: "+(total-auto-manual)+"\n\n";
+  S.cues.forEach((c,i)=>{
+    const phrase = S.tokens.slice(Math.max(0,c.tokenIndex-4), c.tokenIndex+1).map(t=>t.raw).join(" ");
+    out += "slide "+(i+2)+"  ["+(c.firedBy||"missed")+"]  "+(c.clock||"—")+"  after \"…"+phrase+"\"  heard: "+(c.heard||"—")+"\n";
+  });
+  return out;
+}
+
+/* ============================================================
+   WIRING
+   ============================================================ */
+document.getElementById("toMarkBtn").addEventListener("click", ()=>{
+  const text = document.getElementById("manuscriptInput").value.trim();
+  if (!text){ document.getElementById("manuscriptInput").focus(); return; }
+  const oldTokens = S.tokens.map(t=>t.norm).join(" ");
+  const parsed = parseManuscript(text);
+  S.tokens = parsed.tokens;
+  if (parsed.cueIdx.length){
+    // @@@ markers found in the paste — they define the slide turns
+    S.cues = parsed.cueIdx.map(i=>({tokenIndex:i, fired:false, firedBy:null, clock:null, heard:""}));
+    S.pendingCueIdx = null;
+  } else {
+    const newTokens = S.tokens.map(t=>t.norm).join(" ");
+    if (oldTokens!==newTokens){
+      // keep pending cues from storage if valid, else clear
+      const keep = (S.pendingCueIdx||S.cues.map(c=>c.tokenIndex)).filter(i=>i<S.tokens.length);
+      S.cues = keep.map(i=>({tokenIndex:i, fired:false, firedBy:null, clock:null, heard:""}));
+      S.pendingCueIdx = null;
+    }
+  }
+  saveState();
+  buildMarkSheet();
+  syncSlideTotalHint();
+  document.getElementById("tabMark").disabled=false;
+  show("mark");
+});
+document.getElementById("backToPasteBtn").addEventListener("click", ()=>show("paste"));
+
+/* ---------- sermon slide total ---------- */
+function syncSlideTotalHint(){
+  const expected = S.cues.length + 1;
+  const inp = document.getElementById("slideTotal");
+  if (!inp.dataset.touched){ inp.value = expected; }   // auto-suggest until he edits it
+  S.slideTotal = Math.max(1, Math.min(50, +inp.value || expected));
+  document.getElementById("slidesHint").textContent =
+    "Your @@@ marks make " + expected + " slide" + (expected>1?"s":"") + " (1–" + expected + ").";
+}
+document.getElementById("slideTotal").addEventListener("input", (e)=>{
+  e.target.dataset.touched = "1";
+  S.slideTotal = Math.max(1, Math.min(50, +e.target.value || 1));
+});
+
+document.getElementById("toLiveBtn").addEventListener("click", ()=>{
+  if (!S.cues.length){ document.getElementById("cueCountHint").textContent="Tap a word first — mark at least one slide turn."; return; }
+  // Lock in the slide total (at least enough for the cues).
+  const need = S.cues.length + 1;
+  S.slideTotal = Math.max(need, Math.min(50, +document.getElementById("slideTotal").value || need));
+  resetRun(); buildLiveScript();
+  document.getElementById("tabLive").disabled=false;
+  document.getElementById("tabLog").disabled=false;
+  show("live");
+});
+document.getElementById("exitLiveBtn").addEventListener("click", ()=>{ stopMicTest(); stopListening(); sermonStop(); buildReport(); show("log"); });
+document.getElementById("againBtn").addEventListener("click", ()=>{ resetRun(); buildLiveScript(); show("live"); });
+document.getElementById("copyLogBtn").addEventListener("click", async (e)=>{
+  try{ await navigator.clipboard.writeText(reportAsText()); e.target.textContent="Copied ✓"; setTimeout(()=>e.target.textContent="Copy report as text",1500);}catch(err){}
+});
+document.getElementById("listenBtn").addEventListener("click", ()=>{ S.listening?stopListening():startListening(); });
+document.getElementById("testMicBtn").addEventListener("click", toggleMicTest);
+document.getElementById("nextBtn").addEventListener("click", manualNext);
+document.getElementById("prevBtn").addEventListener("click", manualBack);
+document.getElementById("resetRunBtn").addEventListener("click", resetRun);
+document.getElementById("tabPaste").addEventListener("click", ()=>show("paste"));
+document.getElementById("tabMark").addEventListener("click", function(){ if(!this.disabled) show("mark"); });
+document.getElementById("tabLive").addEventListener("click", function(){ if(!this.disabled) show("live"); });
+document.getElementById("tabLog").addEventListener("click", function(){ if(!this.disabled){ buildReport(); show("log"); } });
+
+/* Clicker / keyboard — active only in live mode */
+document.addEventListener("keydown", (e)=>{
+  if (!document.getElementById("livePanel").classList.contains("active")) return;
+  if (["ArrowRight"," ","PageDown"].includes(e.key)){ e.preventDefault(); manualNext(); }
+  else if (["ArrowLeft","PageUp"].includes(e.key)){ e.preventDefault(); manualBack(); }
+});
+
+const JOHN_MARK_SERMON = "JOHN MARK\n\n@@@ John Mark grew up right in the middle of Jerusalem. Inside a massive family estate. Heavy gate out front. Beautiful courtyard. Lovely gardens. Servants taking care of everything.\n\nJohn Mark lived a very insulated life.\n\nBecause outside that gate? Jerusalem was dangerous. The Roman Empire had its boot on the city's neck.\n\n@@@ Soldiers patrolled the streets daily. Violence was commonplace in public squares. Everybody seemed to be on edge.\n\nJohn Mark probably heard about the conflicts but was sheltered within his gates. Home was peaceful but outside was a totally different world.\n\nAnd things escalated. A new movement was exploding across Jerusalem.\n\nThe followers of a crucified carpenter named Jesus. They were preaching that He had risen from the dead. Thousands were joining them. And the men in power took notice.\n\nKing Herod Agrippa ruled the region with intense paranoia. He couldn't bear the thought of losing his grip on power. And he saw the followers of Jesus as a direct threat to his throne.\n\n@@@ Acts chapter 12, verses 1 and 2 shows us the reality of his terror: \"Now about that time Herod the king stretched out his hand to harass some from the church. Then he killed James the brother of John with the sword.\"\n\nHe also threw Peter into a maximum-security prison. Crosses lined the roads. Believers were suffering just for sharing their faith. And watching his people suffer, John Mark began to feel a burden. A desire to step out and do something for the Lord.\n\nHis mother Mary took a huge risk! Not the mother of Jesus. Another Mary.\n\n@@@ She turned her living room into the headquarters of the early church. And even though she could be killed for sheltering believers, she did it anyway.\n\nActs records one night Peter escaped from prison. An angel walked him right past the executioners. And he ran straight to Mary's estate.\n\n@@@ Acts chapter 12, verses 13 and 14 describes the scene: \"And as Peter knocked at the door of the gate, a girl named Rhoda came to answer. When she recognized Peter's voice, because of her gladness she did not open the gate, but ran in and announced that Peter stood before the gate.\"\n\nJust imagine young John Mark. Waking up from the commotion. Stepping out of his bedroom. And seeing the most wanted man in Jerusalem standing right in front of him.\n\nMark's early years had to be inspiring. He had a front-row seat to a revolution. The giants of the faith were meeting in his own home. He probably greeted them. Heard their conversations firsthand. We can only imagine the stories told around the dinner table.\n\nThese men were risking their lives for their faith. And Mark watched it all from his living room.\n\nA burden inside him kept growing. He felt a calling he couldn't fully explain. He desired to be used by God but had no clue where to start. Then an opportunity of a lifetime came to his door.\n\nSaul and Barnabas swung by during one of their visits. And Mark couldn't hold back. So he stepped up and asked if he could join them on their next missionary journey.\n\nWhat he didn't realize was they were already preparing to leave. And they needed someone to help them manage the daily demands of the road. So they decided to give him a chance.\n\nAnd so Mark grabbed what he needed. Hugged his mother goodbye, and walked right out of the safety of his own home. I can only imagine what he felt when he heard the sound of his gate shutting behind him. For the Bible says in\n\n@@@ Acts chapter 12, verse 25: \"And Barnabas and Saul returned from Jerusalem when they had fulfilled their ministry, and they also took with them John whose surname was Mark.\"\n\nThey boarded a ship and sailed for the island of Cyprus. To a small town called Salamis and preached the word of God in the synagogues of the Jews.\n\nMark was finally living out his dream. He was traveling the world with the most famous missionaries alive.\n\nBut the honeymoon didn't last long. He was starting to feel the weight of his decision. He was realizing that being a missionary comes with a cost.\n\nHe saw firsthand how demon possessed people gnashed their teeth at them. How the religious leaders tried to oppose them at every turn. Rocks were hurled from time to time. Persecution became a daily reality, and Mark was trapped right in the middle of it.\n\n@@@ When they finally landed at a port city called Perga, Mark saw the massive Taurus Mountains looming in the distance.\n\nThese mountains had a reputation. Everyone knew the horrifying stories of bandits murdering travelers. Going in but never coming out. Whole families being buried by landslides. Others slipping and plummeting to their death below.\n\nWhen John Mark realized where they were going, he froze like ice. I'm sure he wanted to be brave and courageous like Paul. But his fear paralyzed him and he couldn't move forward. Regrets began to flood his mind and in a moment of desperation, he abandoned Paul and Barnabas and returned home.\n\n@@@ Acts chapter 13, verse 13 records this moment: \"Now when Paul and his company loosed from Paphos, they came to Perga in Pamphylia; and John, departing from them, returned to Jerusalem.\"\n\nHe walked away from his calling. He turned his back on the mission. He cowered to the comfort of his estate.\n\nTo be honest, he must've felt horrible. He let God's leaders down. He dropped the ball. It was an opportunity of a lifetime, and he crumbled under the pressure.\n\n@@@ And I have to be honest with you. I know something about that valley. When I was a young Bible worker, I utterly failed. God had given me a work to do, and I turned my back on it. Out of fear. Out of discouragement. Out of misdirection. I ran from my calling and tried to shut it out completely.\n\nBut running didn't bring me peace. It broke me. It crushed my spirit. I felt like I shut the door to heaven. Like I had lost my only chance to be a pastor.\n\nIt's a dark valley when we feel like we've abandoned God and His purpose for our lives. And I'm sure John Mark felt the same way. Probably even more than I did.\n\nTime passed. And Paul and Barnabas started planning another journey. But when Barnabas brought up Mark's name, Paul shut it down immediately. You see Paul was a pioneer.\n\nHe measured everything by the mission. This is the man who was stoned at Lystra. They dragged him out of the city and left him for dead. And he got up and walked right back in.\n\nThat was Paul's standard. He expected the same from everyone around him. In his eyes, Mark had failed the test.\n\nBut Barnabas measured differently. His real name was Joses. But the apostles called him Barnabas which means Son of Encouragement.\n\nThat was his reputation in the church. Think about it. When Saul the persecutor became a believer, everyone in Jerusalem was afraid of him. Nobody wanted him around. It was Barnabas who took him in. Barnabas vouched for him before the apostles. He was different than Paul.\n\nWhen Mark's name came up, Paul was turned off. He wasn't about to risk the mission on a deserter. Barnabas on the other hand, looked at Mark and saw potential. He knew he just needed someone to believe in him.\n\nIt was because of their differences Paul and Barnabas split ways. Two of the most consecrated leaders had a falling out and Mark was the reason!\n\n@@@ Acts chapter 15, verse 39 describes what happened between them: \"Then the contention was so sharp between them, that they departed asunder one from another. And so Barnabas took Mark and sailed to Cyprus.\"\n\nNot everyone has the patience and faith in others the way Barnabas did. He didn't hang Mark's past failures over his head. He showed him what he could become through the grace and power of God.\n\nYou see, Mark wasn't useless. He just needed coaching. He needed someone to lead him step by step. Someone who would be in for the long haul.\n\n@@@ This season of rebuilding didn't happen overnight. It actually took over ten years. Barnabas spent a solid decade pouring his life into a shattered young leader. But the things Mark learned were invaluable!\n\nHe learned how to survive public failure. How to face his fears. And how to depend entirely on God. He discovered the power of prayer. And developed true grit. By the end of his training Mark was completely transformed. A terrified deserter had become a seasoned disciple. This was the mighty work of the Holy Spirit.\n\nAnd can I tell you something? Barnabas gives us a beautiful picture of the heart of God.\n\nBecause what did Barnabas do? He came looking for the one who ran away. That's our God. He doesn't wait for us to climb back. He persues the runaway.\n\nBarnabas refused to define Mark by his worst day. He saw what Mark could become, and patiently walked with him for ten years until he became it. That's our God. He never gives up on us!\n\nAnd Jesus did for Peter what Barnabas did for Mark. After Peter denied Him three times, Jesus came back for him. Restored him. Recommissioned him.\n\nAnd when you encourage a broken person, you're not just being kind. You're showing them what God is like!\n\n@@@ The world grew even darker during that decade. A vicious emperor named Nero took control of Rome. He pushed persecution to the next level. Believers were flogged publicly in the marketplace. They were beaten with rods. And stoned to death in the alleyways.\n\nThis is when Mark reappears in Scripture. He's in Rome. In the belly of the beast. The deadliest place on earth for a Christian. The young man who once ran from danger is now ministering in the middle of it.\n\nHe also worked with the apostle Peter for a while. And listen how Peter describes him.\n\n@@@ First Peter chapter 5, verse 13 says: \"The church that is in Babylon, elect together with you, saluteth you; and so doth Mark my son.\"\n\nPeter calls Mark his son. This is a term of endearment. Of someone who is appreciated and respected. The boy who panicked at Perga was now fearlessly proclaiming the gospel in Rome.\n\nPaul, by this time, was locked away in a Roman dungeon. He would soon be executed. But before his death, who do you think he asks for? Who does Paul want by his side during the last hours of his life?\n\n@@@ Listen to Second Timothy chapter 4, verse 11, where Paul writes to Timothy: \"Only Luke is with me. Get Mark and bring him with thee, for he is profitable to me for ministry.\"\n\nWhoooo. Wait a minute\u2026 The one Paul rejected as a quitter is now asking for his help.\n\nAnd look at the word he uses. Profitable. Some versions say useful. In all of Paul's letters, he calls only two people useful. John Mark. And Onesimus who was a runaway slave who came back. That was Paul's word for runaways who returned.\n\nSo what makes a person useful in God's eyes?\n\nLook at the man Paul asked for. Useful means battle tested. You've been knocked down and learned how to rise. You've tasted failure and refused to let it write the ending. You've been to the bottom and back.\n\nBecause Paul was facing the executioner. He didn't need a rookie. He needed someone who wouldn't flinch. And nobody understands suffering like a person who fails and returns stronger.\n\nThat's useful. Scarred. Seasoned. Still standing.\n\nChurch family, Mark's life is a testament to what God can do. He takes quitters and makes them conquerors. He takes our failures and turns them into fuel. He takes the weak ones and fills them with His wonder-working power. Nothing is impossible with God!\n\nYou would think the story ends right there. Restored, useful, standing beside Paul in his final days. What more could God possibly want from this man?\n\nOne more thing. Mark's greatest assignment was still ahead of him. A task that would require consecration and experience.\n\nYou see, nothing in Mark's story was wasted. There was a reason for everything. There was a reason he lived at the headquarters of the early church. There was a reason he was sheltered in his mother's estate. There was a reason he sat at the dinner table and listened to the stories of the apostles. There was a reason he had to fail so miserably. And why he had to be rebuilt in ten years of silence.\n\nGod was preparing him. Positioning him for something bigger than he could ever imagine.\n\n@@@ God had him write one of the Gospels. And the Gospel of Mark stands today as one of the greatest literary feats of all time. In fact, most scholars believe it was the first gospel ever written. Which says a lot about its importance in the Biblical canon.\n\nBut here's what fascinates me. Every writer leaves fingerprints on the page. And Mark left his all over this book.\n\nWe may not have a lot of information about Mark's life per se. But we get a deeper glimpse by the way he wrote his gospel.\n\nBecause when you open his book, it almost leaves you out of breath. He wrote like a man running out of time. He loves the word \"immediately.\" He skips the birth story. He skips the family lineage. And he drops the reader straight into the wilderness with John the Baptist. His pace is relentless. Almost like he was trying to make up for lost time.\n\nAnd Mark doesn't water down the story of Jesus. He shows us the messiness of ministry. He's the only gospel writer who pictures Jesus spitting on a blind man's eyes. And rubbing it in to heal him. Mark knows how messy life can get.\n\nHe also shows us a different side of Jesus. He captures His raw humanity. He shows Him getting angry at the religious leaders. He shows Him exhausted, frustrated, and grieved in His spirit. Mark shows us a Savior who is touched by the feelings of our infirmities. A Savior who understands our weaknesses. Because this is what anchored Mark's faith.\n\nThis is why. Almost half of the Gospel of Mark points us to the final weeks of Christ's life. He hyper-focuses the reader on the sufferings of Jesus.\n\n@@@ Mark chapter 8, verse 31 says: \"And He began to teach them that the Son of Man must suffer many things, and be rejected by the elders and chief priests and scribes, and be killed, and after three days rise again.\"\n\nMark knew suffering from the inside. And his gospel taught the early church how to face it with honor. How to endure through tribulation. How to cling to hope when everything around seemed hopeless. He learned a lot from the Son of Encouragement.\n\nBut Mark's story doesn't end at the writing desk. The persecution he wrote about eventually took Peter. Then it took Paul. And Mark? He kept going. He continued to dig beds for the Gospel stream to flow forward. Church history tells us he planted a massive congregation in Alexandria, Egypt. Right in the middle of hostile territory.\n\nBut the local leaders were seething. His influence was growing. Their temples were emptying. And they wanted him gone.\n\nThey waited for a pagan festival, when the streets were full and the crowds were frenzied. And the mob turned on him. They beat him to the ground. Fists. Feet. Then someone produced a rope, and they cinched it around his neck.\n\nAnd they dragged him. Through the cobblestone streets of Alexandria. The stones tearing at his body. The crowd cheering. This was an old man now \u2014 a man who had given his life to the Gospel \u2014 being dragged like an animal through the city he came to save.\n\nThat night they threw what was left of him into a dark cell. Bleeding. Broken. Alone. No Peter to call him son. No Barnabas to lift him up. Just Mark, and the God who had never once let go of him.\n\nAnd I have to believe that somewhere in that long night, his own words came back to him. The Son of Man must suffer many things. He had written about a suffering Savior. Now he would follow Him all the way.\n\nMorning came. The mob came with it. They dragged him through those streets again \u2014 until his body finally gave out.\n\n@@@ Mark didn't run this time. He finished his race as a fearless martyr on those rocky Egyptian streets.\n\nWhat a life. What a God.\n\nAnd Mark's story gives us incredible hope.\n\nBecause we all have moments we want to hide. We've all panicked and run the opposite direction. We've all let fear make our decisions. Maybe some of us have even walked away from God's calling because it asked too much of us.\n\nGod sees those moments. He knows every failure. And He refuses to write us off.\n\nBarnabas saw potential in Mark when everyone else saw a quitter. God sees that same potential in you right now. Your past mistakes don't disqualify you. God is able to pick you right back up. He wants to use your life for something far bigger than yourself.\n\nBut we have to get real with Him. And real with ourselves. We can't gloss over our weaknesses and pretend we're okay. Here's what made Mark a mighty man of faith. He knew exactly what he couldn't do. And he knew exactly what God could. He stopped hiding his weakness and started leaning on God's power. That's why he finished strong.\n\nBut let's get deeper\u2026 Because Mark's honesty shows up in the strangest place. He writes something peculiar not found in any of the other gospels. A mysterious young man watching Jesus being taken away in the Garden of Gethsemane.\n\n@@@ Mark chapter 14, verses 51 and 52 records this: \"Now a certain young man followed Him, having a linen cloth thrown around his naked body. And the young men laid hold of him, and he left the linen cloth and fled from them naked.\"\n\nI bet you never noticed that verse before. He is the only gospel writer to mention this detail.\n\nScholars believe this young man is John Mark himself. What is he doing here? Why would he paint himself in this light? Why would he want to highlight his most embarrassing moment to the world?\n\nBecause Mark is no longer ashamed. He knows what God has done in him. He remembers the coward who ran that night. But that's the old Mark. God rebuilt him from the ground up. And when God rebuilds your life, the past loses its power over you. Amen Church?!!\n\nAnd Mark buried something even deeper in this story. If you love your Bible's follow me closely.\n\nRemember that linen cloth. It's the last thing Mark lost that night. The mob grabbed it, and he ran away naked. His shame, wrapped up in one piece of linen, left behind in the dark.\n\nNow, the word Mark uses for that linen cloth is sind\u014dn. And Sindon, appears in only one other place in the gospel..\n\n@@@ Turn one chapter forward. Jesus has died on the cross. And Joseph of Arimathea goes out and buys a linen cloth. A sind\u014dn. The same word. And what does he do with it? He wraps the body of Jesus in that linen. And lays Him in the tomb.\n\nNow watch this. The last time we saw a sind\u014dn, it was the garment of Mark's shame. Lying in the dirt of Gethsemane. The next time we see it, it's wrapped around Jesus. Buried with Him in the grave.\n\nWhat is Mark telling us??? He's saying, My shame went into that grave with Jesus.\n\nChurch family, we are not defined by our failures. God takes our dirtiest messes and turns them into monuments of His mercy. He steps into our brokenness and exchanges it for beauty. He takes our bruised hearts and gives us brand-new beginnings. Our God can save from the guttermost to the uttermost! There's nothing too hard for God.\n\nMark could write about the night he ran, because Mark experienced the Master's plan.\n\nWe all have moments where we fall apart. But when we're down, Jesus is right there to lift us up. When our souls grow weary, He sits with us in the silence. When troubles come crashing in, His shoulders carry the weight.\n\nHe lifts us up out of our shame and heals our past mistakes. He lifts us up to step back into the calling we ran away from. He lifts us up to become a light for someone else who is hurting like Barnabus did. He lifts us up to be far more than we could ever be on our own.\n\nWe are strong because we rest on Him. So stop running today.\n\n@@@ Hand Him the pen. And church family, I plead with you... let Jesus write your next chapter. Let Him be the Author of your story.";
+document.getElementById("sampleBtn").addEventListener("click", ()=>{
+  document.getElementById("manuscriptInput").value = JOHN_MARK_SERMON;
+  document.getElementById("saveHint").textContent = "John Mark sermon loaded — 20 slide turns marked with @@@.";
+});
+
+document.getElementById("manuscriptInput").addEventListener("input", ()=>{ document.getElementById("saveHint").textContent=""; });
+
+if (!SR) document.getElementById("supportWarn").style.display="block";
+if (location.protocol === "file:"){
+  document.getElementById("fileWarn").style.display = "block";
+  const sw = document.getElementById("supportWarn");
+  sw.style.display = "block";
+  sw.innerHTML = "⚠ You're running this as a <strong>downloaded file</strong>. Browsers won't remember mic permission for files, so it will ask over and over. Open it from the hub's <strong>https address</strong> and the mic will be granted once and stay.";
+}
+
+/* ---------- PIN gate (same code as the hub Steward panel) ---------- */
+function tryUnlock(){
+  const v = document.getElementById("pinInput").value.trim();
+  if (v === HUB.PIN){
+    document.getElementById("pinGate").classList.add("hide");
+    setTimeout(()=>document.getElementById("manuscriptInput").focus(), 100);
+  } else {
+    document.getElementById("pinErr").textContent = "That code doesn't match. Try again.";
+    document.getElementById("pinInput").value = "";
+    document.getElementById("pinInput").focus();
+  }
+}
+document.getElementById("pinBtn").addEventListener("click", tryUnlock);
+document.getElementById("pinInput").addEventListener("keydown", (e)=>{ if (e.key==="Enter") tryUnlock(); });
+
+/* ---------- live-sync connection status ---------- */
+function setConn(ok){
+  const dot = document.getElementById("connDot"), txt = document.getElementById("connText");
+  dot.classList.toggle("ok", ok); dot.classList.toggle("off", !ok);
+  txt.textContent = ok ? "live sync on" : "sync offline — clicker still works";
+}
+if (db){
+  try{
+    db.ref(".info/connected").on("value", s=>{ setConn(!!s.val()); });
+  }catch(e){ setConn(false); }
+} else {
+  setConn(false);
+}
+
+loadState();
+</script>
+</body>
+</html>
