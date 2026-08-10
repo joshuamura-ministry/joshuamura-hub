@@ -5286,8 +5286,6 @@ document.getElementById('panelbox').innerHTML=`
    <div class="subcard">
     <b>🎙️ Sermon slides <span style="text-transform:none;font-weight:400;color:var(--dim)">(shown under the YouTube video)</span></b>
     <div class="note" style="margin-bottom:.3em">Your /SERMONS JPEGs (1.jpg, 2.jpg …). Drive them from <a href="#present">Presenter mode</a>.</div>
-    <label>Sermon folder <span style="text-transform:none;font-weight:400;color:var(--dim)">(leave blank for /SERMONS/1.jpg — or type a folder like <b>john-mark</b> for /SERMONS/john-mark/1.jpg)</span></label>
-    <input type="text" id="se-folder" placeholder="e.g. john-mark" value="${esc((C.sermons&&C.sermons.folder)||'')}">
     <label>How many sermon slides? (0–50)</label>
     <input type="number" id="se-total" min="0" max="50" value="${(C.sermons&&C.sermons.total)||0}">
     <label>Show under the YouTube sermon?</label>
@@ -5488,7 +5486,7 @@ document.getElementById('save-wf').onclick=async()=>{
   var ok=document.getElementById('wf-ok');
   try{
     await saveLive();
-    await sermonWrite({total:+(document.getElementById('se-total').value||0),on:document.getElementById('se-on').value==='yes',folder:(document.getElementById('se-folder')?document.getElementById('se-folder').value:'')});
+    await sermonWrite({total:+(document.getElementById('se-total').value||0),on:document.getElementById('se-on').value==='yes'});
     await cfgSet({slidedelay:Math.max(0,Math.min(60,+(document.getElementById('se-delay').value||0))),presentcode:v('pr-codeset')});
     seUpd(); ok.className='ok'; ok.textContent='Saved \u2713 \u2014 the map knows what is live.';
   }catch(e){ ok.className='err'; ok.textContent='Save failed \u2014 rules published?'; }
