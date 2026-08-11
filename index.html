@@ -214,6 +214,13 @@ footer .v{font-family:'Fraunces',serif;font-style:italic;font-size:1.05em;color:
 .ipslide table td:last-child,.ipslide table th:last-child{text-align:right;white-space:nowrap}
 .ipslide table tr.total td{border-top:2px solid var(--gold);border-bottom:none;font-weight:700;color:var(--ivory);padding-top:.6em}
 .ipslide .card{background:rgba(201,162,75,.06);border:1px solid rgba(201,162,75,.16);border-radius:10px;padding:.9em 1em;margin:.7em 0}
+.modlive{display:inline-flex;align-items:center;gap:.45em;background:rgba(60,200,120,.12);border:1px solid rgba(60,200,120,.55);color:#5fe0a0;border-radius:20px;padding:.18em .8em;font-size:.72em;font-weight:800;letter-spacing:.14em;text-transform:uppercase;box-shadow:0 0 10px rgba(60,200,120,.45),inset 0 0 8px rgba(60,200,120,.12);animation:modpulse 2.2s ease-in-out infinite;white-space:nowrap}
+.modlive .dot{width:8px;height:8px;border-radius:50%;background:#5fe0a0;box-shadow:0 0 8px #5fe0a0}
+@keyframes modpulse{0%,100%{box-shadow:0 0 8px rgba(60,200,120,.35),inset 0 0 8px rgba(60,200,120,.10)}50%{box-shadow:0 0 18px rgba(60,200,120,.75),inset 0 0 10px rgba(60,200,120,.18)}}
+@media(prefers-reduced-motion:reduce){.modlive{animation:none}}
+.modkey{font-size:.78em;opacity:.75;white-space:nowrap}
+.modkey a{color:var(--gold)}
+.cardhead{display:flex;align-items:center;justify-content:space-between;gap:.6em;flex-wrap:wrap}
 .ipnav{display:flex;align-items:center;justify-content:space-between;gap:1em;margin-top:1em;padding-top:1em;border-top:1px solid rgba(201,162,75,.15)}
 .ipnav button{background:rgba(201,162,75,.15);border:1px solid rgba(201,162,75,.4);color:var(--ivory);border-radius:10px;padding:.5em 1.2em;font-weight:700;cursor:pointer;font-size:1rem}
 .ipnav button:disabled{opacity:.3;cursor:default}
@@ -2799,7 +2806,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v113</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v114</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -3782,13 +3789,17 @@ async function slideLiveWrite(patch){
   C.slides={...C.slides,...cur};
 }
 /* Small UI to let Pastor Josh unlock moderator for this session. */
+/* Green glowing badge shown in the card header while you hold the circle. */
+function modBadge(){
+  return SESSION_MOD_PASS ? '<span class="modlive"><span class="dot"></span>Moderating</span>' : '';
+}
 function modUnlockCard(afterRoom,afterName,afterContainer){
-  /* Already moderating? The invitation has done its job \u2014 clear it away.
+  /* Moderating already? Nothing to show \u2014 the green badge up top says it.
      (A failed passphrase clears SESSION_MOD_PASS, so this only hides on real success.) */
   if(SESSION_MOD_PASS) return '';
-  return `<div class="card note" style="margin-top:.6em">
-    🔑 <b>Steward?</b> <a href="#" id="mod-unlock">Enter as moderator</a> to lead this circle (mute, lock, remove).
-    <div id="mod-status" style="margin-top:.35em"></div>
+  return `<div class="modkey" style="margin-top:.5em">
+    🔑 <a href="#" id="mod-unlock">Enter as moderator</a>
+    <span id="mod-status"></span>
   </div>`;
 }
 function wireModUnlock(room,name,containerId){
@@ -5184,7 +5195,7 @@ function altar(){
 const pc=C.live.prayer;
 app.innerHTML=`${crumb()}
  <div class="eyebrow">🙏 The Altar · Prayer</div>
- ${pc.on?`<div class="card" style="border-color:var(--red)"><b style="color:var(--red)">🔥 The Prayer Circle is open right now.</b>
+ ${pc.on?`<div class="card" style="border-color:var(--red)"><div class="cardhead"><b style="color:var(--red)">🔥 The Prayer Circle is open right now.</b>${modBadge()}</div>
    <div class="videoframe" style="margin-top:.6em" id="circle-prayer"></div>
    <p class="note">You join <b>muted</b> — raise your hand 🖐 and Pastor Josh will call on you to pray.</p>
    ${modUnlockCard()}</div>`
