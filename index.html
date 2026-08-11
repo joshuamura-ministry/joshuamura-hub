@@ -234,8 +234,9 @@ body.tvmode .wrap,body.tvmode #app{max-width:none;padding:0}
 .modlive .dot{width:8px;height:8px;border-radius:50%;background:#5fe0a0;box-shadow:0 0 8px #5fe0a0}
 @keyframes modpulse{0%,100%{box-shadow:0 0 8px rgba(60,200,120,.35),inset 0 0 8px rgba(60,200,120,.10)}50%{box-shadow:0 0 18px rgba(60,200,120,.75),inset 0 0 10px rgba(60,200,120,.18)}}
 @media(prefers-reduced-motion:reduce){.modlive{animation:none}}
-.modkey{font-size:.78em;opacity:.75;white-space:nowrap}
-.modkey a{color:var(--gold)}
+.modkey{margin-top:.5em;text-align:center}
+.modkey a{display:inline-block;color:var(--gold);text-decoration:none;border:1px solid rgba(201,162,75,.45);border-radius:10px;padding:.55em 1.1em;min-height:44px;line-height:1.6;font-size:.9rem;font-weight:700;-webkit-tap-highlight-color:rgba(201,162,75,.25)}
+.modkey a:active{background:rgba(201,162,75,.18)}
 .cardhead{display:flex;align-items:center;justify-content:space-between;gap:.6em;flex-wrap:wrap}
 .ipnav{display:flex;align-items:center;justify-content:space-between;gap:1em;margin-top:1em;padding-top:1em;border-top:1px solid rgba(201,162,75,.15)}
 .ipnav button{background:rgba(201,162,75,.15);border:1px solid rgba(201,162,75,.4);color:var(--ivory);border-radius:10px;padding:.5em 1.2em;font-weight:700;cursor:pointer;font-size:1rem}
@@ -613,6 +614,11 @@ window.onerror=function(msg,src,line){
 };
 /* ================= CONFIG ================= */
 const PANEL_PIN='7777';
+/* Once the PIN is entered, stay unlocked for THIS TAB only. Saving a setting writes to
+   Firebase, which re-renders the page \u2014 without this you'd be thrown back to the PIN
+   screen after every single save. Cleared when the tab closes. */
+let PANEL_OK=false;
+try{ PANEL_OK = sessionStorage.getItem('panelok')==='1'; }catch(e){}
 const WRITE_KEY='jm-2026-steward';
 let db=null;
 try{
@@ -2846,7 +2852,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v125</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v127</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -3841,15 +3847,32 @@ function modUnlockCard(afterRoom,afterName,afterContainer){
   /* Hide ONLY when moderating is confirmed by the signer. If anything goes wrong,
      the link must come back so you can try again \u2014 never trap yourself. */
   if(SESSION_MOD_PASS && MOD_CONFIRMED) return '';
-  return `<div class="modkey" style="margin-top:.5em">
-    🔑 <a href="#" id="mod-unlock">Enter as moderator</a>
-    <span id="mod-status"></span>
+  return `<div class="modkey">
+    <a href="#" id="mod-unlock" role="button">🔑 Enter as moderator</a>
+    <div id="mod-status" class="note" style="margin-top:.35em"></div>
   </div>`;
 }
 function wireModUnlock(room,name,containerId){
+  /* Remember which circle this page is showing, then let ONE document-level
+     listener handle the tap. Re-renders can no longer strip the handler off. */
+  MOD_TARGET={room:room,name:name,container:containerId};
   const link=document.getElementById('mod-unlock');
   if(!link)return;
-  link.onclick=async e=>{
+  if(!document.__modDelegated){
+    document.__modDelegated=true;
+    document.addEventListener('click',function(e){
+      var a=e.target&&e.target.closest?e.target.closest('#mod-unlock'):null;
+      if(!a||!MOD_TARGET)return;
+      e.preventDefault();
+      modUnlockRun(MOD_TARGET.room,MOD_TARGET.name,MOD_TARGET.container);
+    });
+  }
+}
+var MOD_TARGET=null;
+async function modUnlockRun(room,name,containerId){
+  const link=document.getElementById('mod-unlock');
+  {
+    const e={preventDefault:function(){}};
     e.preventDefault();
     const p=prompt('Moderator passphrase (kept only for this session):');
     if(!p)return;
@@ -3873,7 +3896,7 @@ function wireModUnlock(room,name,containerId){
       say('\u274c That passphrase didn\u2019t match \u2014 you joined as a regular participant. Tap to try again.',false);
       await mountCircle(containerId,room,name);
     }
-  };
+  }
 }
 
 function render(){
@@ -5612,6 +5635,16 @@ function loadAnalytics(){
   });
 }
 function panel(){
+/* Already unlocked in this tab? Go straight in. */
+if(PANEL_OK){
+  app.innerHTML=`${crumb()}
+ <div class="eyebrow">🗝️ The Steward's Panel</div>
+ <h2>Keeper's entrance</h2>
+ <div class="card" id="panelbox"></div>
+ ${footer()}`;
+  openPanel();
+  return;
+}
 app.innerHTML=`${crumb()}
  <div class="eyebrow">🗝️ The Steward's Panel</div>
  <h2>Keeper's entrance</h2>
@@ -5623,6 +5656,8 @@ app.innerHTML=`${crumb()}
  ${footer()}`;
 document.getElementById('pin-go').onclick=()=>{
   if(document.getElementById('pin').value.trim()!==PANEL_PIN){document.getElementById('pin-err').textContent='Not the key.';return}
+  PANEL_OK=true;
+  try{ sessionStorage.setItem('panelok','1'); }catch(e){}
   openPanel();
 };
 document.getElementById('pin').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('pin-go').click()});
@@ -5650,6 +5685,7 @@ const dv=C.devotional,lv=C.live;
 document.getElementById('panelbox').innerHTML=`
  <!-- ========== LIVE GATHERINGS (each gathering = one card) ========== -->
  <div class="psec">
+  <div style="text-align:right;margin-bottom:.4em"><a href="#map" id="panel-lock" class="note" style="color:var(--dim)">🔒 Lock the panel</a></div>
   <h2>🚪 The Upper Room · private meetings</h2>
   <div class="pdesc">A private video room for planning, elders, counselling — anything that isn't for the whole church. It is <b>not</b> on the treasure map and nothing links to it: only someone you send the link to can find it. No time limit.</div>
   <div class="subcard">
@@ -5907,6 +5943,10 @@ var pwc=document.getElementById('pw-clear'); if(pwc)pwc.onclick=async function()
 };
 loadAnalytics();
 var azr=document.getElementById('az-refresh'); if(azr) azr.onclick=loadAnalytics;
+(function(){
+  var lk=document.getElementById('panel-lock');
+  if(lk)lk.onclick=function(){ PANEL_OK=false; try{ sessionStorage.removeItem('panelok'); }catch(e){} };
+})();
 (function(){
   var nameBox=document.getElementById('mt-name');
   var showLink=function(){
