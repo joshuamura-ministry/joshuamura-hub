@@ -185,6 +185,12 @@ footer .v{font-family:'Fraunces',serif;font-style:italic;font-size:1.05em;color:
 .vmodal-foot a{color:var(--dim)}
 /* ===== Interactive Presentations (Bucks-style) ===== */
 .ipres{position:relative;min-height:60dvh;overflow:hidden}
+.laserdot{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;pointer-events:none;z-index:9;
+  background:radial-gradient(circle,#ff4b3e 0%,#ff2d20 45%,rgba(255,45,32,0) 72%);
+  box-shadow:0 0 14px 6px rgba(255,60,45,.55);opacity:0;transition:opacity .9s ease-out;will-change:left,top,opacity}
+.laserdot.show{opacity:1;transition:opacity .06s ease-out}
+.ipres.lasermode{cursor:crosshair}
+.btn.laseron{background:var(--red);color:#fff}
 .ipslide{opacity:0;transform:translateX(24px);transition:opacity .22s ease-out,transform .22s ease-out,visibility 0s linear .22s;position:absolute;inset:0;pointer-events:none;visibility:hidden;will-change:opacity,transform;backface-visibility:hidden}
 .ipslide.active{opacity:1;transform:translateZ(0);pointer-events:auto;position:relative;visibility:visible;transition:opacity .22s ease-out,transform .22s ease-out,visibility 0s}
 .ipslide.exit-left{opacity:0;transform:translateX(-24px)}
@@ -2840,7 +2846,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v123</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v125</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -3749,8 +3755,10 @@ function slidesPanel(){
     const lead=!!SESSION_MOD_PASS;
     const tail = lead
       ? `<div style="display:flex;align-items:center;gap:.5em;justify-content:center;margin-top:.5em;flex-wrap:wrap">
+           ${laserButtonHTML()}
            <button class="btn" id="ps-close" style="padding:.35em 1em">&#10005; Close presentation</button>
          </div>
+         <div id="laser-note" class="note" style="text-align:center;margin-top:.25em"></div>
          <div class="note" style="text-align:center;margin-top:.3em">Tap the right side of the deck to advance, the left to go back — everyone follows you. Closing puts the prayer requests back in view.</div>`
       : '';
     return '<div class="card" style="padding:.5em">'+ipRenderDeck(deckId,{follow:!lead})+tail+tvButtonHTML()+'</div>';
@@ -3782,6 +3790,7 @@ function wireSlideLead(){
   if(s.on && s.mode==='ipres'){
     setTimeout(function(){
       try{ ipShow((C.present&&C.present.current)||0,false); }catch(e){}
+      try{ laserListen(); }catch(e){}
       if(SESSION_MOD_PASS){
         try{ ipEnablePresenterDrive(); }catch(e){}
         /* The deck's own Back / Next buttons must drive everyone too, not just the side-tap. */
@@ -3798,6 +3807,7 @@ function wireSlideLead(){
         if(ipp)ipp.onclick=function(e){ e.stopPropagation(); move(((C.present&&C.present.current)||0)-1); };
       }
       try{ wireTvButton((C.present&&C.present.which)||''); }catch(e){}
+      try{ wireLaserButton(); }catch(e){}
       const cl=document.getElementById('ps-close');
       if(cl)cl.onclick=async()=>{ try{ await slideLiveWrite({on:false}); }catch(e){} };
     },40);
@@ -5165,13 +5175,94 @@ if(ex.on&&ex.source==='ipres'){
   },30);
 }
 }
+/* ================= THE LASER =================
+   Presenter holds a finger (or mouse) on the slide -> a red dot appears in the SAME
+   spot on everyone's screen, and fades a second after they lift.
+   It rides its own Firebase node so it can never disturb which slide is showing.
+   While the laser is ON, taps/swipes do NOT advance -- use the arrows.            */
+var LASER_ON=false, LASER_LAST=0, LASER_TIMER=null;
+
+function laserDot(){
+  var d=document.getElementById('laser-dot');
+  if(!d){
+    var host=document.getElementById('ipres-host'); if(!host)return null;
+    d=document.createElement('div'); d.id='laser-dot'; d.className='laserdot';
+    host.appendChild(d);
+  }
+  return d;
+}
+/* Show the dot at a relative position (0-1 of the slide box). */
+function laserPaint(x,y,on){
+  var d=laserDot(); if(!d)return;
+  if(!on){ d.classList.remove('show'); return; }
+  d.style.left=(x*100)+'%'; d.style.top=(y*100)+'%';
+  d.classList.add('show');
+}
+/* Followers: react to whatever the presenter last sent. */
+function laserListen(){
+  if(!db||window.__laserWired)return; window.__laserWired=true;
+  db.ref('content/laser').on('value',function(s){
+    var v=s.val(); if(!v)return;
+    if(!document.getElementById('ipres-host'))return;
+    if(SESSION_MOD_PASS||PRESENT_OK)return;          /* the presenter draws locally */
+    laserPaint(v.x||0, v.y||0, !!v.on);
+    if(v.on){ clearTimeout(LASER_TIMER); LASER_TIMER=setTimeout(function(){ laserPaint(0,0,false); },1400); }
+  });
+}
+function laserSend(x,y,on){
+  if(!db)return;
+  var now=Date.now();
+  if(on && now-LASER_LAST<60)return;                 /* ~16/sec is smooth and gentle on the line */
+  LASER_LAST=now;
+  try{ db.ref('content/laser').set({k:WRITE_KEY,x:x,y:y,on:!!on,t:now}); }catch(e){}
+}
+/* Presenter's finger/mouse -> local dot + broadcast. */
+function laserWireHost(){
+  var host=document.getElementById('ipres-host'); if(!host||host._lasered)return; host._lasered=true;
+  function rel(cx,cy){ var r=host.getBoundingClientRect();
+    return [Math.min(1,Math.max(0,(cx-r.left)/r.width)), Math.min(1,Math.max(0,(cy-r.top)/r.height))]; }
+  function down(cx,cy){ if(!LASER_ON)return; var p=rel(cx,cy); laserPaint(p[0],p[1],true); laserSend(p[0],p[1],true); }
+  function up(){ if(!LASER_ON)return;
+    clearTimeout(LASER_TIMER);
+    LASER_TIMER=setTimeout(function(){ laserPaint(0,0,false); },1000);   /* 1s fade, as asked */
+    laserSend(0,0,false); }
+  host.addEventListener('mousedown',function(e){ down(e.clientX,e.clientY); });
+  host.addEventListener('mousemove',function(e){ if(e.buttons===1) down(e.clientX,e.clientY); });
+  host.addEventListener('mouseup',up);
+  host.addEventListener('mouseleave',up);
+  host.addEventListener('touchstart',function(e){ if(!LASER_ON)return; e.preventDefault(); down(e.touches[0].clientX,e.touches[0].clientY); },{passive:false});
+  host.addEventListener('touchmove',function(e){ if(!LASER_ON)return; e.preventDefault(); down(e.touches[0].clientX,e.touches[0].clientY); },{passive:false});
+  host.addEventListener('touchend',up);
+}
+/* The toggle the presenter taps. */
+function laserButtonHTML(){
+  return '<button class="btn ghost" id="laser-btn" style="padding:.35em 1em">\ud83d\udd34 Laser off</button>';
+}
+function wireLaserButton(){
+  var b=document.getElementById('laser-btn'); if(!b)return;
+  laserWireHost();
+  var paint=function(){
+    b.textContent=LASER_ON?'\ud83d\udd34 Laser ON \u2014 tap to stop':'\ud83d\udd34 Laser off';
+    b.classList.toggle('laseron',LASER_ON);
+    var host=document.getElementById('ipres-host');
+    if(host)host.classList.toggle('lasermode',LASER_ON);
+    var note=document.getElementById('laser-note');
+    if(note)note.textContent=LASER_ON
+      ? 'Hold your finger on the slide to point. Use the arrows to change slides.'
+      : '';
+  };
+  b.onclick=function(e){ e.stopPropagation(); LASER_ON=!LASER_ON; if(!LASER_ON){ laserPaint(0,0,false); laserSend(0,0,false); } paint(); };
+  paint();
+}
+
 function ipEnablePresenterDrive(){
   var host=document.getElementById('ipres-host'); if(!host||host._driven)return; host._driven=true;
   // Presenter is driving now — hide the "following" lock note (the green LIVE badge stays).
   var lock=document.querySelector('.iplock'); if(lock)lock.style.display='none';
   host.classList.remove('follow-locked'); // presenter may tap/swipe to drive
   var deck=presById(C.present.which); var max=deck?deck.slides.length-1:0;
-  function go(n){ n=Math.max(0,Math.min(max,n)); if(n===C.present.current)return; ipShow(n,true); try{presentWrite({current:n});}catch(e){} }
+  function go(n){ if(LASER_ON)return;   /* in laser mode the finger paints, it never turns pages */
+    n=Math.max(0,Math.min(max,n)); if(n===C.present.current)return; ipShow(n,true); try{presentWrite({current:n});}catch(e){} }
   // Tap: right half = next, left half = previous
   host.addEventListener('click',function(e){
     var r=host.getBoundingClientRect();
@@ -5559,6 +5650,22 @@ const dv=C.devotional,lv=C.live;
 document.getElementById('panelbox').innerHTML=`
  <!-- ========== LIVE GATHERINGS (each gathering = one card) ========== -->
  <div class="psec">
+  <h2>🚪 The Upper Room · private meetings</h2>
+  <div class="pdesc">A private video room for planning, elders, counselling — anything that isn't for the whole church. It is <b>not</b> on the treasure map and nothing links to it: only someone you send the link to can find it. No time limit.</div>
+  <div class="subcard">
+    <b>Name this meeting</b>
+    <div class="note" style="margin:.3em 0 .5em">Anything you like — <code>planning</code>, <code>elders</code>, <code>board</code>. Each name is its own separate room. Same name = same room, so you can reuse it every week.</div>
+    <input type="text" id="mt-name" value="planning" placeholder="planning">
+    <div style="display:flex;gap:.5em;flex-wrap:wrap;margin-top:.4em">
+      <button class="btn" id="mt-open">🚪 Open the room</button>
+      <button class="btn ghost" id="mt-copy">🔗 Copy the invite link</button>
+    </div>
+    <div id="mt-link" class="note" style="margin-top:.5em;word-break:break-all"></div>
+    <div id="mt-ok" class="ok"></div>
+  </div>
+ </div>
+
+ <div class="psec">
   <h2>🔴 Live Gatherings</h2>
   <div class="pdesc">Each gathering is one card — turn it on, set what people see, and save, all in the same place. One flip to ON lights the red "live" banner on the site.</div>
 
@@ -5800,6 +5907,29 @@ var pwc=document.getElementById('pw-clear'); if(pwc)pwc.onclick=async function()
 };
 loadAnalytics();
 var azr=document.getElementById('az-refresh'); if(azr) azr.onclick=loadAnalytics;
+(function(){
+  var nameBox=document.getElementById('mt-name');
+  var showLink=function(){
+    var n=(nameBox.value||'planning').trim().replace(/\s+/g,'-').replace(/[^A-Za-z0-9-]/g,'')||'planning';
+    var url=location.origin+location.pathname+'#meet-'+n;
+    var box=document.getElementById('mt-link');
+    if(box)box.innerHTML='Invite link: <b>'+esc(url)+'</b>';
+    return url;
+  };
+  if(nameBox){ nameBox.addEventListener('input',showLink); showLink(); }
+  var o=document.getElementById('mt-open');
+  if(o)o.onclick=function(){ var u=showLink(); location.hash=u.split('#')[1]; };
+  var c=document.getElementById('mt-copy');
+  if(c)c.onclick=async function(){
+    var u=showLink();
+    try{ await navigator.clipboard.writeText(u); }catch(e){
+      var t=document.createElement('textarea'); t.value=u; document.body.appendChild(t); t.select();
+      try{document.execCommand('copy');}catch(_){}; document.body.removeChild(t);
+    }
+    var ok=document.getElementById('mt-ok');
+    if(ok){ ok.textContent='Copied ✓ — paste it into a text or email.'; setTimeout(function(){ok.textContent='';},3000); }
+  };
+})();
 document.getElementById('save-d').onclick=async()=>{
   try{
     const old=C.devotional;
