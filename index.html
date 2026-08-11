@@ -472,6 +472,10 @@ h3.gsec{font-family:'Fraunces',serif;color:var(--gold);font-size:1.15rem;margin:
 </div>
 
 <script>
+/* Big-screen (TV) flags — declared FIRST because the live content listener reads TV_MODE. */
+var TV_MODE=false, PRES_REQ=null, PRES_CONN=null;
+var SLIDE_SHAPE='';   /* on/off + mode + deck: if this changes we must re-render, not patch */
+
 // --- Add-to-home-screen support ---
 var DEFERRED_INSTALL=null;               // holds Android/Chrome's install prompt
 window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); DEFERRED_INSTALL=e; });
@@ -675,8 +679,27 @@ if(db){
       if(lab)lab.textContent='Slide '+nn+' of '+C.sermons.total+' · the slides turn as he teaches';
       showLivePill(); return;   /* smooth in-place update, no full re-render */
     }
+    /* Prayer circle: keep its slides moving. The wall branch below returns early,
+       so the deck/JPEG must be advanced here or followers would sit frozen. */
+    var sl=C.slides||{};
+    var shape=[!!sl.on, sl.mode||'jpeg', sl.folder||'', (C.present&&C.present.which)||'', sl.total||0].join('|');
+    var shapeChanged=(SLIDE_SHAPE!==''&&SLIDE_SHAPE!==shape);
+    SLIDE_SHAPE=shape;
+    if(!shapeChanged && sl.on){
+      if(sl.mode==='ipres' && ipHost){ ipShow((C.present&&C.present.current)||0,false); }
+      else {
+        var psImg=document.getElementById('prayer-slide-img');
+        if(psImg){
+          var pn=Math.min(Math.max(1,sl.current||1),Math.max(1,sl.total||1));
+          psImg.src=prayerSlideUrl(pn);
+          var plab=psImg.parentNode&&psImg.parentNode.querySelector('.note');
+          if(plab)plab.textContent='Slide '+pn+' of '+sl.total+' \u00b7 follows Pastor Josh live';
+        }
+      }
+    }
     var pwWall=document.getElementById('pw-wall');
-    if(pwWall && C.live && C.live.prayer && C.live.prayer.on){ pwPaint(); showLivePill(); return; }
+    /* If the slides were switched on/off or swapped, the page must be rebuilt. */
+    if(pwWall && !shapeChanged && C.live && C.live.prayer && C.live.prayer.on){ pwPaint(); showLivePill(); return; }
     render();showLivePill();});
 }
 
@@ -2817,7 +2840,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v115</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v117</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -3746,7 +3769,7 @@ function slidesPanel(){
     <div class="note" style="text-align:center;margin-top:.3em">Closing puts the prayer requests back in view for everyone.</div>`
     : `<div class="note" style="text-align:center;margin-top:.4em">Slide ${n} of ${s.total} &middot; follows Pastor Josh live</div>`;
   return `<div class="card" style="padding:.5em">
-    <img src="${prayerSlideUrl(n)}" alt="Slide ${n}"
+    <img id="prayer-slide-img" src="${prayerSlideUrl(n)}" alt="Slide ${n}"
       style="width:100%;border-radius:10px;display:block;background:#000"
       onerror="this.style.opacity=.4;this.alt='Slide ${n} not found — expected ${prayerSlideUrl(n)}'">
     ${controls}
@@ -4376,7 +4399,7 @@ function share(){
    FOLLOWS the presenter live. Nothing else on screen — no menus, no forms.
    Open it on a laptop plugged into the TV, on a smart-TV browser, or cast it
    from Chrome to a Chromecast on the same wi-fi.                          */
-let TV_MODE=false, PRES_REQ=null, PRES_CONN=null;
+/* TV_MODE / PRES_REQ / PRES_CONN are declared at the top of this script. */
 
 function tvDeckId(){
   const h=(location.hash||'').replace('#','');
