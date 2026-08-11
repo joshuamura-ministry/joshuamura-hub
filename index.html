@@ -96,12 +96,6 @@ label{font-size:.8em;font-weight:700;letter-spacing:.07em;text-transform:upperca
 .crumb a{color:var(--dim);text-decoration:none;font-size:.85em;font-weight:700;letter-spacing:.06em}
 .card{background:var(--card);border:1px solid rgba(201,162,75,.25);border-radius:14px;padding:1.1em 1.2em;margin:.8em 0}
 .videoframe{position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000;margin:.8em 0}
-/* Live circles: Jitsi draws its own toolbar + tiles, so a flat 16:9 clips them on a
-   portrait phone. Taller shape on narrow screens, and never taller than the screen. */
-.circleframe{position:relative;width:100%;aspect-ratio:16/9;min-height:260px;max-height:72vh;max-height:72dvh;border-radius:14px;overflow:hidden;background:#000;margin:.8em 0}
-.circleframe iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
-@media(max-width:700px){.circleframe{aspect-ratio:3/4;min-height:330px;max-height:66vh;max-height:66dvh}}
-@media(max-width:700px) and (orientation:landscape){.circleframe{aspect-ratio:16/9;min-height:200px;max-height:78vh;max-height:78dvh}}
 .videoframe iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .gem{display:inline-block;font-size:2.4rem;margin:.15em}
 .qbox{background:var(--card);border:1px solid rgba(201,162,75,.3);border-radius:14px;padding:1.1em 1.2em;margin:1em 0}
@@ -2846,7 +2840,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v120</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v121</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -5083,7 +5077,7 @@ if(ex.on){
   if(ex.source==='youtube'&&ex.youtubeId){
     media=`<div class="videoframe"><iframe src="https://www.youtube.com/embed/${esc(ex.youtubeId)}?autoplay=1" allow="autoplay;encrypted-media;picture-in-picture" allowfullscreen></iframe></div>`;
   }else if(ex.source==='jitsi'){
-    media=`<div class="circleframe" id="circle-watchfire"></div>${slidesPanel()}
+    media=`<div class="videoframe" id="circle-watchfire"></div>${slidesPanel()}
     <p class="note">🧭 A round-table journey — you join <b>muted</b>; raise your hand 🖐 to speak.</p>`;
   }else if(ex.source==='present'){
     media=livePresentView();
@@ -5168,7 +5162,7 @@ const f=C.live.teaching;
 app.innerHTML=`<div class="crumb"><a href="#mine">⛏️ ← Back to the Mine</a></div>
  <div class="eyebrow">📖 The Live Class · Teaching in Real Time</div>
  <h2>${f.on?'Class is in session — take your seat':'Class is not in session'}</h2>
- ${f.on?`<div class="circleframe" id="circle-class"></div>${slidesPanel()}
+ ${f.on?`<div class="videoframe" id="circle-class"></div>${slidesPanel()}
   <p class="note">🔥 You join <b>muted</b> — raise your hand 🖐 to ask your question, live.</p>
   ${modUnlockCard()}`
  :`<div class="card" style="text-align:center"><div style="font-size:2.6rem">🪑</div><p class="sub">${esc(f.note)}</p></div>`}
@@ -5314,7 +5308,7 @@ const pc=C.live.prayer;
 app.innerHTML=`${crumb()}
  <div class="eyebrow">🙏 The Altar · Prayer</div>
  ${pc.on?`<div class="card" style="border-color:var(--red)"><div class="cardhead"><b style="color:var(--red)">🔥 The Prayer Circle is open right now.</b>${modBadge()}</div>
-   <div class="circleframe" style="margin-top:.6em" id="circle-prayer"></div>
+   <div class="videoframe" style="margin-top:.6em" id="circle-prayer"></div>
    <p class="note">You join <b>muted</b> — raise your hand 🖐 and Pastor Josh will call on you to pray.</p>
    ${modUnlockCard()}</div>`
   :`<div class="card note">🕯️ <b>The Prayer Circle</b> — ${esc(pc.note)}</div>`}
