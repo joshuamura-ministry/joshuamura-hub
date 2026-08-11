@@ -2799,13 +2799,14 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v109</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v111</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
 const SIGNER_URL='/.netlify/functions/circle-token';
 /* remember a moderator pass for this browser session only (never stored to disk) */
 let SESSION_MOD_PASS=null;
+let MOD_CONFIRMED=false;   /* true only when the signer actually granted moderator */
 
 /* Build the public (unauthenticated) fallback URL — today's behaviour. */
 function publicCircleUrl(room){
@@ -3741,7 +3742,21 @@ function wireSlideLead(){
   if(s.on && s.mode==='ipres'){
     setTimeout(function(){
       try{ ipShow((C.present&&C.present.current)||0,false); }catch(e){}
-      if(SESSION_MOD_PASS){ try{ ipEnablePresenterDrive(); }catch(e){} }
+      if(SESSION_MOD_PASS){
+        try{ ipEnablePresenterDrive(); }catch(e){}
+        /* The deck's own Back / Next buttons must drive everyone too, not just the side-tap. */
+        var dk=presById((C.present&&C.present.which)||''); var mx=dk?dk.slides.length-1:0;
+        var move=function(n){
+          n=Math.max(0,Math.min(mx,n));
+          if(n===(C.present&&C.present.current))return;
+          try{ ipShow(n,true); }catch(e){}
+          try{ presentWrite({current:n}); }catch(e){}
+        };
+        var ipn=document.getElementById('ip-next');
+        var ipp=document.getElementById('ip-prev');
+        if(ipn)ipn.onclick=function(e){ e.stopPropagation(); move(((C.present&&C.present.current)||0)+1); };
+        if(ipp)ipp.onclick=function(e){ e.stopPropagation(); move(((C.present&&C.present.current)||0)-1); };
+      }
       const cl=document.getElementById('ps-close');
       if(cl)cl.onclick=async()=>{ try{ await slideLiveWrite({on:false}); }catch(e){} };
     },40);
@@ -3768,17 +3783,45 @@ async function slideLiveWrite(patch){
 }
 /* Small UI to let Pastor Josh unlock moderator for this session. */
 function modUnlockCard(afterRoom,afterName,afterContainer){
+  /* If this session is already moderating, say so plainly instead of offering the link again. */
+  if(SESSION_MOD_PASS && MOD_CONFIRMED){
+    return `<div class="card" style="margin-top:.6em;border-color:var(--gold);text-align:center">
+      <b style="color:var(--gold);letter-spacing:.06em">🔑 YOU ARE MODERATING THIS CIRCLE</b>
+      <div class="note" style="margin-top:.25em">You can mute, lock, and remove \u2014 and the slide controls are yours.</div>
+    </div>`;
+  }
   return `<div class="card note" style="margin-top:.6em">
     🔑 <b>Steward?</b> <a href="#" id="mod-unlock">Enter as moderator</a> to lead this circle (mute, lock, remove).
+    <div id="mod-status" style="margin-top:.35em"></div>
   </div>`;
 }
 function wireModUnlock(room,name,containerId){
   const link=document.getElementById('mod-unlock');
   if(!link)return;
-  link.onclick=e=>{
+  link.onclick=async e=>{
     e.preventDefault();
     const p=prompt('Moderator passphrase (kept only for this session):');
-    if(p){ SESSION_MOD_PASS=p; mountCircle(containerId,room,name); link.textContent='Re-joining as moderator…'; if(typeof pwPaint==='function')pwPaint(); if(typeof render==='function')setTimeout(render,400); }
+    if(!p)return;
+    const st=document.getElementById('mod-status');
+    const say=(msg,ok)=>{ if(st){ st.innerHTML=msg; st.style.color=ok?'var(--gold)':'var(--red)'; } };
+    SESSION_MOD_PASS=p;
+    link.textContent='Checking\u2026';
+    say('\u23f3 Checking that passphrase\u2026',true);
+    await mountCircle(containerId,room,name);
+    /* mountCircle records what the signer actually granted. Trust that, not the typing. */
+    const el=document.getElementById(containerId);
+    const granted = el && el.dataset && el.dataset.mod==='1';
+    if(granted){
+      MOD_CONFIRMED=true;
+      say('\u2705 <b>MODERATING NOW</b> \u2014 you are leading this circle.',true);
+      if(typeof pwPaint==='function')pwPaint();
+      if(typeof render==='function')setTimeout(render,500);
+    }else{
+      MOD_CONFIRMED=false; SESSION_MOD_PASS=null;
+      link.textContent='Enter as moderator';
+      say('\u274c That passphrase didn\u2019t match \u2014 you joined as a regular participant. Tap to try again.',false);
+      await mountCircle(containerId,room,name);
+    }
   };
 }
 
