@@ -2799,7 +2799,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v111</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v112</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -4963,7 +4963,7 @@ if(ex.on){
   }else if(ex.source==='present'){
     media=livePresentView();
   }else if(ex.source==='ipres'){
-    media=ipRenderDeck(C.present.which,{follow:true})
+    media=ipRenderDeck(C.present.which,{follow:!PRESENT_OK})
       + (PRESENT_OK?'':'<div class="card note" style="text-align:center;margin-top:.6em">🎤 <b>Are you the presenter?</b><br><input type="password" id="ip-unlock-code" placeholder="Presenter code" style="max-width:200px;margin:.4em auto;display:block;text-align:center"><button class="btn" id="ip-unlock-go">Unlock — let me drive</button><div id="ip-unlock-err" class="err" style="margin-top:.3em"></div></div>');
   }
 }
@@ -4982,11 +4982,19 @@ app.innerHTML=`${crumb()}
  ${(ex.source==='present')?'<div class="card note" style="text-align:center">📽️ <b>Presenting the JPEG slides?</b> <a href="#present">Open Presenter mode</a> — full-screen for the projector.</div>':''}
  ${footer()}`;
 if(ex.on){ wireQAAsk(); qaPaintSpotlight(); }
-if(ex.on&&ex.source==='jitsi'){ mountCircle('circle-watchfire',ex.room,'Friend'); }
+if(ex.on&&ex.source==='jitsi'){ mountCircle('circle-watchfire',ex.room,'Friend'); wireSlideLead(); }
 if(ex.on&&ex.source==='ipres'){
   setTimeout(function(){
     ipShow(C.present.current||0,false);
-    if(PRESENT_OK){ ipEnablePresenterDrive(); }
+    if(PRESENT_OK){
+      ipEnablePresenterDrive();
+      var dk=presById(C.present.which); var mx=dk?dk.slides.length-1:0;
+      var mv=function(n){ n=Math.max(0,Math.min(mx,n)); if(n===C.present.current)return;
+        ipShow(n,true); try{presentWrite({current:n});}catch(e){} };
+      var bn=document.getElementById('ip-next'), bp=document.getElementById('ip-prev');
+      if(bn)bn.onclick=function(e){ e.stopPropagation(); mv((C.present.current||0)+1); };
+      if(bp)bp.onclick=function(e){ e.stopPropagation(); mv((C.present.current||0)-1); };
+    }
     var ug=document.getElementById('ip-unlock-go');
     if(ug)ug.onclick=function(){
       var code=(document.getElementById('ip-unlock-code').value||'').trim();
@@ -5041,7 +5049,7 @@ app.innerHTML=`<div class="crumb"><a href="#mine">⛏️ ← Back to the Mine</a
  :`<div class="card" style="text-align:center"><div style="font-size:2.6rem">🪑</div><p class="sub">${esc(f.note)}</p></div>`}
  <div class="verse"><p>"Then opened he their understanding, that they might understand the scriptures."</p><cite>Luke 24:45</cite></div>
  ${footer()}`;
-if(f.on){ mountCircle('circle-class',f.room,'Friend'); wireModUnlock(f.room,'Pastor Josh','circle-class'); }
+if(f.on){ mountCircle('circle-class',f.room,'Friend'); wireModUnlock(f.room,'Pastor Josh','circle-class'); wireSlideLead(); }
 }
 
 function prayerteam(){
