@@ -214,6 +214,16 @@ footer .v{font-family:'Fraunces',serif;font-style:italic;font-size:1.05em;color:
 .ipslide table td:last-child,.ipslide table th:last-child{text-align:right;white-space:nowrap}
 .ipslide table tr.total td{border-top:2px solid var(--gold);border-bottom:none;font-weight:700;color:var(--ivory);padding-top:.6em}
 .ipslide .card{background:rgba(201,162,75,.06);border:1px solid rgba(201,162,75,.16);border-radius:10px;padding:.9em 1em;margin:.7em 0}
+body.tvmode{background:#0a0805}
+body.tvmode .wrap,body.tvmode #app{max-width:none;padding:0}
+.tvwrap{min-height:100dvh;display:flex;flex-direction:column;justify-content:center;padding:2vh 4vw}
+.tvwrap .ipres{min-height:80dvh}
+.tvwrap .ipinner{max-width:none;font-size:clamp(1rem,1.9vw,1.9rem)}
+.tvwrap h1{font-size:clamp(2rem,5vw,4.6rem)}
+.tvwrap h2{font-size:clamp(1.4rem,3.2vw,3rem)}
+.tvwrap .iplock{display:none}
+.tvexit{text-align:center;opacity:.25;font-size:.8rem;padding:.6em}
+.tvexit a{color:var(--ivory-dim)}
 .modlive{display:inline-flex;align-items:center;gap:.45em;background:rgba(60,200,120,.12);border:1px solid rgba(60,200,120,.55);color:#5fe0a0;border-radius:20px;padding:.18em .8em;font-size:.72em;font-weight:800;letter-spacing:.14em;text-transform:uppercase;box-shadow:0 0 10px rgba(60,200,120,.45),inset 0 0 8px rgba(60,200,120,.12);animation:modpulse 2.2s ease-in-out infinite;white-space:nowrap}
 .modlive .dot{width:8px;height:8px;border-radius:50%;background:#5fe0a0;box-shadow:0 0 8px #5fe0a0}
 @keyframes modpulse{0%,100%{box-shadow:0 0 8px rgba(60,200,120,.35),inset 0 0 8px rgba(60,200,120,.10)}50%{box-shadow:0 0 18px rgba(60,200,120,.75),inset 0 0 10px rgba(60,200,120,.18)}}
@@ -653,6 +663,7 @@ if(db){
   db.ref('content').on('value',s=>{const v=s.val();if(v){if(v.devotional)C.devotional={...C.devotional,...v.devotional};if(v.live){['prayer','teaching','expedition'].forEach(f=>{if(v.live[f])C.live[f]={...C.live[f],...v.live[f]};});}if(v.archive&&v.archive.items)C.archive=v.archive.items;if(v.config)C.config={...C.config,...v.config};if(v.trail&&v.trail.items)C.trail=v.trail.items;if(v.rhythm&&v.rhythm.items)C.rhythm=v.rhythm.items;if(v.slides)C.slides={...C.slides,...v.slides};if(v.sermons)C.sermons={...C.sermons,...v.sermons};if(v.present)C.present={...C.present,...v.present};if(v.circle)C.circle={...C.circle,...v.circle};}
     qaListen(); qaMountPresenter(); qaPaintSpotlight();
     var ipHost=document.getElementById('ipres-host');
+    if(ipHost && TV_MODE){ ipShow(C.present.current, false); return; }   /* big screen just follows */
     if(ipHost && C.live.expedition.on && C.live.expedition.source==='ipres'){
       ipShow(C.present.current, false); showLivePill(); return;
     }
@@ -2806,7 +2817,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v114</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v115</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -3720,7 +3731,7 @@ function slidesPanel(){
          </div>
          <div class="note" style="text-align:center;margin-top:.3em">Tap the right side of the deck to advance, the left to go back — everyone follows you. Closing puts the prayer requests back in view.</div>`
       : '';
-    return '<div class="card" style="padding:.5em">'+ipRenderDeck(deckId,{follow:!lead})+tail+'</div>';
+    return '<div class="card" style="padding:.5em">'+ipRenderDeck(deckId,{follow:!lead})+tail+tvButtonHTML()+'</div>';
   }
   if(!s.total)return '';
   const n=Math.min(Math.max(1,s.current||1),s.total);
@@ -3764,6 +3775,7 @@ function wireSlideLead(){
         if(ipn)ipn.onclick=function(e){ e.stopPropagation(); move(((C.present&&C.present.current)||0)+1); };
         if(ipp)ipp.onclick=function(e){ e.stopPropagation(); move(((C.present&&C.present.current)||0)-1); };
       }
+      try{ wireTvButton((C.present&&C.present.which)||''); }catch(e){}
       const cl=document.getElementById('ps-close');
       if(cl)cl.onclick=async()=>{ try{ await slideLiveWrite({on:false}); }catch(e){} };
     },40);
@@ -3844,6 +3856,7 @@ function render(){
     : (h==='altar')?'altar' : (h==='treasury')?'treasury' : (h==='share')?'share' : '';
   logDoor(_door);
   qaListen(); qaMountPresenter();
+  if(h==='tv'||h.indexOf('tv-')===0){tvView();window.scrollTo(0,0);return}
   if(h==='deck'||h.indexOf('deck-')===0){deck();window.scrollTo(0,0);return}
   if(h==='library'){library();window.scrollTo(0,0);return}
   if(h==='bible'||h.indexOf('bible-')===0){bible();window.scrollTo(0,0);return}
@@ -4358,6 +4371,77 @@ function share(){
     catch(e){ done('Link: '+link); }
   };
 }
+/* ================= SEND TO THE BIG SCREEN =================
+   #tv  (or #tv-<deckId>) is a bare, full-bleed view of the presentation that
+   FOLLOWS the presenter live. Nothing else on screen — no menus, no forms.
+   Open it on a laptop plugged into the TV, on a smart-TV browser, or cast it
+   from Chrome to a Chromecast on the same wi-fi.                          */
+let TV_MODE=false, PRES_REQ=null, PRES_CONN=null;
+
+function tvDeckId(){
+  const h=(location.hash||'').replace('#','');
+  if(h.indexOf('tv-')===0)return h.slice(3);
+  return (C.present&&C.present.which)||(PRESENTATIONS[0]&&PRESENTATIONS[0].id);
+}
+function tvUrl(id){
+  return location.origin+location.pathname+'#tv-'+(id||tvDeckId());
+}
+function tvView(){
+  TV_MODE=true;
+  const id=tvDeckId(); const d=presById(id);
+  if(!d){ app.innerHTML='<div class="card"><p class="sub">That presentation could not be found.</p></div>'; return; }
+  document.body.classList.add('tvmode');
+  app.innerHTML='<div class="tvwrap">'+ipRenderDeck(id,{follow:true})
+    +'<div class="tvexit"><a href="#altar">\u2190 leave the big screen</a></div></div>';
+  setTimeout(function(){ try{ ipShow((C.present&&C.present.current)||0,false); }catch(e){} },40);
+}
+
+/* Is there a TV/Chromecast on this wi-fi? Only offer the button if so. */
+function tvWatchAvailability(id,onChange){
+  if(!('PresentationRequest' in window)){ onChange(false,'unsupported'); return; }
+  try{
+    PRES_REQ=new PresentationRequest([tvUrl(id)]);
+    PRES_REQ.getAvailability().then(function(av){
+      onChange(av.value,'ok');
+      av.onchange=function(){ onChange(av.value,'ok'); };
+    }).catch(function(){ onChange(true,'unknown'); });   /* can't tell — offer it anyway */
+  }catch(e){ onChange(false,'unsupported'); }
+}
+function tvSend(id,say){
+  if(!PRES_REQ){ try{ PRES_REQ=new PresentationRequest([tvUrl(id)]); }catch(e){} }
+  if(!PRES_REQ){ say(tvHelpText()); return; }
+  PRES_REQ.start().then(function(conn){
+    PRES_CONN=conn;
+    say('\u2705 Sent to <b>'+(conn.name||'your TV')+'</b> \u2014 it follows along live.');
+    conn.onclose=function(){ say('Screen disconnected.'); };
+  }).catch(function(){
+    say(tvHelpText());
+  });
+}
+function tvHelpText(){
+  return 'No TV found on this wi\u2011fi. On an <b>iPhone or iPad</b>, swipe down and tap '
+    +'<b>Screen Mirroring</b>. On a <b>computer or Android</b>, use Chrome\u2019s <b>Cast</b> menu. '
+    +'Or open <b>'+tvUrl()+'</b> in your TV\u2019s browser.';
+}
+/* The button, for any page showing a deck. */
+function tvButtonHTML(){
+  return '<div id="tv-zone" class="hide" style="text-align:center;margin-top:.5em">'
+    +'<button class="btn ghost" id="tv-send">\ud83d\udcfa Send to TV</button>'
+    +'<div id="tv-msg" class="note" style="margin-top:.35em"></div></div>';
+}
+function wireTvButton(id){
+  const zone=document.getElementById('tv-zone'); if(!zone)return;
+  const msg=document.getElementById('tv-msg');
+  const say=h=>{ if(msg)msg.innerHTML=h; };
+  tvWatchAvailability(id,function(available,how){
+    /* Show the button when a screen is there, or when the browser won't tell us. */
+    if(available||how==='unknown')zone.classList.remove('hide');
+    else if(how==='unsupported')zone.classList.add('hide');
+  });
+  const b=document.getElementById('tv-send');
+  if(b)b.onclick=function(){ say('\u23f3 Looking for a screen\u2026'); tvSend(id,say); };
+}
+
 function deck(){
   // Standalone, self-paced view of a single presentation — a clean shareable link.
   // URL: #deck  (shows the default deck)  or  #deck-<id>  (a specific deck).
