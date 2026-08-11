@@ -2840,7 +2840,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v121</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v122</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -2850,20 +2850,14 @@ let SESSION_MOD_PASS=null;
 let MOD_CONFIRMED=false;   /* true only when the signer actually granted moderator */
 
 /* Build the public (unauthenticated) fallback URL — today's behaviour. */
-/* Phone browsers: Jitsi normally refuses to run embedded and hands off to its app,
-   leaving an EMPTY video box. These flags keep it in the web client on a phone. */
-const CIRCLE_OPTS='#config.prejoinConfig.enabled=true'
-  +'&config.disableDeepLinking=true'
-  +'&config.enableWebPlatformOnMobile=true'
-  +'&config.startWithAudioMuted=true'
-  +'&config.disableInviteFunctions=true'
-  +'&interfaceConfig.MOBILE_APP_PROMO=false';
 function publicCircleUrl(room){
-  return 'https://8x8.vc/'+JAAS_APPID+'/'+encodeURIComponent(room)+CIRCLE_OPTS;
+  return 'https://8x8.vc/'+JAAS_APPID+'/'+encodeURIComponent(room)
+    +'#config.prejoinConfig.enabled=true&config.disableDeepLinking=true';
 }
-/* Build the signed URL once we have a token. */
 function signedCircleUrl(room,token){
-  return 'https://8x8.vc/'+JAAS_APPID+'/'+encodeURIComponent(room)+'?jwt='+token+CIRCLE_OPTS;
+  return 'https://8x8.vc/'+JAAS_APPID+'/'+encodeURIComponent(room)
+    +'?jwt='+token
+    +'#config.prejoinConfig.enabled=true&config.disableDeepLinking=true';
 }
 
 /*
@@ -2877,7 +2871,7 @@ function signedCircleUrl(room,token){
 async function mountCircle(containerId,room,name){
   const el=document.getElementById(containerId);
   if(!el)return;
-  const frame=src=>`<iframe src="${src}" allow="camera;microphone;fullscreen;display-capture;autoplay" allowfullscreen playsinline style="width:100%;height:100%;border:0;min-height:320px" title="Live circle"></iframe>`;
+  const frame=src=>`<iframe src="${src}" allow="camera;microphone;fullscreen;display-capture;autoplay" style="width:100%;height:100%;border:0"></iframe>`;
   /* start on public fallback immediately so there's never a blank frame */
   el.innerHTML=frame(publicCircleUrl(room));
   try{
