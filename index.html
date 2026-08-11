@@ -2840,7 +2840,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v122</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v123</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -3878,6 +3878,7 @@ function render(){
     : (h==='altar')?'altar' : (h==='treasury')?'treasury' : (h==='share')?'share' : '';
   logDoor(_door);
   qaListen(); qaMountPresenter();
+  if(h==='meet'||h.indexOf('meet-')===0){meetRoom();window.scrollTo(0,0);return}
   if(h==='tv'||h.indexOf('tv-')===0){tvView();window.scrollTo(0,0);return}
   if(h==='deck'||h.indexOf('deck-')===0){deck();window.scrollTo(0,0);return}
   if(h==='library'){library();window.scrollTo(0,0);return}
@@ -4393,6 +4394,51 @@ function share(){
     catch(e){ done('Link: '+link); }
   };
 }
+/* ================= THE UPPER ROOM — private meetings =================
+   #meet-<name> is an unlisted, signed meeting room. It is NOT on the treasure map
+   and nothing links to it: only someone holding the link can find it. Uses the same
+   token signer as the circles, so there is no 5-minute limit.
+   Example: joshuamura.netlify.app/#meet-planning                                  */
+function meetRoomName(){
+  const h=(location.hash||'').replace('#','');
+  let raw = h.indexOf('meet-')===0 ? h.slice(5) : '';
+  try{ raw=decodeURIComponent(raw); }catch(e){}          /* %20 etc. shouldn't leak into the name */
+  const clean = raw.trim().replace(/\s+/g,'-').replace(/[^A-Za-z0-9-]/g,'').slice(0,40);
+  return clean || 'UpperRoom';
+}
+function meetRoom(){
+  const name=meetRoomName();
+  const room='JMMeet-'+name;              /* namespaced so it can't collide with a circle */
+  const link=location.origin+location.pathname+'#meet-'+name;
+  app.innerHTML=`
+   <div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>
+   <div class="eyebrow">🚪 The Upper Room · private meeting</div>
+   <h2>${esc(name.replace(/-/g,' '))}</h2>
+   <p class="sub">A private room, just for the people you send this link to. It isn't listed anywhere on the site.</p>
+   <div class="videoframe" id="circle-meet"></div>
+   <p class="note">You join <b>muted</b> — unmute when you're ready. No time limit.</p>
+   <div class="card">
+     <b>🔗 Invite someone</b>
+     <div class="note" style="margin:.3em 0 .5em">Send them this link. Anyone with it can join, so share it only with the people you mean to.</div>
+     <input type="text" id="meet-link" value="${esc(link)}" readonly onclick="this.select()">
+     <button class="btn" id="meet-copy">Copy the link</button>
+     <span id="meet-copied" class="ok" style="margin-left:.5em"></span>
+   </div>
+   ${modUnlockCard()}
+   <div class="card note">💡 Want a different room? Change the end of the address — <b>#meet-elders</b>, <b>#meet-board</b>, and so on. Each name is its own room.</div>
+   ${footer()}`;
+  mountCircle('circle-meet',room,'Friend');
+  wireModUnlock(room,'Pastor Josh','circle-meet');
+  const c=document.getElementById('meet-copy');
+  if(c)c.onclick=async()=>{
+    const box=document.getElementById('meet-link');
+    try{ await navigator.clipboard.writeText(box.value); }
+    catch(e){ box.select(); try{document.execCommand('copy');}catch(_){} }
+    const ok=document.getElementById('meet-copied');
+    if(ok){ ok.textContent='Copied ✓'; setTimeout(()=>{ok.textContent='';},2500); }
+  };
+}
+
 /* ================= SEND TO THE BIG SCREEN =================
    #tv  (or #tv-<deckId>) is a bare, full-bleed view of the presentation that
    FOLLOWS the presenter live. Nothing else on screen — no menus, no forms.
