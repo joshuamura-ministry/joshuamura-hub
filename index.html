@@ -637,7 +637,7 @@ let C={
    teaching:{on:false,room:"JoshuaMuraTeaching",topic:"",note:"Live class meets here. Next session: announced soon."},
    expedition:{on:false,title:"",source:"none",youtubeId:"",room:"JoshuaMuraExpedition",deckUrl:"",study:"",note:"When the fire is lit — a sermon, a seminar, a small-group journey — this is the gathering place: his voice above, the slides turning in your hand below."}
  },
- slides:{on:false,total:0,current:1,folder:""},
+ slides:{on:false,total:0,current:1,folder:"",mode:"jpeg"},
  sermons:{on:false,total:0,current:1,folder:""},
  present:{on:false,which:"vision-sanctuary",current:0,spotlight:""},
  circle:{mode:"size",size:3,people:8,cur:0}
@@ -666,6 +666,21 @@ if(db){
 /* Each presentation = {id, title, blurb, slides:[html,...]}. Slides are hand-crafted rich HTML.
    Synced live via Firebase content/present {on,which,current}. Congregation follows on phones. */
 const PRESENTATIONS=[
+{ id:"lords-prayer", title:"After This Manner, Pray", blurb:"A study of the Lord’s Prayer — nine movements, from “Our Father” to “Amen.”",
+  slides:[
+`<div class="ipinner"><div class="eyebrow">A Group Study · Matthew 6:9–13</div><h1>Teach Us to Pray</h1><p class="sub" style="font-size:1.1em;color:var(--ivory)">The disciples watched Jesus pray through long hours, and they connected His hours of prayer with the power of His words and works. So their request was not <span class='sc'>teach us to preach</span> — it was <span class='sc'>Lord, teach us to pray</span> (Luke 11:1).</p><p class="sub">Jesus answered with a <b>pattern, not a script</b>. <span class='sc'>After this manner therefore pray</span> — a model in content, not a formula to recite. He rescued prayer from empty repetition and gave a form simple enough for a child, yet so deep the greatest minds can never fully fathom it.</p><p class="sub">The prayer moves in two halves. The <b>first lifts our eyes to God</b> — His Fatherhood, His name, His kingdom, His will. The <b>second brings our needs to Him</b> — bread, forgiveness, and deliverance. Nine movements in all.</p><p class="sub">In this study we'll walk through each movement slowly. Every section gives us a focus, a few thoughts to sit with, and two questions to talk through together. Read each slide aloud, then let the group speak — there's no rush. Go as deep as the Spirit leads.</p></div>`,
+`<div class="ipinner"><div class="eyebrow">The Pattern in Full · Matthew 6:9–13</div><div class="card" style="font-family:Georgia,serif;font-style:italic;font-size:1.12em;line-height:1.5"><div style="margin:.28em 0">Our Father in heaven,</div><div style="padding-left:1.6em;margin:.28em 0">Hallowed be Your name.</div><div style="margin:.28em 0">Your kingdom come.</div><div style="margin:.28em 0">Your will be done</div><div style="padding-left:1.6em;margin:.28em 0">On earth as it is in heaven.</div><div style="margin:.28em 0">Give us this day our daily bread.</div><div style="margin:.28em 0">And forgive us our debts,</div><div style="padding-left:1.6em;margin:.28em 0">As we forgive our debtors.</div><div style="margin:.28em 0">And do not lead us into temptation,</div><div style="padding-left:1.6em;margin:.28em 0">But deliver us from the evil one.</div><div style="color:var(--gold);margin:.28em 0">For Yours is the kingdom and the power</div><div style="padding-left:1.6em;color:var(--gold);margin:.28em 0">and the glory forever. <b>Amen.</b></div></div><h2>Nine movements we’ll follow</h2><ul class="points"><li><b style="color:var(--gold)">I · Faith</b><br><span style="color:var(--ivory-dim)">Our Father in heaven</span></li><li><b style="color:var(--gold)">II · Worship</b><br><span style="color:var(--ivory-dim)">Hallowed be Your name</span></li><li><b style="color:var(--gold)">III · Expectation</b><br><span style="color:var(--ivory-dim)">Your kingdom come</span></li><li><b style="color:var(--gold)">IV · Submission</b><br><span style="color:var(--ivory-dim)">Your will be done, on earth as it is in heaven</span></li><li><b style="color:var(--gold)">V · Petition</b><br><span style="color:var(--ivory-dim)">Give us this day our daily bread</span></li><li><b style="color:var(--gold)">VI · Confession</b><br><span style="color:var(--ivory-dim)">And forgive us our debts</span></li><li><b style="color:var(--gold)">VII · Compassion</b><br><span style="color:var(--ivory-dim)">As we forgive our debtors</span></li><li><b style="color:var(--gold)">VIII · Dependence</b><br><span style="color:var(--ivory-dim)">And do not lead us into temptation, but deliver us from the evil one</span></li><li><b style="color:var(--gold)">IX · Acknowledgment</b><br><span style="color:var(--ivory-dim)">For Yours is the kingdom and the power and the glory forever. Amen.</span></li></ul></div>`,
+`<div class="ipinner"><div class="tag gold">I · Faith</div><h1>Our Father in heaven</h1><div class="eyebrow">Matthew 6:9a</div><p class="sub" style="font-size:1.1em;color:var(--ivory)">Before a single request, Jesus hands us a <b>relationship</b>. The first word is not <span class='sc'>God</span> or <span class='sc'>Almighty</span> but <span class='sc'>Father</span> — and <span class='sc'>our</span>, not <span class='sc'>my</span>. We come as sons and daughters, and we come together. No one prays rightly who seeks a blessing for himself alone.</p><p class="sub">We may feel unworthy to say <span class='sc'>Father</span>. Yet whenever we say it in sincerity, heaven receives us with joy (Luke 15:20–24). And <span class='sc'>in heaven</span> holds the balance: nearness without loss of reverence — a Father close enough to trust, a King high enough to adore.</p><p class="sub">Faith is the doorway to all the rest. The very first step in approaching God is to know and believe the love He has for us.</p><blockquote class="verse">So ready, so eager, is the Saviour's heart to welcome us as members of the family of God, that in the very first words we are to use in approaching God He places the assurance of our divine relationship, ‘Our Father.’<cite>Thoughts from the Mount of Blessing</cite></blockquote><div class="card"><div class="eyebrow">To talk through together</div><div style="display:flex;gap:.6em;margin:.5em 0;line-height:1.5"><b style="color:var(--gold);flex:0 0 auto">1.</b><div>What changes in how you pray when you begin with “Father” instead of a title — and with “our” instead of “my”?</div></div><div style="display:flex;gap:.6em;margin:.5em 0;line-height:1.5"><b style="color:var(--gold);flex:0 0 auto">2.</b><div>Where do you find it hardest to believe that God receives you as a beloved child? What would faith look like right there?</div></div></div></div>`,
+`<div class="ipinner"><div class="tag gold">II · Worship</div><h1>Hallowed be Your name</h1><div class="eyebrow">Matthew 6:9b</div><p class="sub" style="font-size:1.1em;color:var(--ivory)">To <b>hallow</b> means to treat as holy. God's <span class='sc'>name</span> is His character — merciful, gracious, faithful (Exodus 34:5–7). We hallow it two ways: by reverencing who He is, and by letting Him reproduce that character in us.</p><p class="sub">Prayer is entering the audience chamber of the Most High. The angels veil their faces there; how much more should we come with awe. Yet this reverence is not cold — it is love that has caught a glimpse of greatness.</p><p class="sub">Here is the startling part: <b>His name is put upon us</b>. We are called by His name before the watching world. To pray <span class='sc'>hallowed be Your name</span> is to ask that His name be honored <b>in you</b> — that your life bring no dishonor to the worthy name you carry.</p><blockquote class="verse">In prayer we enter the audience chamber of the Most High; and we should come before Him with holy awe.<cite>Thoughts from the Mount of Blessing</cite></blockquote><div class="card"><div class="eyebrow">To talk through together</div><div style="display:flex;gap:.6em;margin:.5em 0;line-height:1.5"><b style="color:var(--gold);flex:0 0 auto">1.</b><div>What does genuine reverence look like in your prayer life — and how is it different from mere formality?</div></div><div style="display:flex;gap:.6em;margin:.5em 0;line-height:1.5"><b style="color:var(--gold);flex:0 0 auto">2.</b><div>God's reputation is entrusted to you before the people around you. Where is it being honored well? Where is it not?</div></div></div></div>`,
+`<div class="ipinner"><div class="tag gold">III · Expectation</div><h1>Your kingdom come</h1><div class="eyebrow">Matthew 6:10a</div><p class="sub" style="font-size:1.1em;color:var(--ivory)">Two kingdoms are in view. The <b>kingdom of grace</b> is being set up now, day by day, as hearts full of rebellion yield to the sovereignty of His love. The <b>kingdom of glory</b> arrives in full at Christ's return.</p><p class="sub">This petition is also a <b>promise</b>. The very fact that Jesus told us to pray for it is evidence that in God's own time it will surely come. Our hope has an anchor.</p><p class="sub">And it is a <b>commissioning</b>. His kingdom waits on the gospel reaching all nations (Matthew 24:14). So those who sincerely pray <span class='sc'>Your kingdom come</span> are those who give themselves to bring it — <span class='sc'>Here am I; send me</span> (Isaiah 6:8).</p><blockquote class="verse">As we give ourselves to God, and win other souls to Him, we hasten the coming of His kingdom.<cite>Thoughts from the Mount of Blessing</cite></blockquote><div class="card"><div class="eyebrow">To talk through together</div><div style="display:flex;gap:.6em;margin:.5em 0;line-height:1.5"><b style="color:var(--gold);flex:0 0 auto">1.</b><div>Are you praying for God's kingdom as a spectator, or as a participant? What is one way you could help “hasten” its coming this week?</div></div><div style="display:flex;gap:.6em;margin:.5em 0;line-height:1.5"><b style="color:var(--gold);flex:0 0 auto">2.</b><div>Where in your own life do you most need the kingdom of grace to take fuller charge right now?</div></div></div></div>`,
+`<div class="ipinner"><div class="tag gold">IV · Submission</div><h1>Your will be done, on earth as it is in heaven</h1><div class="eyebrow">Matthew 6:10b</div><p class="sub" style="font-size:1.1em;color:var(--ivory)">In heaven, obedience is no drudgery. The angels serve <b>not as servants, but as sons</b>; love for God makes their service a joy. That is the <span class='sc'>as it is in heaven</span> we are asking for — obedience that <b>delights</b>.</p><p class="sub">To pray this is to ask for the end of sin's reign — first in me, then in the world. It is a prayer of surrender: God's will, not mine; His ways, not the ways of my own choosing.</p><p class="sub">The pattern is Christ's own heart: <span class='sc'>I delight to do Thy will, O my God; yea, Thy law is within my heart</span> (Psalm 40:8).</p><blockquote class="verse">In their ministry the angels are not as servants, but as sons. … Love for God makes their service a joy.<cite>Thoughts from the Mount of Blessing</cite></blockquote><div class="card"><div class="eyebrow">To talk through together</div><div style="display:flex;gap:.6em;margin:.5em 0;line-height:1.5"><b style="color:var(--gold);flex:0 0 auto">1.</b><div>Is there an area where you are quietly saying “my will be done” while praying “Your will be done”? What would surrender cost — and give?</div></div><div style="display:flex;gap:.6em;margin:.5em 0;line-height:1.5"><b style="color:var(--gold);flex:0 0 auto">2.</b><div>What is the difference between obeying God out of duty and obeying Him out of delight? Which one describes most of your days?</div></div></div></div>`,
+`<div class="ipinner"><div class="tag gold">V · Petition</div><h1>Give us this day our daily bread</h1><div class="eyebrow">Matthew 6:11</div><p class="sub" style="font-size:1.1em;color:var(--ivory)">Only after God's name, kingdom, and will do we ask for ourselves — and then simply, like a child: <b>enough for today</b>. Not a storehouse for tomorrow. Daily need keeps us daily near.</p><p class="sub">Notice: <span class='sc'>give us</span>, not <span class='sc'>give me</span>. We ask for others too, and we confess that what God gives is not for us alone — it is held in trust so that we may feed the hungry.</p><p class="sub">And the bread is more than food. It is also the <b>Bread of Life</b> — Christ Himself, received through His word day by day (John 6:51). We are to pray daily that His Spirit will open that word to strengthen us for the day's need.</p><blockquote class="verse">Like the child, you shall receive day by day what is required for the day's need.<cite>Thoughts from the Mount of Blessing</cite></blockquote><div class="card"><div class="eyebrow">To talk through together</div><div style="display:flex;gap:.6em;margin:.5em 0;line-height:1.5"><b style="color:var(--gold);flex:0 0 auto">1.</b><div>Why do you think Jesus taught us to ask for today's bread rather than security for the future? What would change if you truly prayed one day at a time?</div></div><div style="display:flex;gap:.6em;margin:.5em 0;line-height:1.5"><b style="color:var(--gold);flex:0 0 auto">2.</b><div>“Give us” includes your neighbor. Who has God placed within your reach to share bread with — physical or spiritual — this week?</div></div></div></div>`,
+`<div class="ipinner"><div class="tag gold">VI · Confession</div><h1>And forgive us our debts</h1><div class="eyebrow">Matthew 6:12a</div><p class="sub" style="font-size:1.1em;color:var(--ivory)">The word <span class='sc'>debts</span> pictures sin as an obligation we cannot pay. Confession is agreeing with God about it — not excusing it, not shrinking it. Calvary alone reveals how heavy it truly is.</p><p class="sub">God's forgiveness is <b>not merely a legal pardon</b>. It is not only forgiveness <i>for</i> sin, but reclaiming <i>from</i> sin — redeeming love that transforms the heart. David knew this: <span class='sc'>Create in me a clean heart, O God</span> (Psalm 51:10).</p><p class="sub">Satan whispers that you have sinned too badly to pray. That whisper is the very reason <b>to</b> pray. When we feel that we have sinned and cannot pray, that is the time to pray — ashamed and humbled, but believing (1 John 1:9).</p><blockquote class="verse">God's forgiveness is not merely a judicial act … It is not only forgiveness for sin, but reclaiming from sin. It is the outflow of redeeming love that transforms the heart.<cite>Thoughts from the Mount of Blessing</cite></blockquote><div class="card"><div class="eyebrow">To talk through together</div><div style="display:flex;gap:.6em;margin:.5em 0;line-height:1.5"><b style="color:var(--gold);flex:0 0 auto">1.</b><div>What is the difference between <i>excusing</i> sin and <i>confessing</i> it? Which do you find yourself doing more?</div></div><div style="display:flex;gap:.6em;margin:.5em 0;line-height:1.5"><b style="color:var(--gold);flex:0 0 auto">2.</b><div>Is there a place where the enemy is telling you that you are “too far gone” to come to God? What would it mean to pray there anyway?</div></div></div></div>`,
+`<div class="ipinner"><div class="tag gold">VII · Compassion</div><h1>As we forgive our debtors</h1><div class="eyebrow">Matthew 6:12b · see 6:14–15</div><p class="sub" style="font-size:1.1em;color:var(--ivory)">Jesus ties our <b>receiving</b> to our <b>releasing</b> — not because our forgiveness earns God's, but because a heart truly touched by grace cannot help but pass it on. The unforgiving person cuts off the very channel through which mercy would reach him.</p><p class="sub">And we do not wait for the offender to confess. Whether or not they own the wrong, we are to carry a spirit of compassion toward them — because that is exactly how God in Christ dealt with us (Ephesians 4:32).</p><p class="sub">This is the one line Jesus circles back to explain (Matthew 6:14–15). It matters that much.</p><blockquote class="verse">He who is unforgiving cuts off the very channel through which alone he can receive mercy from God.<cite>Thoughts from the Mount of Blessing</cite></blockquote><div class="card"><div class="eyebrow">To talk through together</div><div style="display:flex;gap:.6em;margin:.5em 0;line-height:1.5"><b style="color:var(--gold);flex:0 0 auto">1.</b><div>Is there someone you are withholding forgiveness from until they “deserve” it? What is that costing you?</div></div><div style="display:flex;gap:.6em;margin:.5em 0;line-height:1.5"><b style="color:var(--gold);flex:0 0 auto">2.</b><div>Forgiving is not pretending it never hurt. What is one honest first step toward releasing a grievance you have been carrying?</div></div></div></div>`,
+`<div class="ipinner"><div class="tag gold">VIII · Dependence</div><h1>And do not lead us into temptation, but deliver us from the evil one</h1><div class="eyebrow">Matthew 6:13a</div><p class="sub" style="font-size:1.1em;color:var(--ivory)">God tempts no one (James 1:13). This is not a request to remove all testing; it is a prayer of <b>self-distrust</b>: <span class='sc'>do not let me walk into it</span>. To pray it sincerely is to stop choosing my own risky paths and to follow His.</p><p class="sub">It is also a <b>promise</b>. God will not let us be tempted beyond what we can bear; with the temptation He makes a way of escape (1 Corinthians 10:13). We are never left to fight alone — angels press back the hosts of evil around tempted souls.</p><p class="sub">And the one safeguard is not willpower. It is Christ within: the only safeguard against evil is the indwelling of Christ in the heart through faith in His righteousness.</p><blockquote class="verse">Live in contact with the living Christ, and He will hold you firmly by a hand that will never let go.<cite>Thoughts from the Mount of Blessing</cite></blockquote><div class="card"><div class="eyebrow">To talk through together</div><div style="display:flex;gap:.6em;margin:.5em 0;line-height:1.5"><b style="color:var(--gold);flex:0 0 auto">1.</b><div>Where do you tend to “walk into” temptation by placing yourself in its path? What path would God choose instead?</div></div><div style="display:flex;gap:.6em;margin:.5em 0;line-height:1.5"><b style="color:var(--gold);flex:0 0 auto">2.</b><div>This petition admits we cannot stand on our own. Where do you most need to trade willpower for dependence on Christ?</div></div></div></div>`,
+`<div class="ipinner"><div class="tag gold">IX · Acknowledgment</div><h1>For Yours is the kingdom and the power and the glory forever. Amen.</h1><div class="eyebrow">Matthew 6:13b</div><p class="sub" style="font-size:1.1em;color:var(--ivory)">The prayer ends where it began — with <b>God above all</b>. After naming our needs and our enemies, we lift our eyes higher than every power of evil, to the One whose kingdom rules over all and who is our Father and everlasting Friend.</p><p class="sub">Kingdom, power, glory — all His, <b>forever</b>. This is the ground of our confidence: the outcome of history is in our Maker's hands. The program of coming events is in the hands of our Maker.</p><p class="sub"><span class='sc'>Amen</span> means <span class='sc'>so let it be</span> — faith setting its seal on the prayer, resting the whole of it back on God.</p><blockquote class="verse">The disciples of Christ were directed to look above all the power and dominion of evil, unto the Lord their God, whose kingdom ruleth over all and who is their Father and everlasting Friend.<cite>Thoughts from the Mount of Blessing</cite></blockquote><div class="card"><div class="eyebrow">To talk through together</div><div style="display:flex;gap:.6em;margin:.5em 0;line-height:1.5"><b style="color:var(--gold);flex:0 0 auto">1.</b><div>How does ending in praise — rather than petition — change the way a prayer leaves you feeling?</div></div><div style="display:flex;gap:.6em;margin:.5em 0;line-height:1.5"><b style="color:var(--gold);flex:0 0 auto">2.</b><div>What fear or “power” in your life looks smaller when you remember the kingdom, power, and glory belong to God forever?</div></div></div></div>`,
+`<div class="ipinner"><div class="eyebrow">Closing & Appeal</div><h1>After This Manner, Pray</h1><p class="sub" style="font-size:1.1em;color:var(--ivory)">We have walked from <b>Our Father</b> to <b>Amen</b> — from relationship, through worship and surrender, through our daily needs and failures, to a final look upward. This is the shape Jesus gives our praying: <b>God first, then us; honest about our need, anchored in His glory.</b></p><p class="sub">The prayer is a pattern to fill, not merely words to say. This week, let it shape your own praying — begin as a child with the Father, hallow His name, seek His kingdom and His will, bring Him your bread and your debts, lean on Him against the tempter, and end with your eyes lifted.</p><blockquote class="verse">Prayer is the opening of the heart to God as to a friend.<cite>Steps to Christ</cite></blockquote><div class="card"><div class="eyebrow">To talk through together</div><div style="display:flex;gap:.6em;margin:.5em 0;line-height:1.5"><b style="color:var(--gold);flex:0 0 auto">1.</b><div>Which movement of the prayer did you most need to hear today — and why?</div></div><div style="display:flex;gap:.6em;margin:.5em 0;line-height:1.5"><b style="color:var(--gold);flex:0 0 auto">2.</b><div>What is one specific way you will let the Lord’s Prayer reshape your own prayers this week?</div></div></div></div>`
+  ]},
 { id:"vision-sanctuary", title:"A Vision for Our Sanctuary", blurb:"Worship \u00b7 Media \u00b7 Ministry \u2014 the full vision deck.",
   slides:[
 `<div class="ipinner" style="text-align:center;display:flex;flex-direction:column;justify-content:center;min-height:60dvh"><div class="eyebrow">Bucks County Seventh-day Adventist Church · Warminster, PA</div>
@@ -2784,7 +2799,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v106</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v109</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -3684,14 +3699,72 @@ function qrCard(label,hash,filename){
 }
 function slidesPanel(){
   const s=C.slides;
-  if(!s||!s.on||!s.total)return '';
+  if(!s||!s.on)return '';
+  /* Interactive deck (the sanctuary-style presentation) instead of flat JPEGs. */
+  if(s.mode==='ipres'){
+    const deckId=(C.present&&C.present.which)||'';
+    const deck=presById(deckId);
+    if(!deck)return '<div class="card note">📽️ No interactive presentation chosen yet — pick one in the Steward\'s Panel.</div>';
+    const lead=!!SESSION_MOD_PASS;
+    const tail = lead
+      ? `<div style="display:flex;align-items:center;gap:.5em;justify-content:center;margin-top:.5em;flex-wrap:wrap">
+           <button class="btn" id="ps-close" style="padding:.35em 1em">&#10005; Close presentation</button>
+         </div>
+         <div class="note" style="text-align:center;margin-top:.3em">Tap the right side of the deck to advance, the left to go back — everyone follows you. Closing puts the prayer requests back in view.</div>`
+      : '';
+    return '<div class="card" style="padding:.5em">'+ipRenderDeck(deckId,{follow:!lead})+tail+'</div>';
+  }
+  if(!s.total)return '';
   const n=Math.min(Math.max(1,s.current||1),s.total);
+  const lead=!!SESSION_MOD_PASS;
+  /* The leader gets the slide controls right here — no digging into the panel mid-circle. */
+  const controls = lead ? `<div style="display:flex;align-items:center;gap:.5em;justify-content:center;margin-top:.5em;flex-wrap:wrap">
+      <button class="btn ghost" id="ps-prev" style="font-size:1.2rem;padding:.25em .8em">&#9664;</button>
+      <b style="min-width:6.5em;text-align:center">Slide ${n} of ${s.total}</b>
+      <button class="btn ghost" id="ps-next" style="font-size:1.2rem;padding:.25em .8em">&#9654;</button>
+      <button class="btn" id="ps-close" style="padding:.35em 1em">&#10005; Close slides</button>
+    </div>
+    <div class="note" style="text-align:center;margin-top:.3em">Closing puts the prayer requests back in view for everyone.</div>`
+    : `<div class="note" style="text-align:center;margin-top:.4em">Slide ${n} of ${s.total} &middot; follows Pastor Josh live</div>`;
   return `<div class="card" style="padding:.5em">
     <img src="${prayerSlideUrl(n)}" alt="Slide ${n}"
       style="width:100%;border-radius:10px;display:block;background:#000"
-      onerror="this.style.opacity=.4;this.alt='Slide ${n} not found — expected /PRAYER/${n}.jpg'">
-    <div class="note" style="text-align:center;margin-top:.4em">Slide ${n} of ${s.total} · follows Pastor Josh live</div>
+      onerror="this.style.opacity=.4;this.alt='Slide ${n} not found — expected ${prayerSlideUrl(n)}'">
+    ${controls}
   </div>`;
+}
+
+/* Leader taps on the Altar itself: advance, go back, or close the deck for everyone. */
+function wireSlideLead(){
+  const s=C.slides||{};
+  /* Interactive deck: start it on the right slide for everyone, and let the leader drive. */
+  if(s.on && s.mode==='ipres'){
+    setTimeout(function(){
+      try{ ipShow((C.present&&C.present.current)||0,false); }catch(e){}
+      if(SESSION_MOD_PASS){ try{ ipEnablePresenterDrive(); }catch(e){} }
+      const cl=document.getElementById('ps-close');
+      if(cl)cl.onclick=async()=>{ try{ await slideLiveWrite({on:false}); }catch(e){} };
+    },40);
+    return;
+  }
+  if(!SESSION_MOD_PASS)return;
+  const go=async patch=>{ try{ await slideLiveWrite(patch); }catch(e){} };
+  const nx=document.getElementById('ps-next');
+  const pv=document.getElementById('ps-prev');
+  const cl=document.getElementById('ps-close');
+  if(nx)nx.onclick=()=>go({current:((C.slides&&C.slides.current)||1)+1});
+  if(pv)pv.onclick=()=>go({current:((C.slides&&C.slides.current)||1)-1});
+  if(cl)cl.onclick=()=>go({on:false});
+}
+
+/* Writes the live slide state without needing the Steward's Panel inputs on screen. */
+async function slideLiveWrite(patch){
+  const s=C.slides||{};
+  const cur={on:!!s.on,total:+(s.total||0),current:+(s.current||1),folder:s.folder||'',mode:s.mode||'jpeg', ...patch};
+  cur.total=Math.min(50,Math.max(0,cur.total));
+  cur.current=Math.min(Math.max(1,cur.current),Math.max(1,cur.total));
+  await db.ref('content/slides').set({k:WRITE_KEY,on:cur.on,total:cur.total,current:cur.current,folder:cur.folder||'',mode:cur.mode||'jpeg'});
+  C.slides={...C.slides,...cur};
 }
 /* Small UI to let Pastor Josh unlock moderator for this session. */
 function modUnlockCard(afterRoom,afterName,afterContainer){
@@ -3705,7 +3778,7 @@ function wireModUnlock(room,name,containerId){
   link.onclick=e=>{
     e.preventDefault();
     const p=prompt('Moderator passphrase (kept only for this session):');
-    if(p){ SESSION_MOD_PASS=p; mountCircle(containerId,room,name); link.textContent='Re-joining as moderator…'; if(typeof pwPaint==='function')pwPaint(); }
+    if(p){ SESSION_MOD_PASS=p; mountCircle(containerId,room,name); link.textContent='Re-joining as moderator…'; if(typeof pwPaint==='function')pwPaint(); if(typeof render==='function')setTimeout(render,400); }
   };
 }
 
@@ -5112,7 +5185,7 @@ app.innerHTML=`${crumb()}
  ${lordsPrayerSection()}
  <div class="card note">👥 <b>On the Prayer Team?</b> <a href="#prayerteam">Enter the team room</a> with your team code.</div>
  ${footer()}`;
-if(pc.on){ mountCircle('circle-prayer',pc.room,'Friend'); wireModUnlock(pc.room,'Pastor Josh','circle-prayer'); pwListen(); wirePWSubmit(); wirePWWall(); pwPaint(); }
+if(pc.on){ mountCircle('circle-prayer',pc.room,'Friend'); wireModUnlock(pc.room,'Pastor Josh','circle-prayer'); pwListen(); wirePWSubmit(); wirePWWall(); pwPaint(); wireSlideLead(); }
 document.getElementById('p-home').onchange=()=>{
   document.getElementById('p-which-wrap').classList.toggle('hide',document.getElementById('p-home').value!=='other-church');
 };
@@ -5367,6 +5440,12 @@ document.getElementById('panelbox').innerHTML=`
     <b>📽️ Prayer &amp; Class picture slides</b>
     <div class="note" style="margin-bottom:.3em">Your /slides JPEGs. Shown under <b>both</b> the Prayer Circle here <b>and</b> the Live Class in the Mine — one shared deck.</div>
     <label>How many slides? (0–50)</label>
+    <label>What shows under the circle?</label>
+    <select id="sl-mode">
+      <option value="jpeg"${((C.slides&&C.slides.mode)||'jpeg')==='jpeg'?' selected':''}>🖼️ Flat slides (JPEGs from /PRAYER)</option>
+      <option value="ipres"${(C.slides&&C.slides.mode)==='ipres'?' selected':''}>✨ Interactive presentation (tap & explore)</option>
+    </select>
+    <div class="note" style="margin:-.2em 0 .5em">The interactive one is the rich deck people can tap through — like the sanctuary vision. Choose which deck in the Watchfire card above; both use the same presentation.</div>
     <label>📁 Which prayer set? (folder name — leave blank for loose files)</label>
     <input type="text" id="sl-set" placeholder="e.g. lords-prayer" value="${esc((C.slides&&C.slides.folder)||'')}">
     <div class="note" style="margin:-.2em 0 .5em">Folder name inside <b>/PRAYER</b> — <b>case-sensitive</b>. Blank reads <b>/PRAYER/1.jpg</b>.</div>
@@ -5604,10 +5683,11 @@ async function slideWrite(patch){
   const cur={total:+(document.getElementById('sl-total').value||0),
              on:document.getElementById('sl-on').value==='yes',
              folder:setEl?setEl.value.trim():((C.slides&&C.slides.folder)||''),
+             mode:(document.getElementById('sl-mode')?document.getElementById('sl-mode').value:((C.slides&&C.slides.mode)||'jpeg')),
              current:(C.slides&&C.slides.current)||1, ...patch};
   cur.total=Math.min(50,Math.max(0,cur.total));
   cur.current=Math.min(Math.max(1,cur.current),Math.max(1,cur.total));
-  await db.ref('content/slides').set({k:WRITE_KEY,on:cur.on,total:cur.total,current:cur.current,folder:cur.folder||''});
+  await db.ref('content/slides').set({k:WRITE_KEY,on:cur.on,total:cur.total,current:cur.current,folder:cur.folder||'',mode:cur.mode||'jpeg'});
   C.slides={...C.slides,...cur};
   const now=document.getElementById('sl-now'); if(now)now.textContent='Slide '+cur.current+' of '+cur.total;
 }
