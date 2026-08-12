@@ -37,7 +37,7 @@ a{color:var(--blue)}
 .verse{border-left:3px solid var(--gold);padding:.5em 0 .5em 1em;margin:1em 0}
 .verse p{font-family:'Fraunces',serif;font-style:italic;font-size:1.12em;color:var(--ivory)}
 .verse cite{display:block;margin-top:.4em;font-size:.7em;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);font-style:normal}
-input[type=text],input[type=email],textarea,select{width:100%;background:var(--card);border:1.5px solid rgba(244,237,224,.25);
+input[type=text],input[type=email],input[type=password],input[type=number],input[type=tel],textarea,select{width:100%;background:var(--card);border:1.5px solid rgba(244,237,224,.25);
   border-radius:10px;color:var(--ivory);font-family:inherit;font-size:1em;padding:.6em .8em;margin:.25em 0 .8em}
 input:focus,textarea:focus{outline:2px solid var(--blue);border-color:transparent}
 label{font-size:.8em;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--dim)}
@@ -154,7 +154,8 @@ footer .v{font-family:'Fraunces',serif;font-style:italic;font-size:1.05em;color:
 
 
 #classpin-persist:empty{display:none}
-#classpin-persist{position:sticky;top:0;z-index:50;background:var(--walnut);padding:0 clamp(16px,4vw,40px)}
+#classpin-persist{position:sticky;top:0;z-index:50;background:var(--walnut);
+  max-width:880px;margin:0 auto;padding:0 clamp(16px,4vw,40px)}   /* line up with .wrap */
 #classpin{position:sticky;top:0;z-index:40;background:var(--walnut);
   padding:.5em 0 .6em;margin:-.4em 0 .8em;border-bottom:1px solid rgba(201,162,75,.3)}
 #classpin .pinvid{width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#000}
@@ -2860,7 +2861,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v130</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v131</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
