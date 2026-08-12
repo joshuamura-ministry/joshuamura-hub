@@ -2868,7 +2868,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v135</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v136</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -5828,7 +5828,7 @@ document.getElementById('panelbox').innerHTML=`
   </div>
   <div class="subcard">
     <label>Short name for the link <span style="text-transform:none">(letters and hyphens — e.g. <code>sports</code>)</span></label>
-    <input type="text" id="sv-id" placeholder="sports">
+    <input type="text" id="sv-id" placeholder="sports" value="${esc((C.survey&&C.survey.id)||'')}">
     <label>Survey title</label>
     <input type="text" id="sv-title" value="${esc((C.survey&&C.survey.title)||'')}" placeholder="e.g. After-School Sports \u2014 would your child join?">
     <label>A sentence or two of introduction</label>
@@ -6178,7 +6178,10 @@ var azr=document.getElementById('az-refresh'); if(azr) azr.onclick=loadAnalytics
   var nw=document.getElementById('sv-new');
   if(nw)nw.onclick=function(){
     loadInto({id:'',title:'',intro:'',q:[],thanks:'Thank you \u2014 your answer has been counted.',on:false});
-    document.getElementById('sv-ok').textContent='New survey \u2014 give it a short name and your questions, then Save.';
+    var ok=document.getElementById('sv-ok');
+    if(ok)ok.textContent='\u2728 Blank survey ready \u2014 give it a short name and your questions below, then Save.';
+    var idb=document.getElementById('sv-id');
+    if(idb){ try{ idb.focus(); idb.scrollIntoView({behavior:'smooth',block:'center'}); }catch(e){} }
   };
   var del=document.getElementById('sv-del');
   if(del)del.onclick=async function(){
