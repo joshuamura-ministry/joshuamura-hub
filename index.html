@@ -2868,7 +2868,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v134</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v135</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -4495,7 +4495,7 @@ function askPage(){
    <div id="ask-form">
      ${qs}
      <div class="card">
-       <b>\ud83d\udcec Would you like us to contact you?</b>
+       <b>📬 Would you like us to contact you?</b>
        <div class="note" style="margin:.3em 0 .5em">Only if you\u2019d like to hear more, help out, or be kept posted. Leave it blank to stay anonymous \u2014 your answers above still count either way.</div>
        <label>Your name</label><input type="text" id="ask-name" placeholder="Name (optional)">
        <label>Phone or email</label><input type="text" id="ask-contact" placeholder="Best way to reach you (optional)">
@@ -5815,9 +5815,20 @@ document.getElementById('panelbox').innerHTML=`
  <!-- ========== LIVE GATHERINGS (each gathering = one card) ========== -->
  <div class="psec">
   <div style="text-align:right;margin-bottom:.4em"><a href="#map" id="panel-lock" class="note" style="color:var(--dim)">🔒 Lock &amp; leave</a></div>
-  <h2>\U0001f4dd The Asking \u00b7 surveys &amp; sign-ups</h2>
+  <h2>📝 The Asking · surveys &amp; sign-ups</h2>
   <div class="pdesc">Ask a question, send the link, watch the answers add up. Good for gauging interest \u2014 an after-school sports program, a class, a trip \u2014 before you build it. Anyone who wants to be contacted can leave their details, and those stay private to you.</div>
   <div class="subcard">
+    <b>📂 Your surveys</b>
+    <div class="note" style="margin:.3em 0 .5em">Each survey keeps its own name, questions, link, and answers. Pick one to edit it, or start a new one.</div>
+    <select id="sv-pick"></select>
+    <div style="display:flex;gap:.5em;flex-wrap:wrap;margin-top:.3em">
+      <button class="btn ghost" id="sv-new">➕ Start a new survey</button>
+      <button class="btn ghost" id="sv-del">🗑️ Delete this survey</button>
+    </div>
+  </div>
+  <div class="subcard">
+    <label>Short name for the link <span style="text-transform:none">(letters and hyphens — e.g. <code>sports</code>)</span></label>
+    <input type="text" id="sv-id" placeholder="sports">
     <label>Survey title</label>
     <input type="text" id="sv-title" value="${esc((C.survey&&C.survey.title)||'')}" placeholder="e.g. After-School Sports \u2014 would your child join?">
     <label>A sentence or two of introduction</label>
@@ -5828,34 +5839,34 @@ document.getElementById('panelbox').innerHTML=`
     <textarea id="sv-q" rows="6" placeholder="Would your child be interested in basketball? | Yes, No, Maybe&#10;Would your child be interested in flag football? | Yes, No, Maybe&#10;Would you be willing to help coach sometimes? | Yes, No">${((C.survey&&C.survey.q)||[]).map(function(q){return esc(q.text)+' | '+esc((q.opts||['Yes','No']).join(', '));}).join('\n')}</textarea>
     <label>Thank-you message</label>
     <input type="text" id="sv-thanks" value="${esc((C.survey&&C.survey.thanks)||'Thank you \u2014 your answer has been counted.')}">
-    <label>Open for answers?</label>${pToggle('sv-on',(C.survey&&C.survey.on),'\ud83d\udd12 Closed','\ud83d\udcdd OPEN \u2014 accepting answers')}
+    <label>Open for answers?</label>${pToggle('sv-on',(C.survey&&C.survey.on),'🔒 Closed','📝 OPEN — accepting answers')}
     <div style="display:flex;gap:.5em;flex-wrap:wrap;margin-top:.5em">
-      <button class="btn" id="save-sv">\ud83d\udcbe Save the survey</button>
-      <button class="btn ghost" id="sv-copy">\ud83d\udd17 Copy the link to send</button>
-      <button class="btn ghost" id="sv-see">\ud83d\udc41\ufe0f Preview it</button>
+      <button class="btn" id="save-sv">💾 Save the survey</button>
+      <button class="btn ghost" id="sv-copy">🔗 Copy the link to send</button>
+      <button class="btn ghost" id="sv-see">👁️ Preview it</button>
     </div>
     <div id="sv-ok" class="ok" style="margin-top:.4em"></div>
     <div class="note" style="margin-top:.3em">Link to send: <b id="sv-link"></b></div>
     <div style="text-align:center;margin-top:.6em">
       <div id="sv-qr"></div>
-      <button class="btn ghost" id="sv-qr-dl" style="margin-top:.4em">\u2b07\ufe0f Download the QR code</button>
-      <div class="note" style="margin-top:.3em">Print this on a flyer or slide \u2014 parents point a phone camera at it and the survey opens.</div>
+      <button class="btn ghost" id="sv-qr-dl" style="margin-top:.4em">⬇️ Download the QR code</button>
+      <div class="note" style="margin-top:.3em">Print this on a flyer or slide — parents point a phone camera at it and the survey opens.</div>
     </div>
   </div>
   <div class="subcard">
-    <b>\ud83d\udcca The answers so far</b>
+    <b>📊 The answers so far</b>
     <div class="note" style="margin:.3em 0 .5em">Updates as people reply. Names and contacts show only for those who chose to leave them.</div>
     <div id="sv-results" class="note">Loading\u2026</div>
     <div style="display:flex;gap:.5em;flex-wrap:wrap;margin-top:.5em">
-      <button class="btn" id="sv-pdf">\ud83d\udcc4 Results as PDF / print</button>
-      <button class="btn ghost" id="sv-download">\u2b07\ufe0f Download the replies</button>
-      <button class="btn ghost" id="sv-clear">\ud83e\uddf9 Clear all replies</button>
+      <button class="btn" id="sv-pdf">📄 Results as PDF / print</button>
+      <button class="btn ghost" id="sv-download">⬇️ Download the replies</button>
+      <button class="btn ghost" id="sv-clear">🧹 Clear all replies</button>
     </div>
   </div>
  </div>
 
  <div class="psec">
-  <h2>\U0001f6aa The Upper Room \u00b7 private meetings</h2>
+  <h2>🚪 The Upper Room · private meetings</h2>
   <div class="pdesc">A private video room for planning, elders, counselling — anything that isn't for the whole church. It is <b>not</b> on the treasure map and nothing links to it: only someone you send the link to can find it. No time limit.</div>
   <div class="subcard">
     <b>Name this meeting</b>
@@ -6113,9 +6124,10 @@ var pwc=document.getElementById('pw-clear'); if(pwc)pwc.onclick=async function()
 loadAnalytics();
 var azr=document.getElementById('az-refresh'); if(azr) azr.onclick=loadAnalytics;
 /* ---- The Asking: save, share, and tally ---- */
-(function(){
+(function(){ try{
   function parseQs(){
-    return (document.getElementById('sv-q').value||'').split('\n')
+    var qe=document.getElementById('sv-q');
+    return ((qe&&qe.value)||'').split('\n')
       .map(function(l){return l.trim();}).filter(Boolean)
       .map(function(l){
         var bits=l.split('|');
@@ -6127,7 +6139,7 @@ var azr=document.getElementById('az-refresh'); if(azr) azr.onclick=loadAnalytics
   /* ---- many surveys, each with its own name, link and answers ---- */
   function cleanId(v){ return (v||'').trim().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'').slice(0,40); }
   function allSurveys(){ return ((C.survey&&C.survey.list)||[]).slice(); }
-  function currentId(){ return cleanId(document.getElementById('sv-id').value)||'survey'; }
+  function currentId(){ var e=document.getElementById('sv-id'); return cleanId(e?e.value:'')||'survey'; }
   function surveyUrl(id){ return location.origin+location.pathname+'#ask-'+(id||currentId()); }
 
   function paintLink(){
@@ -6138,11 +6150,13 @@ var azr=document.getElementById('az-refresh'); if(azr) azr.onclick=loadAnalytics
       +'style="width:200px;background:#fff;border-radius:10px;padding:8px">';
   }
   function loadInto(sv){
-    document.getElementById('sv-id').value=sv.id||'';
-    document.getElementById('sv-title').value=sv.title||'';
-    document.getElementById('sv-intro').value=sv.intro||'';
+    var g=function(id){return document.getElementById(id);};
+    if(!g('sv-id'))return;
+    g('sv-id').value=sv.id||'';
+    if(g('sv-title'))g('sv-title').value=sv.title||'';
+    if(g('sv-intro'))g('sv-intro').value=sv.intro||'';
     document.getElementById('sv-thanks').value=sv.thanks||'Thank you \u2014 your answer has been counted.';
-    document.getElementById('sv-q').value=((sv.q)||[]).map(function(q){
+    if(g('sv-q'))g('sv-q').value=((sv.q)||[]).map(function(q){
       return q.text+' | '+((q.opts||['Yes','No']).join(', '));}).join('\n');
     var on=document.getElementById('sv-on'); if(on)on.value=sv.on?'yes':'no';
     paintLink(); paint();
@@ -6196,10 +6210,10 @@ var azr=document.getElementById('az-refresh'); if(azr) azr.onclick=loadAnalytics
   if(save)save.onclick=async function(){
     var ok=document.getElementById('sv-ok');
     var payload={k:WRITE_KEY,
-      on:document.getElementById('sv-on').value==='yes',
-      title:(document.getElementById('sv-title').value||'').trim(),
-      intro:(document.getElementById('sv-intro').value||'').trim(),
-      thanks:(document.getElementById('sv-thanks').value||'').trim()||'Thank you \u2014 your answer has been counted.',
+      on:(function(){var e=document.getElementById('sv-on');return !!e&&e.value==='yes';})(),
+      title:((document.getElementById('sv-title')||{}).value||'').trim(),
+      intro:((document.getElementById('sv-intro')||{}).value||'').trim(),
+      thanks:((document.getElementById('sv-thanks')||{}).value||'').trim()||'Thank you \u2014 your answer has been counted.',
       q:parseQs()};
     if(!payload.q.length){ ok.textContent='Add at least one question first.'; return; }
     payload.id=currentId();
@@ -6278,7 +6292,7 @@ var azr=document.getElementById('az-refresh'); if(azr) azr.onclick=loadAnalytics
   var pdf=document.getElementById('sv-pdf');
   if(pdf)pdf.onclick=function(){
     var qs=(C.survey&&C.survey.q)||[];
-    var title=(document.getElementById('sv-title').value||'Survey results');
+    var title=((document.getElementById('sv-title')||{}).value||'Survey results');
     var rows=forThisSurvey();
     var when=new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
     var body='';
@@ -6354,6 +6368,7 @@ var azr=document.getElementById('az-refresh'); if(azr) azr.onclick=loadAnalytics
     if(!confirm('Delete every reply to this survey? This cannot be undone.'))return;
     try{ await db.ref('survey').remove(); document.getElementById('sv-ok').textContent='Replies cleared.'; }catch(e){}
   };
+}catch(e){ console.error('survey panel',e); }
 })();
 (function(){
   var lk=document.getElementById('panel-lock');
