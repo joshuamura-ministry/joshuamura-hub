@@ -674,12 +674,13 @@ let C={
    expedition:{on:false,title:"",source:"none",youtubeId:"",room:"JoshuaMuraExpedition",deckUrl:"",study:"",note:"When the fire is lit — a sermon, a seminar, a small-group journey — this is the gathering place: his voice above, the slides turning in your hand below."}
  },
  slides:{on:false,total:0,current:1,folder:"",mode:"jpeg"},
+ survey:{on:false,title:"",intro:"",q:[],thanks:"Thank you \u2014 your answer has been counted.",id:"s1",list:[]},
  sermons:{on:false,total:0,current:1,folder:""},
  present:{on:false,which:"vision-sanctuary",current:0,spotlight:""},
  circle:{mode:"size",size:3,people:8,cur:0}
 };
 if(db){
-  db.ref('content').on('value',s=>{const v=s.val();if(v){if(v.devotional)C.devotional={...C.devotional,...v.devotional};if(v.live){['prayer','teaching','expedition'].forEach(f=>{if(v.live[f])C.live[f]={...C.live[f],...v.live[f]};});}if(v.archive&&v.archive.items)C.archive=v.archive.items;if(v.config)C.config={...C.config,...v.config};if(v.trail&&v.trail.items)C.trail=v.trail.items;if(v.rhythm&&v.rhythm.items)C.rhythm=v.rhythm.items;if(v.slides)C.slides={...C.slides,...v.slides};if(v.sermons)C.sermons={...C.sermons,...v.sermons};if(v.present)C.present={...C.present,...v.present};if(v.circle)C.circle={...C.circle,...v.circle};}
+  db.ref('content').on('value',s=>{const v=s.val();if(v){if(v.devotional)C.devotional={...C.devotional,...v.devotional};if(v.live){['prayer','teaching','expedition'].forEach(f=>{if(v.live[f])C.live[f]={...C.live[f],...v.live[f]};});}if(v.archive&&v.archive.items)C.archive=v.archive.items;if(v.config)C.config={...C.config,...v.config};if(v.survey)C.survey={...C.survey,...v.survey};if(v.trail&&v.trail.items)C.trail=v.trail.items;if(v.rhythm&&v.rhythm.items)C.rhythm=v.rhythm.items;if(v.slides)C.slides={...C.slides,...v.slides};if(v.sermons)C.sermons={...C.sermons,...v.sermons};if(v.present)C.present={...C.present,...v.present};if(v.circle)C.circle={...C.circle,...v.circle};}
     qaListen(); qaMountPresenter(); qaPaintSpotlight();
     var ipHost=document.getElementById('ipres-host');
     if(ipHost && TV_MODE){ ipShow(C.present.current, false); return; }   /* big screen just follows */
@@ -2867,7 +2868,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v132</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v134</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -3926,6 +3927,7 @@ function render(){
     : (h==='altar')?'altar' : (h==='treasury')?'treasury' : (h==='share')?'share' : '';
   logDoor(_door);
   qaListen(); qaMountPresenter();
+  if(h==='ask'||h.indexOf('ask-')===0){askPage();window.scrollTo(0,0);return}
   if(h==='meet'||h.indexOf('meet-')===0){meetRoom();window.scrollTo(0,0);return}
   if(h==='tv'||h.indexOf('tv-')===0){tvView();window.scrollTo(0,0);return}
   if(h==='deck'||h.indexOf('deck-')===0){deck();window.scrollTo(0,0);return}
@@ -4452,7 +4454,101 @@ function share(){
     catch(e){ done('Link: '+link); }
   };
 }
-/* ================= THE UPPER ROOM — private meetings =================
+/* ================= THE ASKING \u2014 surveys & sign-ups =================
+   #ask is a simple questionnaire page you send by link. Parents tap answers;
+   the tallies land in the Steward's Panel. Anyone who wants to be contacted
+   can leave their details \u2014 those stay private to Pastor Josh.            */
+function askSurveyId(){
+  const h=(location.hash||'').replace('#','');
+  if(h.indexOf('ask-')===0) return h.slice(4).replace(/[^A-Za-z0-9-]/g,'').slice(0,40);
+  return '';
+}
+function askPage(){
+  /* A specific survey may be named in the link (#ask-sports). Otherwise show the live one. */
+  const want=askSurveyId();
+  const all=(C.survey&&C.survey.list)||[];
+  let sv=C.survey||{};
+  if(want){ const found=all.find(function(x){return x.id===want;}); if(found)sv={...found,on:found.on!==false}; }
+  if(!sv.on || !(sv.q||[]).length){
+    app.innerHTML=`${crumb()}
+      <div class="eyebrow">\ud83d\udcdd The Asking</div>
+      <h2>No questions open right now</h2>
+      <p class="sub">There\u2019s no survey running at the moment. If you were sent a link, check back shortly \u2014 or ask Pastor Josh for a fresh one.</p>
+      ${footer()}`;
+    return;
+  }
+  const qs=(sv.q||[]).map(function(q,i){
+    const opts=(q.opts||['Yes','No']).map(function(o,j){
+      return '<button class="btn ghost askopt" data-q="'+i+'" data-o="'+esc(o)+'" '
+        +'style="margin:.25em .35em .25em 0">'+esc(o)+'</button>';
+    }).join('');
+    return '<div class="card" data-qcard="'+i+'">'
+      +'<div class="eyebrow">Question '+(i+1)+' of '+sv.q.length+'</div>'
+      +'<div style="font-family:Fraunces,serif;font-size:1.15em;margin:.2em 0 .6em">'+esc(q.text)+'</div>'
+      +'<div>'+opts+'</div>'
+      +'<div class="ok askpicked" data-picked="'+i+'"></div></div>';
+  }).join('');
+  app.innerHTML=`${crumb()}
+   <div class="eyebrow">\ud83d\udcdd The Asking</div>
+   <h2>${esc(sv.title||'A few quick questions')}</h2>
+   ${sv.intro?`<p class="sub">${esc(sv.intro)}</p>`:''}
+   <div id="ask-form">
+     ${qs}
+     <div class="card">
+       <b>\ud83d\udcec Would you like us to contact you?</b>
+       <div class="note" style="margin:.3em 0 .5em">Only if you\u2019d like to hear more, help out, or be kept posted. Leave it blank to stay anonymous \u2014 your answers above still count either way.</div>
+       <label>Your name</label><input type="text" id="ask-name" placeholder="Name (optional)">
+       <label>Phone or email</label><input type="text" id="ask-contact" placeholder="Best way to reach you (optional)">
+       <label>Child\u2019s name &amp; grade (optional)</label><input type="text" id="ask-child" placeholder="e.g. Maria \u2014 4th grade">
+       <label>Anything you\u2019d like to add?</label><textarea id="ask-note" rows="2" placeholder="Questions, ideas, or what would help your family"></textarea>
+     </div>
+     <div id="ask-err" class="err"></div>
+     <button class="btn" id="ask-send">\u2705 Send my answers</button>
+     <p class="note" style="margin-top:.6em">Your answers go privately to Pastor Josh. Only the totals are ever shown.</p>
+   </div>
+   ${footer()}`;
+
+  var picked={};
+  app.querySelectorAll('.askopt').forEach(function(b){
+    b.onclick=function(){
+      var qi=b.dataset.q;
+      picked[qi]=b.dataset.o;
+      app.querySelectorAll('.askopt[data-q="'+qi+'"]').forEach(function(x){
+        x.classList.add('ghost'); x.style.background=''; x.style.color='';
+      });
+      b.classList.remove('ghost');
+      var lab=app.querySelector('.askpicked[data-picked="'+qi+'"]');
+      if(lab)lab.textContent='\u2713 '+b.dataset.o;
+    };
+  });
+  var send=document.getElementById('ask-send');
+  if(send)send.onclick=async function(){
+    var err=document.getElementById('ask-err');
+    if(Object.keys(picked).length===0){ err.textContent='Please answer at least one question.'; return; }
+    send.disabled=true; send.textContent='Sending\u2026';
+    var row={answers:picked,
+      name:(document.getElementById('ask-name').value||'').trim(),
+      contact:(document.getElementById('ask-contact').value||'').trim(),
+      child:(document.getElementById('ask-child').value||'').trim(),
+      note:(document.getElementById('ask-note').value||'').trim(),
+      surveyId:(sv.id||(C.survey&&C.survey.id)||'s1'),
+      title:sv.title||(C.survey&&C.survey.title)||'',
+      time:new Date().toLocaleString(), ts:Date.now()};
+    try{
+      if(db)await db.ref('survey').push(row);
+      document.getElementById('ask-form').innerHTML=
+        '<div class="card" style="text-align:center;border-color:var(--gold)">'
+        +'<div style="font-size:2.6rem">\ud83d\ude4f</div>'
+        +'<h2 style="color:var(--gold)">Thank you</h2>'
+        +'<p class="sub">'+esc((C.survey&&C.survey.thanks)||'Your answer has been counted.')+'</p></div>';
+    }catch(e){
+      err.textContent='Could not send \u2014 check your connection and try again.';
+      send.disabled=false; send.textContent='\u2705 Send my answers';
+    }
+  };
+}
+
+/* ================= THE UPPER ROOM \u2014 private meetings =================
    #meet-<name> is an unlisted, signed meeting room. It is NOT on the treasure map
    and nothing links to it: only someone holding the link can find it. Uses the same
    token signer as the circles, so there is no 5-minute limit.
@@ -5719,7 +5815,47 @@ document.getElementById('panelbox').innerHTML=`
  <!-- ========== LIVE GATHERINGS (each gathering = one card) ========== -->
  <div class="psec">
   <div style="text-align:right;margin-bottom:.4em"><a href="#map" id="panel-lock" class="note" style="color:var(--dim)">🔒 Lock &amp; leave</a></div>
-  <h2>🚪 The Upper Room · private meetings</h2>
+  <h2>\U0001f4dd The Asking \u00b7 surveys &amp; sign-ups</h2>
+  <div class="pdesc">Ask a question, send the link, watch the answers add up. Good for gauging interest \u2014 an after-school sports program, a class, a trip \u2014 before you build it. Anyone who wants to be contacted can leave their details, and those stay private to you.</div>
+  <div class="subcard">
+    <label>Survey title</label>
+    <input type="text" id="sv-title" value="${esc((C.survey&&C.survey.title)||'')}" placeholder="e.g. After-School Sports \u2014 would your child join?">
+    <label>A sentence or two of introduction</label>
+    <textarea id="sv-intro" rows="2" placeholder="Why you're asking, and what it might look like">${esc((C.survey&&C.survey.intro)||'')}</textarea>
+    <label>Your questions \u2014 one per line. Put the answer choices after a <b>|</b> , separated by commas.<br>
+      <span style="text-transform:none">e.g. <code>Would your child join basketball? | Yes, No, Maybe</code><br>
+      Leave off the choices and it just uses Yes / No.</span></label>
+    <textarea id="sv-q" rows="6" placeholder="Would your child be interested in basketball? | Yes, No, Maybe&#10;Would your child be interested in flag football? | Yes, No, Maybe&#10;Would you be willing to help coach sometimes? | Yes, No">${((C.survey&&C.survey.q)||[]).map(function(q){return esc(q.text)+' | '+esc((q.opts||['Yes','No']).join(', '));}).join('\n')}</textarea>
+    <label>Thank-you message</label>
+    <input type="text" id="sv-thanks" value="${esc((C.survey&&C.survey.thanks)||'Thank you \u2014 your answer has been counted.')}">
+    <label>Open for answers?</label>${pToggle('sv-on',(C.survey&&C.survey.on),'\ud83d\udd12 Closed','\ud83d\udcdd OPEN \u2014 accepting answers')}
+    <div style="display:flex;gap:.5em;flex-wrap:wrap;margin-top:.5em">
+      <button class="btn" id="save-sv">\ud83d\udcbe Save the survey</button>
+      <button class="btn ghost" id="sv-copy">\ud83d\udd17 Copy the link to send</button>
+      <button class="btn ghost" id="sv-see">\ud83d\udc41\ufe0f Preview it</button>
+    </div>
+    <div id="sv-ok" class="ok" style="margin-top:.4em"></div>
+    <div class="note" style="margin-top:.3em">Link to send: <b id="sv-link"></b></div>
+    <div style="text-align:center;margin-top:.6em">
+      <div id="sv-qr"></div>
+      <button class="btn ghost" id="sv-qr-dl" style="margin-top:.4em">\u2b07\ufe0f Download the QR code</button>
+      <div class="note" style="margin-top:.3em">Print this on a flyer or slide \u2014 parents point a phone camera at it and the survey opens.</div>
+    </div>
+  </div>
+  <div class="subcard">
+    <b>\ud83d\udcca The answers so far</b>
+    <div class="note" style="margin:.3em 0 .5em">Updates as people reply. Names and contacts show only for those who chose to leave them.</div>
+    <div id="sv-results" class="note">Loading\u2026</div>
+    <div style="display:flex;gap:.5em;flex-wrap:wrap;margin-top:.5em">
+      <button class="btn" id="sv-pdf">\ud83d\udcc4 Results as PDF / print</button>
+      <button class="btn ghost" id="sv-download">\u2b07\ufe0f Download the replies</button>
+      <button class="btn ghost" id="sv-clear">\ud83e\uddf9 Clear all replies</button>
+    </div>
+  </div>
+ </div>
+
+ <div class="psec">
+  <h2>\U0001f6aa The Upper Room \u00b7 private meetings</h2>
   <div class="pdesc">A private video room for planning, elders, counselling — anything that isn't for the whole church. It is <b>not</b> on the treasure map and nothing links to it: only someone you send the link to can find it. No time limit.</div>
   <div class="subcard">
     <b>Name this meeting</b>
@@ -5976,6 +6112,249 @@ var pwc=document.getElementById('pw-clear'); if(pwc)pwc.onclick=async function()
 };
 loadAnalytics();
 var azr=document.getElementById('az-refresh'); if(azr) azr.onclick=loadAnalytics;
+/* ---- The Asking: save, share, and tally ---- */
+(function(){
+  function parseQs(){
+    return (document.getElementById('sv-q').value||'').split('\n')
+      .map(function(l){return l.trim();}).filter(Boolean)
+      .map(function(l){
+        var bits=l.split('|');
+        var text=(bits[0]||'').trim();
+        var opts=(bits[1]||'Yes, No').split(',').map(function(o){return o.trim();}).filter(Boolean);
+        return {text:text,opts:opts.length?opts:['Yes','No']};
+      }).filter(function(q){return q.text;});
+  }
+  /* ---- many surveys, each with its own name, link and answers ---- */
+  function cleanId(v){ return (v||'').trim().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'').slice(0,40); }
+  function allSurveys(){ return ((C.survey&&C.survey.list)||[]).slice(); }
+  function currentId(){ return cleanId(document.getElementById('sv-id').value)||'survey'; }
+  function surveyUrl(id){ return location.origin+location.pathname+'#ask-'+(id||currentId()); }
+
+  function paintLink(){
+    var u=surveyUrl();
+    var lb=document.getElementById('sv-link'); if(lb)lb.textContent=u;
+    var qr=document.getElementById('sv-qr');
+    if(qr)qr.innerHTML='<img id="sv-qr-img" src="'+qrImgURL(u,240)+'" alt="Survey QR code" '
+      +'style="width:200px;background:#fff;border-radius:10px;padding:8px">';
+  }
+  function loadInto(sv){
+    document.getElementById('sv-id').value=sv.id||'';
+    document.getElementById('sv-title').value=sv.title||'';
+    document.getElementById('sv-intro').value=sv.intro||'';
+    document.getElementById('sv-thanks').value=sv.thanks||'Thank you \u2014 your answer has been counted.';
+    document.getElementById('sv-q').value=((sv.q)||[]).map(function(q){
+      return q.text+' | '+((q.opts||['Yes','No']).join(', '));}).join('\n');
+    var on=document.getElementById('sv-on'); if(on)on.value=sv.on?'yes':'no';
+    paintLink(); paint();
+  }
+  function paintPicker(){
+    var sel=document.getElementById('sv-pick'); if(!sel)return;
+    var list=allSurveys();
+    if(!list.length){ sel.innerHTML='<option value="">(no surveys yet \u2014 fill in the form below)</option>'; return; }
+    sel.innerHTML=list.map(function(x){
+      return '<option value="'+esc(x.id)+'"'+(x.id===currentId()?' selected':'')+'>'
+        +esc(x.title||x.id)+(x.on?' \u2014 open':' \u2014 closed')+'</option>';
+    }).join('');
+  }
+  var sel=document.getElementById('sv-pick');
+  if(sel)sel.onchange=function(){
+    var f=allSurveys().find(function(x){return x.id===sel.value;});
+    if(f)loadInto(f);
+  };
+  var nw=document.getElementById('sv-new');
+  if(nw)nw.onclick=function(){
+    loadInto({id:'',title:'',intro:'',q:[],thanks:'Thank you \u2014 your answer has been counted.',on:false});
+    document.getElementById('sv-ok').textContent='New survey \u2014 give it a short name and your questions, then Save.';
+  };
+  var del=document.getElementById('sv-del');
+  if(del)del.onclick=async function(){
+    var id=currentId();
+    if(!confirm('Delete the survey "'+id+'"? Its replies stay until you clear them.'))return;
+    var list=allSurveys().filter(function(x){return x.id!==id;});
+    try{
+      await db.ref('content/survey').set({k:WRITE_KEY,list:list,on:false,id:'',title:'',intro:'',q:[],thanks:''});
+      C.survey={...C.survey,list:list};
+      paintPicker();
+      loadInto(list[0]||{id:'',title:'',q:[]});
+      document.getElementById('sv-ok').textContent='Deleted.';
+    }catch(e){}
+  };
+
+  var idBox=document.getElementById('sv-id');
+  if(idBox)idBox.addEventListener('input',paintLink);
+
+  var qdl=document.getElementById('sv-qr-dl');
+  if(qdl)qdl.onclick=function(){
+    var a=document.createElement('a');
+    a.href=qrImgURL(surveyUrl(),700); a.target='_blank'; a.download='survey-qr-'+currentId()+'.png'; a.click();
+  };
+
+  var linkBox=document.getElementById('sv-link');
+  var url=surveyUrl();
+
+  var save=document.getElementById('save-sv');
+  if(save)save.onclick=async function(){
+    var ok=document.getElementById('sv-ok');
+    var payload={k:WRITE_KEY,
+      on:document.getElementById('sv-on').value==='yes',
+      title:(document.getElementById('sv-title').value||'').trim(),
+      intro:(document.getElementById('sv-intro').value||'').trim(),
+      thanks:(document.getElementById('sv-thanks').value||'').trim()||'Thank you \u2014 your answer has been counted.',
+      q:parseQs()};
+    if(!payload.q.length){ ok.textContent='Add at least one question first.'; return; }
+    payload.id=currentId();
+    var list=allSurveys().filter(function(x){return x.id!==payload.id;});
+    list.push({id:payload.id,title:payload.title,intro:payload.intro,thanks:payload.thanks,q:payload.q,on:payload.on});
+    payload.list=list;
+    try{
+      await db.ref('content/survey').set(payload);
+      C.survey={...C.survey,...payload};
+      paintPicker(); paintLink();
+      ok.textContent='Saved \u2713 \u2014 '+payload.q.length+' question'+(payload.q.length>1?'s':'')+(payload.on?', open for answers.':', still closed.');
+    }catch(e){ ok.textContent='Save failed \u2014 check your connection.'; }
+  };
+
+  var cp=document.getElementById('sv-copy');
+  if(cp)cp.onclick=async function(){
+    try{ await navigator.clipboard.writeText(url); }catch(e){
+      var t=document.createElement('textarea'); t.value=url; document.body.appendChild(t); t.select();
+      try{document.execCommand('copy');}catch(_){}; document.body.removeChild(t);
+    }
+    document.getElementById('sv-ok').textContent='Link copied \u2713 \u2014 paste it into a text, email, or class group.';
+  };
+  var see=document.getElementById('sv-see');
+  if(see)see.onclick=function(){ location.hash='ask'; };
+
+  /* ---- live tally ---- */
+  var box=document.getElementById('sv-results');
+  var ALL=[], ROWS=[];
+  function forThisSurvey(){ var id=currentId();
+    return ALL.filter(function(r){ return (r.surveyId||'s1')===id || (!r.surveyId && id==='survey'); }); }
+  function paint(){
+    if(!box)return;
+    ROWS=forThisSurvey();
+    if(!ROWS.length){ box.textContent='No replies yet. Send the link and they\u2019ll appear here.'; return; }
+    var qs=(C.survey&&C.survey.q)||[];
+    var html='<div style="margin-bottom:.6em"><b>'+ROWS.length+' repl'+(ROWS.length===1?'y':'ies')+'</b></div>';
+    qs.forEach(function(q,i){
+      var counts={}, total=0;
+      ROWS.forEach(function(r){
+        var a=r.answers&&r.answers[i];
+        if(a){ counts[a]=(counts[a]||0)+1; total++; }
+      });
+      html+='<div style="margin:.5em 0 .8em"><b>'+esc(q.text)+'</b>';
+      (q.opts||['Yes','No']).forEach(function(o){
+        var n=counts[o]||0, pct=total?Math.round(n/total*100):0;
+        html+='<div style="display:flex;align-items:center;gap:.5em;margin:.25em 0">'
+          +'<span style="min-width:6em">'+esc(o)+'</span>'
+          +'<span style="flex:1;background:rgba(244,237,224,.12);border-radius:6px;overflow:hidden;height:14px">'
+          +'<span style="display:block;height:100%;width:'+pct+'%;background:var(--gold)"></span></span>'
+          +'<b style="min-width:4.5em;text-align:right">'+n+' ('+pct+'%)</b></div>';
+      });
+      html+='</div>';
+    });
+    var withContact=ROWS.filter(function(r){return (r.name||r.contact||r.note||r.child);});
+    if(withContact.length){
+      html+='<div style="margin-top:.8em"><b>\ud83d\udcec Asked to be contacted ('+withContact.length+')</b></div>';
+      withContact.slice().reverse().forEach(function(r){
+        html+='<div style="border-bottom:1px solid rgba(244,237,224,.12);padding:.5em 0">'
+          +'<b style="color:var(--gold)">'+esc(r.name||'(no name)')+'</b>'
+          +(r.contact?' \u00b7 '+esc(r.contact):'')
+          +(r.child?'<div>Child: '+esc(r.child)+'</div>':'')
+          +(r.note?'<div>'+esc(r.note)+'</div>':'')
+          +'<div class="note">'+esc(r.time||'')+'</div></div>';
+      });
+    }
+    box.innerHTML=html;
+  }
+  paintPicker(); paintLink();
+  if(db){
+    db.ref('survey').limitToLast(500).on('value',function(snap){
+        var v=snap.val()||{};
+      ALL=Object.values(v).sort(function(a,b){return (a.ts||0)-(b.ts||0);});
+      paint();
+    });
+  }
+  var pdf=document.getElementById('sv-pdf');
+  if(pdf)pdf.onclick=function(){
+    var qs=(C.survey&&C.survey.q)||[];
+    var title=(document.getElementById('sv-title').value||'Survey results');
+    var rows=forThisSurvey();
+    var when=new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
+    var body='';
+    qs.forEach(function(q,i){
+      var counts={}, total=0;
+      rows.forEach(function(r){ var a=r.answers&&r.answers[i]; if(a){counts[a]=(counts[a]||0)+1; total++;} });
+      body+='<div class="q"><div class="qt">'+esc(q.text)+'</div><table>';
+      (q.opts||['Yes','No']).forEach(function(o){
+        var n=counts[o]||0, pct=total?Math.round(n/total*100):0;
+        body+='<tr><td class="opt">'+esc(o)+'</td>'
+          +'<td class="bar"><span style="width:'+pct+'%"></span></td>'
+          +'<td class="num">'+n+'</td><td class="num">'+pct+'%</td></tr>';
+      });
+      body+='</table><div class="tot">'+total+' answered</div></div>';
+    });
+    var contacts=rows.filter(function(r){return r.name||r.contact||r.child||r.note;});
+    if(contacts.length){
+      body+='<h2>Families who asked to be contacted ('+contacts.length+')</h2><table class="people">'
+        +'<tr><th>Name</th><th>Contact</th><th>Child</th><th>Notes</th></tr>';
+      contacts.forEach(function(r){
+        body+='<tr><td>'+esc(r.name||'')+'</td><td>'+esc(r.contact||'')+'</td>'
+          +'<td>'+esc(r.child||'')+'</td><td>'+esc(r.note||'')+'</td></tr>';
+      });
+      body+='</table>';
+    }
+    var w=window.open('','_blank');
+    if(!w){ document.getElementById('sv-ok').textContent='Please allow pop-ups to build the PDF.'; return; }
+    w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>'
+      +'*{box-sizing:border-box}body{font-family:Georgia,serif;color:#1a1a1a;max-width:760px;margin:0 auto;padding:40px 32px;line-height:1.5}'
+      +'h1{font-size:26px;margin:0 0 2px}h2{font-size:17px;margin:26px 0 8px;border-bottom:1px solid #ccc;padding-bottom:4px}'
+      +'.sub{color:#666;font-size:13px;margin-bottom:22px}'
+      +'.q{margin:0 0 20px;page-break-inside:avoid}.qt{font-weight:bold;margin-bottom:6px}'
+      +'table{width:100%;border-collapse:collapse}'
+      +'td{padding:3px 6px;font-size:14px;vertical-align:middle}'
+      +'.opt{width:26%}.num{width:9%;text-align:right;font-variant-numeric:tabular-nums}'
+      +'.bar{width:56%}.bar span{display:block;height:13px;background:#8a6c2c;border-radius:3px;min-width:1px}'
+      +'.tot{font-size:12px;color:#666;margin-top:3px}'
+      +'.people th{text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#555;border-bottom:1px solid #999;padding:4px 6px}'
+      +'.people td{border-bottom:1px solid #e5e5e5;font-size:13px}'
+      +'.foot{margin-top:30px;font-size:12px;color:#777;border-top:1px solid #ccc;padding-top:8px}'
+      +'.noprint{margin-bottom:20px}@media print{.noprint{display:none}body{padding:0}}'
+      +'</style></head><body>'
+      +'<div class="noprint"><button onclick="window.print()" style="font-size:15px;padding:8px 16px">\ud83d\udcc4 Save as PDF / Print</button></div>'
+      +'<h1>'+esc(title)+'</h1>'
+      +'<div class="sub">'+rows.length+' repl'+(rows.length===1?'y':'ies')+' \u00b7 '+when+'</div>'
+      +body
+      +'<div class="foot">Joshua Mura \u00b7 Digital Ministry \u00b7 joshuamura.netlify.app</div>'
+      +'</body></html>');
+    w.document.close();
+  };
+
+  var dl=document.getElementById('sv-download');
+  if(dl)dl.onclick=function(){
+    var qs=(C.survey&&C.survey.q)||[];
+    var lines=['Survey: '+((C.survey&&C.survey.title)||''),'Replies: '+ROWS.length,''];
+    ROWS.forEach(function(r,n){
+      lines.push('--- reply '+(n+1)+' \u00b7 '+(r.time||'')+' ---');
+      qs.forEach(function(q,i){ lines.push(q.text+'  ->  '+((r.answers&&r.answers[i])||'(no answer)')); });
+      if(r.name)lines.push('Name: '+r.name);
+      if(r.contact)lines.push('Contact: '+r.contact);
+      if(r.child)lines.push('Child: '+r.child);
+      if(r.note)lines.push('Note: '+r.note);
+      lines.push('');
+    });
+    var blob=new Blob([lines.join('\n')],{type:'text/plain'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='survey-'+new Date().toISOString().slice(0,10)+'.txt';
+    a.click();
+  };
+  var cl=document.getElementById('sv-clear');
+  if(cl)cl.onclick=async function(){
+    if(!confirm('Delete every reply to this survey? This cannot be undone.'))return;
+    try{ await db.ref('survey').remove(); document.getElementById('sv-ok').textContent='Replies cleared.'; }catch(e){}
+  };
+})();
 (function(){
   var lk=document.getElementById('panel-lock');
   if(lk)lk.onclick=function(){ PANEL_OK=false; try{ sessionStorage.removeItem('panelok'); }catch(e){} };
