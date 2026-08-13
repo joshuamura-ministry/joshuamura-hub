@@ -670,7 +670,7 @@ let C={
  devotional:{title:"Welcome to the Spring",youtubeId:"",verse:"Whosoever drinketh of the water that I shall give him shall never thirst.",verseref:"John 4:14",thought:"A new devotional flows here each week. The first one is on its way — check back soon, and bring your cup."},
  live:{
    prayer:{on:false,room:"JoshuaMuraPrayer",note:"The prayer circle gathers here. Next meeting: announced soon."},
-   teaching:{on:false,room:"JoshuaMuraTeaching",topic:"",note:"Live class meets here. Next session: announced soon."},
+   teaching:{on:false,room:"JoshuaMuraTeaching",topic:"",study:"",note:"Live class meets here. Next session: announced soon."},
    expedition:{on:false,title:"",source:"none",youtubeId:"",room:"JoshuaMuraExpedition",deckUrl:"",study:"",note:"When the fire is lit — a sermon, a seminar, a small-group journey — this is the gathering place: his voice above, the slides turning in your hand below."}
  },
  slides:{on:false,total:0,current:1,folder:"",mode:"jpeg"},
@@ -2868,7 +2868,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v136</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v137</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -4471,9 +4471,9 @@ function askPage(){
   if(want){ const found=all.find(function(x){return x.id===want;}); if(found)sv={...found,on:found.on!==false}; }
   if(!sv.on || !(sv.q||[]).length){
     app.innerHTML=`${crumb()}
-      <div class="eyebrow">\ud83d\udcdd The Asking</div>
+      <div class="eyebrow">📝 The Asking</div>
       <h2>No questions open right now</h2>
-      <p class="sub">There\u2019s no survey running at the moment. If you were sent a link, check back shortly \u2014 or ask Pastor Josh for a fresh one.</p>
+      <p class="sub">There’s no survey running at the moment. If you were sent a link, check back shortly — or ask Pastor Josh for a fresh one.</p>
       ${footer()}`;
     return;
   }
@@ -4489,7 +4489,7 @@ function askPage(){
       +'<div class="ok askpicked" data-picked="'+i+'"></div></div>';
   }).join('');
   app.innerHTML=`${crumb()}
-   <div class="eyebrow">\ud83d\udcdd The Asking</div>
+   <div class="eyebrow">📝 The Asking</div>
    <h2>${esc(sv.title||'A few quick questions')}</h2>
    ${sv.intro?`<p class="sub">${esc(sv.intro)}</p>`:''}
    <div id="ask-form">
@@ -4503,7 +4503,7 @@ function askPage(){
        <label>Anything you\u2019d like to add?</label><textarea id="ask-note" rows="2" placeholder="Questions, ideas, or what would help your family"></textarea>
      </div>
      <div id="ask-err" class="err"></div>
-     <button class="btn" id="ask-send">\u2705 Send my answers</button>
+     <button class="btn" id="ask-send">✅ Send my answers</button>
      <p class="note" style="margin-top:.6em">Your answers go privately to Pastor Josh. Only the totals are ever shown.</p>
    </div>
    ${footer()}`;
@@ -4543,7 +4543,7 @@ function askPage(){
         +'<p class="sub">'+esc((C.survey&&C.survey.thanks)||'Your answer has been counted.')+'</p></div>';
     }catch(e){
       err.textContent='Could not send \u2014 check your connection and try again.';
-      send.disabled=false; send.textContent='\u2705 Send my answers';
+      send.disabled=false; send.textContent='✅ Send my answers';
     }
   };
 }
@@ -5063,7 +5063,11 @@ app.innerHTML=`<div class="crumb"><a href="#mine">⛏️ ← All veins</a></div>
  ${footer()}`;
 }
 
-function dig(courseId){
+function dig(courseId,hostId){
+/* hostId set = render the study INSIDE that element (used under the Live Class video)
+   instead of taking over the page. Everything else works exactly the same. */
+const HOST = hostId ? document.getElementById(hostId) : app;
+if(!HOST) return;
 
 const CO=courseById(courseId);
 if(!CO||!CO.open){go('mine');return}
@@ -5112,7 +5116,7 @@ let qhtml=CO.questions.map((qq,i)=>{
 const filled=CO.questions.filter((qq,i)=>qDone(qq,i)).length;
 const pct=Math.round(filled/CO.questions.length*100);
 const VV=veinOf(CO.id);
-app.innerHTML=`<div class="crumb"><a href="#vein-${VV.id}">${VV.gem} ← Back to ${esc(VV.label)}</a></div>
+HOST.innerHTML=`${hostId?'':`<div class="crumb"><a href="#vein-${VV.id}">${VV.gem} ← Back to ${esc(VV.label)}</a></div>`}
  <div class="eyebrow">${VV.gem} ${esc(VV.name)} · ${esc(CO.site)}</div>
  <h2>${esc(CO.name)}</h2>
  ${done?`
@@ -5182,12 +5186,12 @@ if(!done){
     const cnt=document.getElementById('strikecount'); if(cnt)cnt.textContent=f+' of '+CO.questions.length+' veins struck';
     document.getElementById('finishzone').classList.toggle('hide',f!==CO.questions.length);
   };
-  app.querySelectorAll('[data-reveal]').forEach(el=>{
+  HOST.querySelectorAll('[data-reveal]').forEach(el=>{
     el.addEventListener('click',e=>{
       e.preventDefault();
       const i=+el.dataset.reveal, qq=CO.questions[i];
       if(!answers[i]||typeof answers[i]==='string')answers[i]={b:[],r:''};
-      app.querySelectorAll('input.blank[data-q="'+i+'"]').forEach(inp=>{
+      HOST.querySelectorAll('input.blank[data-q="'+i+'"]').forEach(inp=>{
         const b=+inp.dataset.b;
         inp.value=qq.blanks[b]; answers[i].b[b]=qq.blanks[b];
         inp.style.borderColor='var(--gold)'; inp.style.color='var(--gold)';
@@ -5196,7 +5200,7 @@ if(!done){
       refresh();
     });
   });
-  app.querySelectorAll('[data-sup]').forEach(el=>{
+  HOST.querySelectorAll('[data-sup]').forEach(el=>{
     el.addEventListener('click',()=>{
       const box=document.getElementById('sup-'+el.dataset.sup);
       box.classList.toggle('hide');
@@ -5204,7 +5208,7 @@ if(!done){
       el.textContent=t+(box.classList.contains('hide')?' ▾':' ▴');
     });
   });
-  app.querySelectorAll('[data-exp]').forEach(el=>{
+  HOST.querySelectorAll('[data-exp]').forEach(el=>{
     el.addEventListener('click',()=>{
       const box=document.getElementById('exp-'+el.dataset.exp);
       box.classList.toggle('hide');
@@ -5217,7 +5221,7 @@ if(!done){
     });
   });
   if(typeof wirePassageLinks==='function') wirePassageLinks(app);
-  app.querySelectorAll('input.blank').forEach(inp=>{
+  HOST.querySelectorAll('input.blank').forEach(inp=>{
     const i=+inp.dataset.q, b=+inp.dataset.b, qq=CO.questions[i];
     const paint=()=>{const ok=norm(inp.value)===norm(qq.blanks[b]);
       inp.style.borderColor=inp.value.trim()?(ok?'var(--gold)':'rgba(194,91,74,.7)'):'rgba(244,237,224,.25)';
@@ -5228,7 +5232,7 @@ if(!done){
       answers[i].b[b]=inp.value; paint(); refresh();
     });
   });
-  app.querySelectorAll('textarea[data-q]').forEach(tx=>{
+  HOST.querySelectorAll('textarea[data-q]').forEach(tx=>{
     tx.addEventListener('input',()=>{
       answers[+tx.dataset.q]=tx.value;
       refresh();
@@ -5439,11 +5443,17 @@ app.innerHTML=`<div class="crumb"><a href="#mine">⛏️ ← Back to the Mine</a
  <h2>${f.on?'Class is in session — take your seat':'Class is not in session'}</h2>
  ${f.on?`<div class="videoframe" id="circle-class"></div>${slidesPanel()}
   <p class="note">🔥 You join <b>muted</b> — raise your hand 🖐 to ask your question, live.</p>
-  ${modUnlockCard()}`
+  ${modUnlockCard()}
+  ${f.study&&courseById(f.study)?`<div class="card" style="border-color:var(--gold);margin-top:.8em">
+     <div class="eyebrow">📖 Today's study — fill it in as we go</div>
+     <div class="note" style="margin:.2em 0 .6em">Your answers save on this device, so you can finish it later in <a href="#dig-${esc(f.study)}">the Mine</a>.</div>
+   </div>
+   <div id="class-study"></div>`:''}`
  :`<div class="card" style="text-align:center"><div style="font-size:2.6rem">🪑</div><p class="sub">${esc(f.note)}</p></div>`}
  <div class="verse"><p>"Then opened he their understanding, that they might understand the scriptures."</p><cite>Luke 24:45</cite></div>
  ${footer()}`;
-if(f.on){ mountCircle('circle-class',f.room,'Friend'); wireModUnlock(f.room,'Pastor Josh','circle-class'); wireSlideLead(); }
+if(f.on){ mountCircle('circle-class',f.room,'Friend'); wireModUnlock(f.room,'Pastor Josh','circle-class'); wireSlideLead();
+  if(f.study&&courseById(f.study)){ try{ dig(f.study,'class-study'); }catch(e){} } }
 }
 
 function prayerteam(){
@@ -6008,6 +6018,15 @@ document.getElementById('panelbox').innerHTML=`
    <label>Room name</label><input type="text" id="t-room" value="${esc(lv.teaching.room)}">
    <label>Class topic <span style="text-transform:none;font-weight:400;color:var(--dim)">(optional — shows in the banner)</span></label>
    <input type="text" id="cl-topic" value="${esc((C.live.teaching&&C.live.teaching.topic)||'')}" placeholder="e.g. Counseling Youth · Overcoming Anger">
+   <label>📖 Study to show under the video <span style="text-transform:none;font-weight:400;color:var(--dim)">(students fill it in during class)</span></label>
+   <select id="cl-study">
+     <option value="">— none, just the video —</option>
+     ${VEINS.map(function(v){return '<optgroup label="'+esc(v.gem+' '+v.label)+'">'
+        +v.courses.filter(function(c){return c.open;}).map(function(c){
+          return '<option value="'+esc(c.id)+'"'+(((C.live.teaching&&C.live.teaching.study)===c.id)?' selected':'')+'>'+esc(c.site+' · '+c.name)+'</option>';
+        }).join('')+'</optgroup>';}).join('')}
+   </select>
+   <div class="note" style="margin:-.2em 0 .5em">The whole study appears under the class video — verses, blanks, commentary and all. Their answers save on their own device, so they can finish it later in the Mine.</div>
    <label>Class code <span style="text-transform:none;font-weight:400;color:var(--dim)">(to join the live video class)</span></label>
    <input type="text" id="cl-code" value="${esc((C.config&&C.config.classcode)||'class2026')}">
    <label>"Not in session" message</label><input type="text" id="t-note" value="${esc(lv.teaching.note)}">
@@ -6415,7 +6434,8 @@ document.getElementById('save-d').onclick=async()=>{
 async function saveLive(){
   var exp={on:document.getElementById('e-on').value==='yes',title:v('e-title'),source:document.getElementById('e-src').value,youtubeId:v('e-yt'),room:v('e-room'),deckUrl:v('e-deck'),study:v('e-study'),note:v('e-note')};
   var pr={on:document.getElementById('p2-on').value==='yes',room:v('p2-room'),note:v('p2-note')};
-  var te={on:document.getElementById('t-on').value==='yes',room:v('t-room'),topic:v('cl-topic'),note:v('t-note')};
+  var clStudy=document.getElementById('cl-study');
+  var te={on:document.getElementById('t-on').value==='yes',room:v('t-room'),topic:v('cl-topic'),study:(clStudy?clStudy.value:((C.live.teaching&&C.live.teaching.study)||'')),note:v('t-note')};
   await db.ref('content/live').set({k:WRITE_KEY,expedition:exp,prayer:pr,teaching:te});
   C.live.expedition={...C.live.expedition,...exp}; C.live.prayer={...C.live.prayer,...pr}; C.live.teaching={...C.live.teaching,...te};
 }
