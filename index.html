@@ -2868,7 +2868,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v137</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v139</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -4489,7 +4489,10 @@ function askPage(){
       +'<div class="ok askpicked" data-picked="'+i+'"></div></div>';
   }).join('');
   app.innerHTML=`${crumb()}
-   <div class="eyebrow">📝 The Asking</div>
+   ${sv.org?`<div class="card" style="text-align:center;border-color:var(--gold);padding:.9em">
+      <div style="font-family:Fraunces,serif;font-size:1.25em;color:var(--gold);line-height:1.25">${esc(sv.org)}</div>
+      ${sv.orgaddr?`<div class="note" style="margin-top:.25em">${esc(sv.orgaddr)}</div>`:''}
+    </div>`:`<div class="eyebrow">📝 The Asking</div>`}
    <h2>${esc(sv.title||'A few quick questions')}</h2>
    ${sv.intro?`<p class="sub">${esc(sv.intro)}</p>`:''}
    <div id="ask-form">
@@ -4526,16 +4529,29 @@ function askPage(){
     var err=document.getElementById('ask-err');
     if(Object.keys(picked).length===0){ err.textContent='Please answer at least one question.'; return; }
     send.disabled=true; send.textContent='Sending\u2026';
-    var row={answers:picked,
-      name:(document.getElementById('ask-name').value||'').trim(),
-      contact:(document.getElementById('ask-contact').value||'').trim(),
-      child:(document.getElementById('ask-child').value||'').trim(),
-      note:(document.getElementById('ask-note').value||'').trim(),
-      surveyId:(sv.id||(C.survey&&C.survey.id)||'s1'),
-      title:sv.title||(C.survey&&C.survey.title)||'',
+    /* Two separate places, on purpose:
+       - 'survey'        = the anonymous answers only. Readable, so the tally works.
+       - 'surveycontact' = names, phones, children. Write-only; read it in the Firebase
+                           console where you're signed in as the owner.               */
+    var sid=(sv.id||(C.survey&&C.survey.id)||'s1');
+    var stitle=sv.title||(C.survey&&C.survey.title)||'';
+    var nm=(document.getElementById('ask-name').value||'').trim();
+    var ct=(document.getElementById('ask-contact').value||'').trim();
+    var ch=(document.getElementById('ask-child').value||'').trim();
+    var nt=(document.getElementById('ask-note').value||'').trim();
+    var row={answers:picked, surveyId:sid, title:stitle,
+      wants:!!(nm||ct||ch||nt),          /* so you can still SEE how many asked to be contacted */
       time:new Date().toLocaleString(), ts:Date.now()};
     try{
-      if(db)await db.ref('survey').push(row);
+      if(db){
+        await db.ref('survey').push(row);
+        if(row.wants){
+          await db.ref('surveycontact').push({
+            name:nm, contact:ct, child:ch, note:nt,
+            answers:picked, surveyId:sid, title:stitle,
+            time:new Date().toLocaleString(), ts:Date.now()});
+        }
+      }
       document.getElementById('ask-form').innerHTML=
         '<div class="card" style="text-align:center;border-color:var(--gold)">'
         +'<div style="font-size:2.6rem">\ud83d\ude4f</div>'
@@ -5839,6 +5855,10 @@ document.getElementById('panelbox').innerHTML=`
   <div class="subcard">
     <label>Short name for the link <span style="text-transform:none">(letters and hyphens — e.g. <code>sports</code>)</span></label>
     <input type="text" id="sv-id" placeholder="sports" value="${esc((C.survey&&C.survey.id)||'')}">
+    <label>Heading at the top <span style="text-transform:none;font-weight:400;color:var(--dim)">(a school or church name — leave blank for none)</span></label>
+    <input type="text" id="sv-org" value="${esc((C.survey&&C.survey.org)||'')}" placeholder="Huntingdon Valley Christian Academy">
+    <label>Address under it <span style="text-transform:none;font-weight:400;color:var(--dim)">(optional)</span></label>
+    <input type="text" id="sv-orgaddr" value="${esc((C.survey&&C.survey.orgaddr)||'')}" placeholder="1845 Byberry Rd, Huntingdon Valley, PA 19006">
     <label>Survey title</label>
     <input type="text" id="sv-title" value="${esc((C.survey&&C.survey.title)||'')}" placeholder="e.g. After-School Sports \u2014 would your child join?">
     <label>A sentence or two of introduction</label>
@@ -6175,6 +6195,8 @@ var azr=document.getElementById('az-refresh'); if(azr) azr.onclick=loadAnalytics
     if(g('sv-title'))g('sv-title').value=sv.title||'';
     if(g('sv-intro'))g('sv-intro').value=sv.intro||'';
     document.getElementById('sv-thanks').value=sv.thanks||'Thank you \u2014 your answer has been counted.';
+    if(document.getElementById('sv-org'))document.getElementById('sv-org').value=sv.org||'';
+    if(document.getElementById('sv-orgaddr'))document.getElementById('sv-orgaddr').value=sv.orgaddr||'';
     if(g('sv-q'))g('sv-q').value=((sv.q)||[]).map(function(q){
       return q.text+' | '+((q.opts||['Yes','No']).join(', '));}).join('\n');
     var on=document.getElementById('sv-on'); if(on)on.value=sv.on?'yes':'no';
@@ -6235,12 +6257,14 @@ var azr=document.getElementById('az-refresh'); if(azr) azr.onclick=loadAnalytics
       on:(function(){var e=document.getElementById('sv-on');return !!e&&e.value==='yes';})(),
       title:((document.getElementById('sv-title')||{}).value||'').trim(),
       intro:((document.getElementById('sv-intro')||{}).value||'').trim(),
+      org:((document.getElementById('sv-org')||{}).value||'').trim(),
+      orgaddr:((document.getElementById('sv-orgaddr')||{}).value||'').trim(),
       thanks:((document.getElementById('sv-thanks')||{}).value||'').trim()||'Thank you \u2014 your answer has been counted.',
       q:parseQs()};
     if(!payload.q.length){ ok.textContent='Add at least one question first.'; return; }
     payload.id=currentId();
     var list=allSurveys().filter(function(x){return x.id!==payload.id;});
-    list.push({id:payload.id,title:payload.title,intro:payload.intro,thanks:payload.thanks,q:payload.q,on:payload.on});
+    list.push({id:payload.id,title:payload.title,intro:payload.intro,thanks:payload.thanks,q:payload.q,on:payload.on,org:payload.org,orgaddr:payload.orgaddr});
     payload.list=list;
     try{
       await db.ref('content/survey').set(payload);
@@ -6289,17 +6313,12 @@ var azr=document.getElementById('az-refresh'); if(azr) azr.onclick=loadAnalytics
       });
       html+='</div>';
     });
-    var withContact=ROWS.filter(function(r){return (r.name||r.contact||r.note||r.child);});
-    if(withContact.length){
-      html+='<div style="margin-top:.8em"><b>\ud83d\udcec Asked to be contacted ('+withContact.length+')</b></div>';
-      withContact.slice().reverse().forEach(function(r){
-        html+='<div style="border-bottom:1px solid rgba(244,237,224,.12);padding:.5em 0">'
-          +'<b style="color:var(--gold)">'+esc(r.name||'(no name)')+'</b>'
-          +(r.contact?' \u00b7 '+esc(r.contact):'')
-          +(r.child?'<div>Child: '+esc(r.child)+'</div>':'')
-          +(r.note?'<div>'+esc(r.note)+'</div>':'')
-          +'<div class="note">'+esc(r.time||'')+'</div></div>';
-      });
+    var wantN=ROWS.filter(function(r){return r.wants||r.name||r.contact||r.note||r.child;}).length;
+    if(wantN){
+      html+='<div class="card" style="margin-top:.8em;border-color:var(--gold)">'
+        +'<b style="color:var(--gold)">\ud83d\udcec '+wantN+' famil'+(wantN===1?'y':'ies')+' left their details</b>'
+        +'<div class="note" style="margin-top:.3em">Names, phone numbers and children\u2019s names are kept <b>private</b> \u2014 they are not readable from this page, by you or anyone else. '
+        +'Read them where you read prayer requests: <b>Firebase console \u2192 joshuamura \u2192 Realtime Database \u2192 surveycontact</b>.</div></div>';
     }
     box.innerHTML=html;
   }
@@ -6330,15 +6349,11 @@ var azr=document.getElementById('az-refresh'); if(azr) azr.onclick=loadAnalytics
       });
       body+='</table><div class="tot">'+total+' answered</div></div>';
     });
-    var contacts=rows.filter(function(r){return r.name||r.contact||r.child||r.note;});
-    if(contacts.length){
-      body+='<h2>Families who asked to be contacted ('+contacts.length+')</h2><table class="people">'
-        +'<tr><th>Name</th><th>Contact</th><th>Child</th><th>Notes</th></tr>';
-      contacts.forEach(function(r){
-        body+='<tr><td>'+esc(r.name||'')+'</td><td>'+esc(r.contact||'')+'</td>'
-          +'<td>'+esc(r.child||'')+'</td><td>'+esc(r.note||'')+'</td></tr>';
-      });
-      body+='</table>';
+    var wantC=rows.filter(function(r){return r.wants||r.name||r.contact||r.child||r.note;}).length;
+    if(wantC){
+      body+='<h2>Families who asked to be contacted</h2>'
+        +'<p><b>'+wantC+'</b> of these families left contact details and are open to hearing more. '
+        +'Their names and numbers are kept private and are not printed in this summary.</p>';
     }
     var w=window.open('','_blank');
     if(!w){ document.getElementById('sv-ok').textContent='Please allow pop-ups to build the PDF.'; return; }
@@ -6358,7 +6373,7 @@ var azr=document.getElementById('az-refresh'); if(azr) azr.onclick=loadAnalytics
       +'.noprint{margin-bottom:20px}@media print{.noprint{display:none}body{padding:0}}'
       +'</style></head><body>'
       +'<div class="noprint"><button onclick="window.print()" style="font-size:15px;padding:8px 16px">\ud83d\udcc4 Save as PDF / Print</button></div>'
-      +'<h1>'+esc(title)+'</h1>'
+      +((C.survey&&C.survey.org)?'<div style="text-align:center;font-size:15px;font-weight:700;letter-spacing:.04em;margin-bottom:2px">'+esc(C.survey.org)+'</div>':'')+((C.survey&&C.survey.orgaddr)?'<div style="text-align:center;font-size:12px;color:#666;margin-bottom:14px">'+esc(C.survey.orgaddr)+'</div>':'')      +'<h1>'+esc(title)+'</h1>'
       +'<div class="sub">'+rows.length+' repl'+(rows.length===1?'y':'ies')+' \u00b7 '+when+'</div>'
       +body
       +'<div class="foot">Joshua Mura \u00b7 Digital Ministry \u00b7 joshuamura.netlify.app</div>'
@@ -6373,10 +6388,7 @@ var azr=document.getElementById('az-refresh'); if(azr) azr.onclick=loadAnalytics
     ROWS.forEach(function(r,n){
       lines.push('--- reply '+(n+1)+' \u00b7 '+(r.time||'')+' ---');
       qs.forEach(function(q,i){ lines.push(q.text+'  ->  '+((r.answers&&r.answers[i])||'(no answer)')); });
-      if(r.name)lines.push('Name: '+r.name);
-      if(r.contact)lines.push('Contact: '+r.contact);
-      if(r.child)lines.push('Child: '+r.child);
-      if(r.note)lines.push('Note: '+r.note);
+      if(r.wants)lines.push('(left contact details \u2014 see Firebase console \u2192 surveycontact)');
       lines.push('');
     });
     var blob=new Blob([lines.join('\n')],{type:'text/plain'});
