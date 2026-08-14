@@ -2896,7 +2896,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v150</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v151</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -2967,11 +2967,14 @@ function bookById(id){ return LIBRARY_BOOKS.find(function(b){return b.id===id;})
 var BOOK_CACHE={};                       // loaded plain-text books, keyed by id
 /* The book behind the Reclamation study. It is deliberately NOT on the Library shelf —
    the reading is served inside the study itself, so nobody has to leave the page. */
+/* Bump BOOK_V whenever a book file changes — it makes browsers fetch the new copy
+   instead of quietly reusing a stale one they cached earlier. */
+const BOOK_V='4';
 const STUDY_BOOKS={reclamation:'/BOOKS/reclamation.json'};
 async function loadStudyBook(id){
   if(BOOK_CACHE[id])return BOOK_CACHE[id];
   var path=STUDY_BOOKS[id]; if(!path)return null;
-  try{ var r=await fetch(path,{cache:'force-cache'}); if(!r.ok)throw 0;
+  try{ var r=await fetch(path+'?v='+BOOK_V,{cache:'default'}); if(!r.ok)throw 0;
        BOOK_CACHE[id]=await r.json(); return BOOK_CACHE[id]; }catch(e){ return null; }
 }
 /* Split a chapter's paragraphs into its own headed sections. */
@@ -2993,7 +2996,7 @@ async function loadBook(id){
   var meta=bookById(id); if(!meta) return null;
   BOOK_LOADING[id]=true;
   try{
-    var res=await fetch(meta.path,{cache:'force-cache'});
+    var res=await fetch(meta.path+'?v='+BOOK_V,{cache:'default'});
     if(!res.ok) throw new Error('not found');
     BOOK_CACHE[id]=await res.json();
     return BOOK_CACHE[id];
@@ -3297,7 +3300,7 @@ async function loadBible(){
   if(BIBLE_LOADING) return null;
   BIBLE_LOADING=true;
   try{
-    var res=await fetch(BIBLE_PATH,{cache:'force-cache'});
+    var res=await fetch(BIBLE_PATH+'?v='+BOOK_V,{cache:'default'});
     if(!res.ok) throw new Error('not found');
     BIBLE=await res.json();
     return BIBLE;
@@ -5196,7 +5199,11 @@ async function fillReadings(CO,HOST){
     }
     var secs=bookSections(data.c[w.r.ch]);
     var pick=(w.r.secs||[]).map(function(n){return secs[n];}).filter(Boolean);
-    if(!pick.length){ host.innerHTML=''; return; }
+    if(!pick.length){
+      host.innerHTML='<div class="card note">The reading for this stop could not be found. '
+        +'Try a hard refresh — the questions below still work.</div>';
+      return;
+    }
     var words=pick.reduce(function(a,s){return a+s.paras.join(' ').split(/\s+/).length;},0);
     var mins=Math.max(1,Math.round(words/220));
     var body=pick.map(function(sec){
