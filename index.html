@@ -287,6 +287,8 @@ body.tvmode .wrap,body.tvmode #app{max-width:none;padding:0}
 .searchhit b:first-child{color:var(--gold)}
 .bookreader{font-size:1.06rem;line-height:1.8;color:var(--ivory);max-width:640px}
 .bookpara{margin:0 0 1em}
+.booksec{font-family:'Fraunces',serif;font-weight:640;font-size:1.12rem;color:var(--gold);margin:1.8em 0 .5em;line-height:1.3;letter-spacing:.01em}
+.booksec:first-child{margin-top:.4em}
 .bookreader .bookpara:first-child{font-size:1.1rem}
 /* ---- Study Guides ---- */
 .guidelist{display:flex;flex-direction:column;gap:.7em;margin-top:.6em}
@@ -2868,7 +2870,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v141</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v142</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -4106,7 +4108,12 @@ function renderBookSection(id, si){
   si=Math.max(0,Math.min(total-1,si));
   saveBookPlace(id,si);
   const body=document.getElementById('book-body'); if(!body)return;
-  const paras=data.c[si].map(p=>`<p class="bookpara">${esc(p)}</p>`).join('');
+  const paras=data.c[si].map(function(p){
+    /* A leading \u00a7 marks one of the book's own section headings. */
+    return p.charAt(0)==='\u00a7'
+      ? '<h3 class="booksec">'+esc(p.slice(1))+'</h3>'
+      : '<p class="bookpara">'+esc(p)+'</p>';
+  }).join('');
   // small jump row (every section)
   let jump=''; for(let n=0;n<total;n++){ jump+=`<span class="chapchip${n===si?' on':''}" data-sec="${n}">${n+1}</span>`; }
   body.innerHTML=`
