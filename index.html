@@ -294,6 +294,9 @@ body.tvmode .wrap,body.tvmode #app{max-width:none;padding:0}
 .bookreader{font-size:1.06rem;line-height:1.8;color:var(--ivory);max-width:640px}
 .bookpara{margin:0 0 1em}
 .readblock{margin:.6em 0 1.2em}
+.qfoot{margin-top:2.4em;padding-top:1em;border-top:1px solid rgba(244,237,224,.12);text-align:center;color:var(--dim);font-size:.85rem;line-height:1.9}
+.qfoot a{color:var(--dim);text-decoration:none;opacity:.7}
+.qfoot a:hover{color:var(--gold);opacity:1}
 .readhead{display:flex;align-items:baseline;justify-content:space-between;gap:.6em;flex-wrap:wrap;border-bottom:1px solid rgba(201,162,75,.3);padding-bottom:.35em;margin-bottom:.7em}
 .readhead b{color:var(--gold);letter-spacing:.02em}
 .readbody{background:rgba(244,237,224,.035);border-left:3px solid rgba(201,162,75,.45);border-radius:0 12px 12px 0;padding:1em 1.1em .4em;font-size:1.05rem;line-height:1.8}
@@ -2892,7 +2895,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v148</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v149</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -4545,6 +4548,15 @@ function share(){
    #ask is a simple questionnaire page you send by link. Parents tap answers;
    the tallies land in the Steward's Panel. Anyone who wants to be contacted
    can leave their details \u2014 those stay private to Pastor Josh.            */
+/* Surveys go to people who may never have met this site \u2014 school families, a
+   community list. They arrive on a clean page: no treasure map, no side doors.
+   The site is still reachable by typing the address; it just isn't pushed at them. */
+function askQuietFoot(){
+  return '<div class="qfoot">'
+    +'<div>Joshua Mura \u00b7 Digital Ministry</div>'
+    +'<a href="#map" class="note">Visit the ministry site \u2192</a>'
+    +'</div>';
+}
 function askSurveyId(){
   const h=(location.hash||'').replace('#','');
   if(h.indexOf('ask-')===0) return h.slice(4).replace(/[^A-Za-z0-9-]/g,'').slice(0,40);
@@ -4557,11 +4569,11 @@ function askPage(){
   let sv=C.survey||{};
   if(want){ const found=all.find(function(x){return x.id===want;}); if(found)sv={...found,on:found.on!==false}; }
   if(!sv.on || !(sv.q||[]).length){
-    app.innerHTML=`${crumb()}
+    app.innerHTML=`
       <div class="eyebrow">📝 The Asking</div>
       <h2>No questions open right now</h2>
       <p class="sub">There’s no survey running at the moment. If you were sent a link, check back shortly — or ask Pastor Josh for a fresh one.</p>
-      ${footer()}`;
+      ${askQuietFoot()}`;
     return;
   }
   const qs=(sv.q||[]).map(function(q,i){
@@ -4575,7 +4587,7 @@ function askPage(){
       +'<div>'+opts+'</div>'
       +'<div class="ok askpicked" data-picked="'+i+'"></div></div>';
   }).join('');
-  app.innerHTML=`${crumb()}
+  app.innerHTML=`
    ${sv.org?`<div class="card" style="text-align:center;border-color:var(--gold);padding:.9em">
       <div style="font-family:Fraunces,serif;font-size:1.25em;color:var(--gold);line-height:1.25">${esc(sv.org)}</div>
       ${sv.orgaddr?`<div class="note" style="margin-top:.25em">${esc(sv.orgaddr)}</div>`:''}
@@ -4596,7 +4608,7 @@ function askPage(){
      <button class="btn" id="ask-send">✅ Send my answers</button>
      <p class="note" style="margin-top:.6em">Your answers go privately to Pastor Josh. Only the totals are ever shown.</p>
    </div>
-   ${footer()}`;
+   ${askQuietFoot()}`;
 
   var picked={};
   app.querySelectorAll('.askopt').forEach(function(b){
