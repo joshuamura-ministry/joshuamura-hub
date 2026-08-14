@@ -2868,7 +2868,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v139</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v141</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -2927,13 +2927,14 @@ const SERMONS_PATH='/SERMONS/';         // sermon slides live in /SERMONS: 1.jpg
 function setSeg(v){ v=(v||'').trim().replace(/^\/+|\/+$/g,''); return v?v+'/':''; }
 function prayerSlideUrl(n){ return SLIDES_PATH+setSeg(C.slides&&C.slides.folder)+n+SLIDES_EXT; }
 function sermonSlideUrl(n){ return SERMONS_PATH+setSeg(C.sermons&&C.sermons.folder)+n+SLIDES_EXT; }
-/* ---- The Library: KJV Bible (public domain), text lives in /books/kjv.json ---- */
-const BIBLE_PATH='/books/kjv.json';     // the KJV text file, served from your own site
+/* ---- The Library: KJV Bible (public domain), text lives in /BOOKS/kjv.json ---- */
+const BIBLE_PATH='/BOOKS/kjv.json';     // the KJV text file, served from your own site
 // The Library shelf. Bible is special (verses+search); the rest are plain-text books (paragraphs).
 var LIBRARY_BOOKS=[
-  {id:'bible',   kind:'bible', title:'Holy Bible',            sub:'King James Version', emoji:'📖', meta:'66 books · search inside', path:'/books/kjv.json'},
-  {id:'pilgrim', kind:'book',  title:"The Pilgrim's Progress", sub:'John Bunyan',        emoji:'🚶', meta:'Christian allegory',       path:'/books/pilgrim.json'},
-  {id:'foxe',    kind:'book',  title:"Fox's Book of Martyrs",  sub:'John Foxe',          emoji:'✝️', meta:'Lives of the faithful',    path:'/books/foxe.json'}
+  {id:'reclamation', kind:'book', title:'Reclamation', sub:'Joshua R. Mura', emoji:'🌧️', meta:'The Latter Rain & the Loud Cry', path:'/BOOKS/reclamation.json'},
+  {id:'bible',   kind:'bible', title:'Holy Bible',            sub:'King James Version', emoji:'📖', meta:'66 books · search inside', path:'/BOOKS/kjv.json'},
+  {id:'pilgrim', kind:'book',  title:"The Pilgrim's Progress", sub:'John Bunyan',        emoji:'🚶', meta:'Christian allegory',       path:'/BOOKS/pilgrim.json'},
+  {id:'foxe',    kind:'book',  title:"Fox's Book of Martyrs",  sub:'John Foxe',          emoji:'✝️', meta:'Lives of the faithful',    path:'/BOOKS/foxe.json'}
 ];
 function bookById(id){ return LIBRARY_BOOKS.find(function(b){return b.id===id;}); }
 var BOOK_CACHE={};                       // loaded plain-text books, keyed by id
@@ -3277,7 +3278,9 @@ function syncClassPin(){
   if(!host)return;
   var k=C.live.teaching;
   var h=(location.hash||'#map').replace('#','');
-  var inMine=(h==='mine'||h.indexOf('vein-')===0||h.indexOf('dig-')===0);
+  /* The pinned class video follows you into the Library too, so a group can read a book together. */
+  var inMine=(h==='mine'||h.indexOf('vein-')===0||h.indexOf('dig-')===0
+           ||h==='library'||h.indexOf('book-')===0||h==='bible'||h.indexOf('bible-')===0||h.indexOf('guide-')===0);
   if(!k||!k.on||!inMine){
     if(host.innerHTML!==''){host.innerHTML='';CLASS_VIDEO_UP=false;CLASS_ROOM_MOUNTED='';}
     return;
@@ -3931,10 +3934,10 @@ function render(){
   if(h==='meet'||h.indexOf('meet-')===0){meetRoom();window.scrollTo(0,0);return}
   if(h==='tv'||h.indexOf('tv-')===0){tvView();window.scrollTo(0,0);return}
   if(h==='deck'||h.indexOf('deck-')===0){deck();window.scrollTo(0,0);return}
-  if(h==='library'){library();window.scrollTo(0,0);return}
-  if(h==='bible'||h.indexOf('bible-')===0){bible();window.scrollTo(0,0);return}
-  if(h.indexOf('book-')===0){bookReader();window.scrollTo(0,0);return}
-  if(h.indexOf('guide-')===0){guideReader();window.scrollTo(0,0);return}
+  if(h==='library'){library();wireClassPin();window.scrollTo(0,0);return}
+  if(h==='bible'||h.indexOf('bible-')===0){bible();wireClassPin();window.scrollTo(0,0);return}
+  if(h.indexOf('book-')===0){bookReader();wireClassPin();window.scrollTo(0,0);return}
+  if(h.indexOf('guide-')===0){guideReader();wireClassPin();window.scrollTo(0,0);return}
   if(h.startsWith('dig-')){dig(h.slice(4));wireClassPin();window.scrollTo(0,0);return}
   if(h.startsWith('vein-')){vein(h.slice(5));wireClassPin();window.scrollTo(0,0);return}
 
@@ -4064,7 +4067,7 @@ async function bible(){
   if(!body)return;
   if(!B){
     body.innerHTML=`<div class="card" style="text-align:center"><div style="font-size:2rem">📖</div>
-      <p class="sub">The Bible text isn't loaded yet. If you're the steward: upload <b>kjv.json</b> into a <b>/books</b> folder in your site, then refresh.</p></div>${footer()}`;
+      <p class="sub">The Bible text isn't loaded yet. If you're the steward: upload <b>kjv.json</b> into a <b>/BOOKS</b> folder in your site, then refresh.</p></div>${footer()}`;
     return;
   }
   // Decide where to open: explicit target → saved place → Genesis 1
@@ -4089,7 +4092,7 @@ async function bookReader(){
   const body=document.getElementById('book-body'); if(!body)return;
   if(!data){
     body.innerHTML=`<div class="card" style="text-align:center"><div style="font-size:2rem">📖</div>
-      <p class="sub">This book isn't loaded yet. If you're the steward: upload <b>${meta?esc(meta.path.split('/').pop()):'the book file'}</b> into your <b>/books</b> folder, then refresh.</p></div>${footer()}`;
+      <p class="sub">This book isn't loaded yet. If you're the steward: upload <b>${meta?esc(meta.path.split('/').pop()):'the book file'}</b> into your <b>/BOOKS</b> folder, then refresh.</p></div>${footer()}`;
     return;
   }
   let sec = (target!==null) ? target : ((bookProg(id)||{}).c || 0);
@@ -4107,13 +4110,13 @@ function renderBookSection(id, si){
   // small jump row (every section)
   let jump=''; for(let n=0;n<total;n++){ jump+=`<span class="chapchip${n===si?' on':''}" data-sec="${n}">${n+1}</span>`; }
   body.innerHTML=`
-    <h2 style="margin:.1em 0 .5em">${esc(data.n)}</h2>
-    <p class="note" style="margin-top:-.3em">${esc(data.a||'')} · Section ${si+1} of ${total}</p>
+    <h2 style="margin:.1em 0 .5em">${esc((data.s&&data.s[si])||data.n)}</h2>
+    <p class="note" style="margin-top:-.3em">${esc(data.n)} · ${esc(data.a||'')}</p>
     <div class="chaprow" style="margin:.4em 0 .8em">${jump}</div>
     <div class="bookreader">${paras}</div>
     <div class="ipnav" style="margin-top:1.4em">
       <button id="bk-prev">◀ Previous</button>
-      <div class="note" style="text-align:center">Section ${si+1} of ${total}</div>
+      <div class="note" style="text-align:center">${esc((data.s&&data.s[si])||("Section "+(si+1)))} · ${si+1} of ${total}</div>
       <button id="bk-next">Next ▶</button>
     </div>
     ${footer()}`;
