@@ -294,6 +294,11 @@ body.tvmode .wrap,body.tvmode #app{max-width:none;padding:0}
 .bookreader{font-size:1.06rem;line-height:1.8;color:var(--ivory);max-width:640px}
 .bookpara{margin:0 0 1em}
 .readblock{margin:.6em 0 1.2em}
+.slidefs{position:fixed;inset:0;z-index:9999;background:#000;display:flex;align-items:center;justify-content:center;padding:0}
+.slidefs img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block}
+.slidefs-x{position:absolute;top:max(12px,env(safe-area-inset-top));right:14px;background:rgba(0,0,0,.55);border:1px solid rgba(244,237,224,.35);color:#fff;border-radius:50%;width:44px;height:44px;font-size:1.2rem;cursor:pointer}
+.slidefs-note{position:absolute;bottom:max(12px,env(safe-area-inset-bottom));left:0;right:0;text-align:center;color:rgba(255,255,255,.75);font-size:.8rem;pointer-events:none}
+body.fs-open{overflow:hidden}
 .qfoot{margin-top:2.4em;padding-top:1em;border-top:1px solid rgba(244,237,224,.12);text-align:center;color:var(--dim);font-size:.85rem;line-height:1.9}
 .qfoot a{color:var(--dim);text-decoration:none;opacity:.7}
 .qfoot a:hover{color:var(--gold);opacity:1}
@@ -707,6 +712,7 @@ if(db){
     if(liveImg && C.live.expedition.on && C.live.expedition.source==='present' && C.sermons && C.sermons.total){
       var nn=Math.min(Math.max(1,C.sermons.current||1),C.sermons.total);
       liveImg.src=sermonSlideUrl(nn);
+      slideFsPaint();
       var lab=liveImg.parentNode&&liveImg.parentNode.querySelector('.note');
       if(lab)lab.textContent='Slide '+nn+' of '+C.sermons.total+' · the slides turn as he teaches';
       showLivePill(); return;   /* smooth in-place update, no full re-render */
@@ -724,6 +730,7 @@ if(db){
         if(psImg){
           var pn=Math.min(Math.max(1,sl.current||1),Math.max(1,sl.total||1));
           psImg.src=prayerSlideUrl(pn);
+          slideFsPaint();
           var plab=psImg.parentNode&&psImg.parentNode.querySelector('.note');
           if(plab)plab.textContent='Slide '+pn+' of '+sl.total+' \u00b7 follows Pastor Josh live';
         }
@@ -2896,7 +2903,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v151</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v152</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -3783,7 +3790,8 @@ function livePresentView(){
     +'<div style="text-align:center;margin-bottom:.4em"><b style="color:var(--red)">🔴 LIVE — following Pastor Josh</b></div>'
     +'<img src="'+sermonSlideUrl(n)+'" alt="Slide '+n+'" style="width:100%;border-radius:10px;display:block;background:#000" '
     +'onerror="this.style.opacity=.4;this.alt=\'Slide '+n+'\'">'
-    +'<div class="note" style="text-align:center;margin-top:.4em">Slide '+n+' of '+s.total+' · the slides turn as he teaches</div></div>';
+    +'<div class="note" style="text-align:center;margin-top:.4em">Slide '+n+' of '+s.total+' · the slides turn as he teaches</div>'
+    +'<div style="text-align:center">'+slideFsButton('sermon')+'</div></div>';
 }
 function sermonsPanel(){
   var s=C.sermons;
@@ -3792,8 +3800,62 @@ function sermonsPanel(){
   return '<div class="card" style="padding:.5em">'
     +'<img src="'+sermonSlideUrl(n)+'" alt="Sermon slide '+n+'" style="width:100%;border-radius:10px;display:block;background:#000" '
     +'onerror="this.style.opacity=.4;this.alt=\'Sermon slide '+n+' not found — expected /SERMONS/'+n+'.jpg\'">'
-    +'<div class="note" style="text-align:center;margin-top:.4em">Slide '+n+' of '+s.total+' · follows the preacher live</div></div>';
+    +'<div class="note" style="text-align:center;margin-top:.4em">Slide '+n+' of '+s.total+' · follows the preacher live</div>'
+    +'<div style="text-align:center">'+slideFsButton('sermon')+'</div></div>';
 }
+/* ================= FULL SCREEN FOR THE SLIDES =================
+   A phone screen is small and a sanctuary slide is meant to be read. This opens the
+   current slide edge to edge, and it KEEPS FOLLOWING \u2014 when Pastor Josh advances,
+   the full-screen slide advances with him. Tap or press Esc to come back.        */
+var SLIDE_FS_KIND=null;
+function slideFsOpen(kind){
+  SLIDE_FS_KIND=kind;                       /* 'sermon' or 'prayer' */
+  var ov=document.getElementById('slide-fs');
+  if(!ov){
+    ov=document.createElement('div'); ov.id='slide-fs'; ov.className='slidefs';
+    ov.innerHTML='<img id="slide-fs-img" alt="Slide">'
+      +'<button class="slidefs-x" aria-label="Close">\u2715</button>'
+      +'<div class="slidefs-note" id="slide-fs-note"></div>';
+    document.body.appendChild(ov);
+    ov.querySelector('.slidefs-x').onclick=slideFsClose;
+    ov.addEventListener('click',function(e){ if(e.target===ov)slideFsClose(); });
+    document.addEventListener('keydown',function(e){ if(e.key==='Escape')slideFsClose(); });
+  }
+  document.body.classList.add('fs-open');
+  slideFsPaint();
+  /* keep the screen awake while a slide is up, where the browser allows it */
+  try{ if(navigator.wakeLock&&!window.__wake) navigator.wakeLock.request('screen').then(function(w){window.__wake=w;}); }catch(e){}
+}
+function slideFsClose(){
+  SLIDE_FS_KIND=null;
+  var ov=document.getElementById('slide-fs');
+  if(ov)ov.remove();
+  document.body.classList.remove('fs-open');
+  try{ if(window.__wake){ window.__wake.release(); window.__wake=null; } }catch(e){}
+}
+/* Called on every live update so the big screen never falls behind. */
+function slideFsPaint(){
+  if(!SLIDE_FS_KIND)return;
+  var img=document.getElementById('slide-fs-img'), note=document.getElementById('slide-fs-note');
+  if(!img)return;
+  var st = SLIDE_FS_KIND==='sermon' ? C.sermons : C.slides;
+  if(!st||!st.on||!st.total){ slideFsClose(); return; }
+  var n=Math.min(Math.max(1,st.current||1),st.total);
+  var url = SLIDE_FS_KIND==='sermon' ? sermonSlideUrl(n) : prayerSlideUrl(n);
+  if(img.getAttribute('src')!==url) img.src=url;
+  if(note)note.textContent='Slide '+n+' of '+st.total+' \u00b7 following live \u00b7 tap to close';
+}
+function slideFsButton(kind){
+  return '<button class="btn ghost slidefs-open" data-fs="'+kind+'" style="margin-top:.5em">'
+    +'\u26f6 Full screen</button>';
+}
+function wireSlideFs(scope){
+  (scope||document).querySelectorAll('.slidefs-open').forEach(function(b){
+    if(b.dataset.fsw)return; b.dataset.fsw='1';
+    b.onclick=function(){ slideFsOpen(b.dataset.fs); };
+  });
+}
+
 /* ---- QR codes: generate + download for any hub link ---- */
 function qrImgURL(data,size){ size=size||300; return 'https://api.qrserver.com/v1/create-qr-code/?size='+size+'x'+size+'&margin=8&data='+encodeURIComponent(data); }
 // Build the FULL config object from current state + overrides, so no save wipes another field.
@@ -4018,6 +4080,7 @@ function render(){
   const keepSpot = (h==='panel' && PANEL_OK && PANEL_SCROLL>0);
   (pages[h]||map)();
   wireClassPin();
+  try{ wireSlideFs(document); slideFsPaint(); }catch(e){}
   if(keepSpot){ requestAnimationFrame(function(){ window.scrollTo(0,PANEL_SCROLL); }); }
   else { window.scrollTo(0,0); }
 }
