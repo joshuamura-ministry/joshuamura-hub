@@ -2903,7 +2903,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v152</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v153</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -3788,7 +3788,7 @@ function livePresentView(){
   var n=Math.min(Math.max(1,s.current||1),s.total);
   return '<div class="card" style="padding:.5em;border-color:var(--red)">'
     +'<div style="text-align:center;margin-bottom:.4em"><b style="color:var(--red)">🔴 LIVE — following Pastor Josh</b></div>'
-    +'<img src="'+sermonSlideUrl(n)+'" alt="Slide '+n+'" style="width:100%;border-radius:10px;display:block;background:#000" '
+    +'<img id="live-present-img" src="'+sermonSlideUrl(n)+'" alt="Slide '+n+'" style="width:100%;border-radius:10px;display:block;background:#000" '
     +'onerror="this.style.opacity=.4;this.alt=\'Slide '+n+'\'">'
     +'<div class="note" style="text-align:center;margin-top:.4em">Slide '+n+' of '+s.total+' · the slides turn as he teaches</div>'
     +'<div style="text-align:center">'+slideFsButton('sermon')+'</div></div>';
@@ -3839,7 +3839,10 @@ function slideFsPaint(){
   var img=document.getElementById('slide-fs-img'), note=document.getElementById('slide-fs-note');
   if(!img)return;
   var st = SLIDE_FS_KIND==='sermon' ? C.sermons : C.slides;
-  if(!st||!st.on||!st.total){ slideFsClose(); return; }
+  /* The sermon view shows slides whenever there ARE slides — it does not wait on an
+     'on' flag — so full screen must not either, or it closes the instant it opens. */
+  var live = st && st.total && (SLIDE_FS_KIND==='sermon' ? true : st.on);
+  if(!live){ slideFsClose(); return; }
   var n=Math.min(Math.max(1,st.current||1),st.total);
   var url = SLIDE_FS_KIND==='sermon' ? sermonSlideUrl(n) : prayerSlideUrl(n);
   if(img.getAttribute('src')!==url) img.src=url;
