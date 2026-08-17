@@ -429,9 +429,11 @@ h3.gsec{font-family:'Fraunces',serif;color:var(--gold);font-size:1.15rem;margin:
 .ccopt:last-child{border-bottom:none}
 .ccopt input{width:22px;height:22px;margin-top:.15em;flex:0 0 auto;accent-color:var(--gold)}
 .ccopt span{line-height:1.4}
-.ccopt b{font-weight:600;color:var(--ivory)}
-.ccopt em{display:block;font-style:normal;font-size:.85em;color:var(--dim);margin-top:.1em}
+.ccopt b{font-weight:600;color:var(--ivory);text-transform:none;letter-spacing:0;font-size:1rem;font-family:'Source Sans 3',system-ui,sans-serif}
+.ccopt em{display:block;font-style:normal;font-size:.85em;color:var(--dim);margin-top:.1em;text-transform:none;letter-spacing:0;font-weight:400}
 .ccopt:has(input:checked) b{color:var(--gold)}
+.ccsub{margin:-.2em 0 .6em 2.4em}
+.ccsub input{margin:0}
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -2937,7 +2939,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v158</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v161</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -4686,33 +4688,35 @@ function connectPage(){
 
   const whoOpts = [
     ccRadio('who','member','I\u2019m a member here',''),
-    ccRadio('who','regular','I come here often, but I\u2019m not a member',''),
-    ccRadio('who','firsttime','This is my first time \u2014 welcome me',''),
-    ccRadio('who','otherchurch','I belong to another church','You can tell us which below, if you\u2019d like'),
-    ccRadio('who','seeking','I\u2019m not a Christian, or I\u2019m still looking','You are very welcome here'),
-    ccRadio('who','rather','I\u2019d rather not say','')
+    ccRadio('who','regular','I come here often',''),
+    ccRadio('who','firsttime','This is my first time',''),
+    ccRadio('who','otherchurch','I belong to another church','')
+      + '<div id="cc-denomwrap" class="hide ccsub"><input type="text" id="cc-denom" placeholder="Which church family?"></div>',
+    ccRadio('who','seeking','I\u2019m still looking','')
   ].join('');
 
   const likeOpts = [
-    ccBox('like','prayer','I\u2019d like prayer','You can stay completely anonymous \u2014 see below'),
-    ccBox('like','study-online','I\u2019d like a Bible study \u2014 online',''),
-    ccBox('like','study-person','I\u2019d like a Bible study \u2014 in person',''),
-    ccBox('like','visit','I\u2019d like a visit from the pastor',''),
-    ccBox('like','baptism','I\u2019d like to talk about baptism',''),
-    ccBox('like','membership','I\u2019d like to study toward membership',''),
-    ccBox('like','justconnect','I\u2019d just like to be kept in touch','')
+    ccBox('like','prayer','Prayer','You can stay completely anonymous \u2014 see below'),
+    ccBox('like','study-online','A Bible study \u2014 online','')
+,
+    ccBox('like','study-person','A Bible study \u2014 in person',''),
+    '<div id="cc-topicwrap" class="hide ccsub"><input type="text" id="cc-topic" placeholder="Any topic you\u2019d like \u2014 Daniel, prophecy, prayer, how to read the Bible\u2026"></div>',
+    ccBox('like','meet','To meet with the pastor or an elder',''),
+    ccBox('like','visit','A visit at home',''),
+    ccBox('like','baptism','To prepare for baptism or rebaptism',''),
+    ccBox('like','transfer','To transfer my membership to this church','')
   ].join('');
 
   const serveOpts = [
-    ccBox('serve','av','Production &amp; audiovisual','Sound, streaming, slides'),
     ccBox('serve','greet','Greeting at the door',''),
-    ccBox('serve','potluck','Potluck &amp; hospitality',''),
-    ccBox('serve','committee','Serving on a committee',''),
-    ccBox('serve','plant','Looking after the building &amp; grounds',''),
-    ccBox('serve','elder','Preparing to serve as an elder',''),
-    ccBox('serve','deacon','Serving as a deacon or deaconess',''),
-    ccBox('serve','music','Music \u2014 singing or playing',''),
-    ccBox('serve','teach','Teaching a Bible class','Tell us the ages below')
+    ccBox('serve','potluck','Potluck and hospitality',''),
+    ccBox('serve','music','Music and worship','Singing or playing'),
+    ccBox('serve','av','Production and audiovisual','Sound, streaming, slides'),
+    ccBox('serve','teach','Teaching a Bible class','Tell us the ages below'),
+    ccBox('serve','elder','Training to serve as an elder',''),
+    ccBox('serve','deacon','Training to serve as a deacon or deaconess',''),
+    ccBox('serve','decor','Church d\u00e9cor and stage design',''),
+    ccBox('serve','plant','Keeping the church cared for','Building and grounds')
   ].join('');
 
   const agesOpts = ['Little ones (under 6)','Children (6\u201312)','Youth (13\u201317)',
@@ -4722,9 +4726,7 @@ function connectPage(){
   const outOpts = [
     ccBox('out','service','Community service \u2014 helping our neighbours',''),
     ccBox('out','digital','Digital evangelism \u2014 sharing online',''),
-    ccBox('out','upkeep','Keeping our church cared for',''),
-    ccBox('out','decor','D\u00e9cor &amp; making the space beautiful',''),
-    ccBox('out','visitation','Visiting those who can\u2019t come to us',''),
+    ccBox('out','visitation','Visiting the shut-in and those who can\u2019t come to us',''),
     ccBox('out','other','Something else \u2014 I\u2019ll say below','')
   ].join('');
 
@@ -4743,25 +4745,8 @@ function connectPage(){
        <option value="fairview">${esc(CONNECT_CHURCHES.fairview)}</option>
      </select></div>`:''}
 
-   <div class="card"><div class="cchead">A little about you</div>
-     <div class="note" style="margin-bottom:.6em">However you answer, you are welcome.</div>
-     ${whoOpts}
-     <div id="cc-denomwrap" class="hide" style="margin-top:.5em">
-       <label>Which church family, if you\u2019d like to say?</label>
-       <input type="text" id="cc-denom" placeholder="Optional">
-     </div>
-   </div>
-
-   <div class="card"><div class="cchead">How did you find us?</div>
-     <input type="text" id="cc-found" placeholder="A friend, a search, driving past, an invitation\u2026 (optional)">
-   </div>
-
    <div class="card"><div class="cchead">I would like\u2026</div>
      ${likeOpts}
-     <div id="cc-topicwrap" class="hide" style="margin-top:.6em">
-       <label>Is there something in particular you\u2019d like to study?</label>
-       <input type="text" id="cc-topic" placeholder="Daniel, prophecy, prayer, how to read the Bible\u2026 anything at all">
-     </div>
    </div>
 
    <div class="card"><div class="cchead">I\u2019d love to help with\u2026</div>
@@ -4783,13 +4768,20 @@ function connectPage(){
 
    <div class="card" style="border-color:var(--gold)">
      <div class="cchead">How can we reach you?</div>
-     <div class="note" style="margin-bottom:.6em">Only so we can follow through on what you asked for. If you\u2019d rather stay anonymous, leave this blank \u2014 see the note at the bottom.</div>
-     <label>Your name</label><input type="text" id="cc-name" placeholder="Optional">
-     <label>Phone</label><input type="tel" id="cc-phone" placeholder="Optional">
-     <label>Email</label><input type="email" id="cc-email" placeholder="Optional">
-     <label>Address <span style="text-transform:none;font-weight:400;color:var(--dim)">(only if you\u2019d like a visit)</span></label>
-     <textarea id="cc-address" rows="2" placeholder="Optional"></textarea>
-     <label>Best time to reach you</label><input type="text" id="cc-when" placeholder="Optional \u2014 evenings, weekends\u2026">
+     <div class="note" style="margin-bottom:.6em">Leave us a way to reach you and we\u2019ll follow through on what you\u2019ve asked for. It goes to Pastor Josh alone.</div>
+     <label>Your name</label><input type="text" id="cc-name" placeholder="First and last">
+     <label>Phone</label><input type="tel" id="cc-phone" placeholder="Where we can call or text">
+     <label>Email</label><input type="email" id="cc-email" placeholder="you@example.com">
+     <label>Address <span style="text-transform:none;font-weight:400;color:var(--dim)">\u2014 if you\u2019d welcome a visit</span></label>
+     <textarea id="cc-address" rows="2" placeholder="Street, town"></textarea>
+     <label>Best time to reach you</label><input type="text" id="cc-when" placeholder="Evenings, weekends, after church\u2026">
+     <details class="wf-extra" style="margin-top:.9em">
+       <summary>A little about you, if you\u2019d like to share</summary>
+       <div class="note" style="margin:.4em 0 .3em">However you answer, you are welcome here.</div>
+       ${whoOpts}
+       <label style="margin-top:.6em">How did you find us?</label>
+       <input type="text" id="cc-found" placeholder="A friend, a search, driving past\u2026">
+     </details>
    </div>
 
    <div class="card note" id="cc-anon">
@@ -4807,7 +4799,8 @@ function connectPage(){
     const who=g('who'), like=g('like'), serve=g('serve');
     app.querySelector('#cc-denomwrap').classList.toggle('hide', who.indexOf('otherchurch')<0);
     const wantsStudy = like.indexOf('study-online')>=0 || like.indexOf('study-person')>=0;
-    app.querySelector('#cc-topicwrap').classList.toggle('hide', !wantsStudy);
+    const tw=app.querySelector('#cc-topicwrap');
+    if(tw)tw.classList.toggle('hide', !wantsStudy);
     app.querySelector('#cc-ageswrap').classList.toggle('hide', serve.indexOf('teach')<0);
   }
   app.querySelectorAll('input[type=checkbox],input[type=radio]').forEach(el=>el.addEventListener('change',sync));
@@ -6695,12 +6688,14 @@ const CC_LABEL={
   who:{member:'a member here',regular:'comes often, not a member',firsttime:'first time visiting',
        otherchurch:'belongs to another church',seeking:'not a Christian / still looking',rather:'preferred not to say'},
   like:{prayer:'prayer','study-online':'Bible study (online)','study-person':'Bible study (in person)',
-        visit:'a visit',baptism:'to talk about baptism',membership:'to study toward membership',
-        justconnect:'to be kept in touch'},
-  serve:{av:'audiovisual',greet:'greeting',potluck:'potluck & hospitality',committee:'a committee',
-         plant:'building & grounds',elder:'preparing as elder',deacon:'deacon/deaconess',music:'music',teach:'teaching'},
-  out:{service:'community service',digital:'digital evangelism',upkeep:'church upkeep',
-       decor:'décor',visitation:'visitation',other:'something else'}
+        meet:'to meet with the pastor or an elder', visit:'a visit at home',
+        baptism:'to prepare for baptism / rebaptism', transfer:'to transfer membership here'},
+  serve:{greet:'greeting',potluck:'potluck & hospitality',music:'music & worship',
+         av:'production & audiovisual',teach:'teaching a Bible class',
+         elder:'training as an elder',deacon:'training as deacon/deaconess',
+         decor:'church décor & stage design',plant:'church care — building & grounds'},
+  out:{service:'community service',digital:'digital evangelism',
+       visitation:'visiting the shut-in',other:'something else'}
 };
 function ccName(group,v){ return (CC_LABEL[group]&&CC_LABEL[group][v])||v; }
 function ccList(group,arr){ return (arr||[]).map(function(x){return ccName(group,x);}).join(', '); }
