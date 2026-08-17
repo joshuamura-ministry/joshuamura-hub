@@ -2903,7 +2903,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v155</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v156</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -6059,18 +6059,7 @@ document.getElementById('panelbox').innerHTML=`
   <div class="tbody">
 <b>🔥 The Watchfire — your main live service</b>
    <div class="note" style="margin:.15em 0 .5em">A sermon (YouTube), a group video call, or a slideshow — you pick the shape below.</div>
-   <label>Underway?</label>${pToggle('e-on',lv.expedition.on,'🧭 Not live','🔥 LIVE NOW')}
-   <label>Journey title</label><input type="text" id="e-title" value="${esc(lv.expedition.title||'')}" placeholder="e.g. Sabbath Worship · The God Who Sees">
-   <div class="subcard" style="background:var(--card2);border-color:var(--red);margin:.7em 0 .3em;text-align:center">
-     <b>📢 Announce we're live</b>
-     <div class="note" style="margin:.3em 0 .5em">One tap sends a ready-to-go message with the Watchfire link. This is what gets people to show up.</div>
-     <div style="display:flex;gap:.5em;flex-wrap:wrap;justify-content:center">
-       <button class="btn" id="ann-share" type="button">📤 Send the announcement…</button>
-       <button class="btn ghost" id="ann-text" type="button">💬 Text it</button>
-       <button class="btn ghost" id="ann-copy" type="button">🔗 Copy message</button>
-     </div>
-     <div id="ann-copied" class="note" style="margin-top:.4em;color:var(--gold);display:none"></div>
-   </div>
+   <div class="pgroup" style="margin:.2em 0 .5em">1 · What shape is this gathering?</div>
    <label>Shape of the journey — what people see</label>
    <select id="e-src">
      <option value="present" ${lv.expedition.source==='present'||lv.expedition.source==='none'?'selected':''}>📱 Slideshow — my picture slides (JPEG)</option>
@@ -6084,6 +6073,9 @@ document.getElementById('panelbox').innerHTML=`
      🎙️ <b>YouTube</b> — your live video; add slides under it with the Sermon slides box below.<br>
      👥 <b>Group video call</b> — people join on camera, like the Prayer Circle.
    </div>
+   <div class="pgroup" style="margin:1.2em 0 .5em">2 · Set it up</div>
+   <label>Journey title</label><input type="text" id="e-title" value="${esc(lv.expedition.title||'')}" placeholder="e.g. Sabbath Worship · The God Who Sees">
+   <div class="wf-when w-ipres">
    <label>Which interactive deck? <span style="text-transform:none;font-weight:400;color:var(--dim)">(only for ✨ interactive)</span></label>
    <select id="e-deckpick">${PRESENTATIONS.map(function(p){return '<option value="'+p.id+'" '+(C.present.which===p.id?'selected':'')+'>'+esc(p.title)+'</option>';}).join('')}</select>
    <div style="display:flex;align-items:center;gap:.6em;justify-content:center;margin:.6em 0">
@@ -6091,12 +6083,17 @@ document.getElementById('panelbox').innerHTML=`
      <b id="ip-panel-now" style="min-width:8em;text-align:center">Slide ${(C.present.current||0)+1}</b>
      <button class="btn" id="ip-panel-next" style="font-size:1.2rem">▶</button>
    </div>
+   </div>
+   <div class="wf-when w-youtube">
    <label>YouTube live video ID <span style="text-transform:none;font-weight:400;color:var(--dim)">(only for 🎙️ YouTube)</span></label><input type="text" id="e-yt" value="${esc(lv.expedition.youtubeId)}">
+   </div>
+   <div class="wf-when w-jitsi">
    <label>Jitsi room name <span style="text-transform:none;font-weight:400;color:var(--dim)">(only for 👥 group video call)</span></label><input type="text" id="e-room" value="${esc(lv.expedition.room||'JoshuaMuraExpedition')}">
+   </div>
+   <div class="wf-when w-deck">
    <label>Synced deck URL <span style="text-transform:none;font-weight:400;color:var(--dim)">(optional — an outside Canva/Google Slides deck)</span></label><input type="text" id="e-deck" value="${esc(lv.expedition.deckUrl)}">
-   <label>Companion study link <span style="text-transform:none;font-weight:400;color:var(--dim)">(e.g. dig-forge-1 · blank = none)</span></label><input type="text" id="e-study" value="${esc(lv.expedition.study||'')}">
-   <label>"Not underway" message</label><input type="text" id="e-note" value="${esc(lv.expedition.note)}">
-
+   </div>
+   <div class="wf-when w-present">
    <div class="subcard">
     <b>🎙️ Sermon slides <span style="text-transform:none;font-weight:400;color:var(--dim)">(shown under the YouTube video)</span></b>
     <div class="note" style="margin-bottom:.3em">Your /sermons JPEGs (1.jpg, 2.jpg …). Drive them from <a href="#present">Presenter mode</a>.</div>
@@ -6127,7 +6124,21 @@ document.getElementById('panelbox').innerHTML=`
   </div>
 
   <div class="subcard" style="border-color:var(--gold)">
-    <button class="golive" id="golive-wf">🔴 GO LIVE — the Watchfire</button>
+       </div>
+   <details class="wf-extra"><summary>More — study link, presenter code</summary>
+   <label>Companion study link <span style="text-transform:none;font-weight:400;color:var(--dim)">(e.g. dig-forge-1 · blank = none)</span></label><input type="text" id="e-study" value="${esc(lv.expedition.study||'')}">
+   </details>
+   <div class="subcard" style="background:var(--card2);border-color:var(--red);margin:.7em 0 .3em;text-align:center">
+     <b>📢 Announce we're live</b>
+     <div class="note" style="margin:.3em 0 .5em">One tap sends a ready-to-go message with the Watchfire link. This is what gets people to show up.</div>
+     <div style="display:flex;gap:.5em;flex-wrap:wrap;justify-content:center">
+       <button class="btn" id="ann-share" type="button">📤 Send the announcement…</button>
+       <button class="btn ghost" id="ann-text" type="button">💬 Text it</button>
+       <button class="btn ghost" id="ann-copy" type="button">🔗 Copy message</button>
+     </div>
+     <div id="ann-copied" class="note" style="margin-top:.4em;color:var(--gold);display:none"></div>
+   </div>
+<button class="golive" id="golive-wf">🔴 GO LIVE — the Watchfire</button>
     <div class="gohint" id="gohint-wf"></div>
   </div>
  </details>
@@ -6408,6 +6419,25 @@ document.getElementById('panelbox').innerHTML=`
  </details>
 `;
 /* ---- Each tab shows its own state, so the panel reads at a glance ---- */
+/* Show only the fields the chosen shape actually needs. A YouTube sermon has no
+   use for a Jitsi room name; a group call has no use for slide folders. */
+function paintWatchfireShape(){
+  var sel=document.getElementById('e-src');
+  if(!sel)return;
+  var need={ youtube:['w-youtube'], jitsi:['w-jitsi'], present:['w-present'],
+             ipres:['w-ipres','w-deck'], none:[] }[sel.value] || [];
+  document.querySelectorAll('.wf-when').forEach(function(el){
+    el.classList.toggle('show', need.some(function(c){ return el.classList.contains(c); }));
+  });
+}
+function wireWatchfireShape(){
+  var sel=document.getElementById('e-src');
+  if(!sel || sel.dataset.shw) { paintWatchfireShape(); return; }
+  sel.dataset.shw='1';
+  sel.addEventListener('change', paintWatchfireShape);
+  paintWatchfireShape();
+}
+
 function paintPanelTabs(){
   var lv=(C.live||{}), sv=(C.survey||{});
   function set(id,text,live){
@@ -6770,7 +6800,7 @@ var azr=document.getElementById('az-refresh'); if(azr) azr.onclick=loadAnalytics
     }catch(e){ if(ok)ok.textContent='Could not save — check your connection.'; }
   };
 })();
-try{ paintPanelTabs(); wireGoLive(); }catch(e){}
+try{ paintPanelTabs(); wireGoLive(); wireWatchfireShape(); }catch(e){}
 document.getElementById('save-d').onclick=async()=>{
   try{
     const old=C.devotional;
