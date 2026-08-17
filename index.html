@@ -398,6 +398,32 @@ h3.gsec{font-family:'Fraunces',serif;color:var(--gold);font-size:1.15rem;margin:
 .pw-lead-row.pw-nav .btn{min-width:5em}
 .pw-sz.active,#pw-ppl-go.active{background:var(--green);color:#0f240e;border-color:var(--green)}
 .pw-lead .btn:disabled{opacity:.4;cursor:default}
+
+/* ---- Steward's Panel: one tab per gathering ---- */
+.ptab{border:1px solid rgba(244,237,224,.16);border-radius:14px;margin:.55em 0;overflow:hidden;background:var(--card)}
+.ptab>summary{list-style:none;cursor:pointer;padding:.85em 1em;display:flex;align-items:center;gap:.55em;font-family:'Fraunces',serif;font-size:1.06rem;font-weight:640;color:var(--ivory)}
+.ptab>summary::-webkit-details-marker{display:none}
+.ptab>summary::after{content:'\25be';margin-left:.4em;opacity:.5;transition:transform .18s ease}
+.ptab[open]>summary::after{transform:rotate(180deg)}
+.ptab[open]>summary{border-bottom:1px solid rgba(244,237,224,.12);background:rgba(244,237,224,.03)}
+.ptab .tstate{margin-left:auto;font-family:'Source Sans 3',system-ui,sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);white-space:nowrap}
+.ptab .tstate.on{color:#5fe0a0}
+.ptab.live{border-color:rgba(194,91,74,.75);box-shadow:0 0 0 1px rgba(194,91,74,.25)}
+.ptab.live>summary{color:var(--red)}
+.ptab.live .tstate{color:var(--red)}
+.ptab .tbody{padding:.9em 1em 1.1em}
+.pgroup{margin:1.6em 0 .4em;font-size:.72rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);opacity:.85}
+.wf-when{display:none}
+.wf-when.show{display:block}
+.wf-extra{margin:.9em 0;border-top:1px solid rgba(244,237,224,.12);padding-top:.6em}
+.wf-extra>summary{cursor:pointer;font-size:.85rem;color:var(--dim);list-style:none}
+.wf-extra>summary::-webkit-details-marker{display:none}
+.wf-extra>summary::before{content:'+  ';color:var(--gold);font-weight:700}
+.wf-extra[open]>summary::before{content:'\2212  '}
+.golive{display:block;width:100%;margin-top:1.1em;padding:1em;border-radius:12px;border:2px solid var(--red);background:rgba(194,91,74,.14);color:var(--red);font-weight:800;font-size:1.02rem;letter-spacing:.04em;cursor:pointer;font-family:inherit}
+.golive:active{transform:scale(.99)}
+.golive.islive{background:var(--red);color:#fff;border-color:#e08a7a}
+.gohint{text-align:center;font-size:.8rem;color:var(--dim);margin-top:.45em}
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -2903,7 +2929,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v156</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v157</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -6055,7 +6081,7 @@ document.getElementById('panelbox').innerHTML=`
  <!-- ========== LIVE GATHERINGS (each gathering = one card) ========== -->
  <div class="pgroup">Gatherings — set it up, then go live</div>
  <details class="ptab" id="tab-wf">
-  <summary>🔥 The Watchfire<span class="tstate" id="tstate-wf"></span></summary>
+  <summary>🔥 The Watchfire<span class="tstate" style="margin-left:auto" id="tstate-wf"></span></summary>
   <div class="tbody">
 <b>🔥 The Watchfire — your main live service</b>
    <div class="note" style="margin:.15em 0 .5em">A sermon (YouTube), a group video call, or a slideshow — you pick the shape below.</div>
@@ -6143,7 +6169,7 @@ document.getElementById('panelbox').innerHTML=`
   </div>
  </details>
  <details class="ptab" id="tab-pc">
-  <summary>🙏 The Altar · Prayer Circle<span class="tstate" id="tstate-pc"></span></summary>
+  <summary>🙏 The Altar · Prayer Circle<span class="tstate" style="margin-left:auto" id="tstate-pc"></span></summary>
   <div class="tbody">
 <b>🙏 The Prayer Circle — lives at the Altar</b>
    <div class="note" style="margin:.15em 0 .5em">A live <b>group video call</b> (Jitsi). Under it, people post one-sentence requests and pray through them together.</div>
@@ -6191,7 +6217,7 @@ document.getElementById('panelbox').innerHTML=`
   </div>
  </details>
  <details class="ptab" id="tab-lc">
-  <summary>📖 The Live Class<span class="tstate" id="tstate-lc"></span></summary>
+  <summary>📖 The Live Class<span class="tstate" style="margin-left:auto" id="tstate-lc"></span></summary>
   <div class="tbody">
 <b>📖 The Live Class — lives in the Mine</b>
    <div class="note" style="margin:.15em 0 .5em">A live <b>group video call</b> (Jitsi) pinned above the Bible lessons. It uses the <b>same picture-slide deck</b> as the Prayer Circle — set that in the Prayer Circle card above.</div>
@@ -6221,7 +6247,7 @@ document.getElementById('panelbox').innerHTML=`
   </div>
  </details>
  <details class="ptab" id="tab-meet">
-  <summary>🚪 The Upper Room · private meeting<span class="tstate" id="tstate-meet"></span></summary>
+  <summary>🚪 The Upper Room · private meeting<span class="tstate" style="margin-left:auto" id="tstate-meet"></span></summary>
   <div class="tbody">
 <h2>🚪 The Upper Room · private meetings</h2>
   <div class="pdesc">A private video room for planning, elders, counselling — anything that isn't for the whole church. It is <b>not</b> on the treasure map and nothing links to it: only someone you send the link to can find it. No time limit.</div>
@@ -6240,7 +6266,7 @@ document.getElementById('panelbox').innerHTML=`
  </details>
  <div class="pgroup">Preaching</div>
  <details class="ptab" id="tab-vp">
-  <summary>🎙️ Voice Preach<span class="tstate" id="tstate-vp"></span></summary>
+  <summary>🎙️ Voice Preach<span class="tstate" style="margin-left:auto" id="tstate-vp"></span></summary>
   <div class="tbody">
     <div class="note" style="margin-bottom:.6em">Paste your manuscript with <b>@@@</b> where the slides change, then preach. Your voice turns the slides for the projector, the booth, and everyone following live — and the clicker still works.</div>
     <a class="btn" href="/voice-preach.html" target="_blank" rel="noopener">🎙️ Open Voice Preach ↗</a>
@@ -6260,7 +6286,7 @@ document.getElementById('panelbox').innerHTML=`
  </details>
  <div class="pgroup">This week’s content</div>
  <details class="ptab" id="tab-spring">
-  <summary>💧 The Spring — devotional<span class="tstate" id="tstate-spring"></span></summary>
+  <summary>💧 The Spring — devotional<span class="tstate" style="margin-left:auto" id="tstate-spring"></span></summary>
   <div class="tbody">
 <h2>💧 The Spring — weekly devotional</h2>
   <div class="pdesc">The video devotional shown at the Spring. Saving a new one lowers last week's into the Deep Well automatically.</div>
@@ -6278,7 +6304,7 @@ document.getElementById('panelbox').innerHTML=`
   </div>
  </details>
  <details class="ptab" id="tab-trail">
-  <summary>🥾 The Trail — schedule<span class="tstate" id="tstate-trail"></span></summary>
+  <summary>🥾 The Trail — schedule<span class="tstate" style="margin-left:auto" id="tstate-trail"></span></summary>
   <div class="tbody">
 <h2>🥾 The Trail — schedule</h2>
   <div class="pdesc">Where you'll be, and your weekly rhythm. Each saves separately.</div>
@@ -6306,7 +6332,7 @@ document.getElementById('panelbox').innerHTML=`
  </details>
  <div class="pgroup">Reaching people</div>
  <details class="ptab" id="tab-ask">
-  <summary>📝 The Asking — surveys<span class="tstate" id="tstate-ask"></span></summary>
+  <summary>📝 The Asking — surveys<span class="tstate" style="margin-left:auto" id="tstate-ask"></span></summary>
   <div class="tbody">
 <div style="text-align:right;margin-bottom:.4em"><a href="#map" id="panel-lock" class="note" style="color:var(--dim)">🔒 Lock &amp; leave</a></div>
   <h2>📝 The Asking · surveys &amp; sign-ups</h2>
@@ -6364,7 +6390,7 @@ document.getElementById('panelbox').innerHTML=`
   </div>
  </details>
  <details class="ptab" id="tab-qr">
-  <summary>📱 QR Codes<span class="tstate" id="tstate-qr"></span></summary>
+  <summary>📱 QR Codes<span class="tstate" style="margin-left:auto" id="tstate-qr"></span></summary>
   <div class="tbody">
 <h2>📱 QR Codes</h2>
   <div class="pdesc">Each code shows its link underneath — scan it, or copy the link for a bulletin or slide. Tap <b>Download</b> to save the QR as an image.</div>
@@ -6398,7 +6424,7 @@ document.getElementById('panelbox').innerHTML=`
  </details>
  <div class="pgroup">What came back</div>
  <details class="ptab" id="tab-analytics">
-  <summary>📊 Analytics<span class="tstate" id="tstate-analytics"></span></summary>
+  <summary>📊 Analytics<span class="tstate" style="margin-left:auto" id="tstate-analytics"></span></summary>
   <div class="tbody">
 <h2>📊 Analytics — who's visiting &amp; studying</h2>
   <div class="pdesc">Anonymous counts from your own vault. It counts visits and devices (not named people), and only from the day it was switched on.</div>
@@ -6410,7 +6436,7 @@ document.getElementById('panelbox').innerHTML=`
   </div>
  </details>
  <details class="ptab" id="tab-inbox">
-  <summary>📬 Reading what comes in<span class="tstate" id="tstate-inbox"></span></summary>
+  <summary>📬 Reading what comes in<span class="tstate" style="margin-left:auto" id="tstate-inbox"></span></summary>
   <div class="tbody">
 <h2>📬 Reading what comes in</h2>
   <div class="pdesc">Responses are private — read them in your Firebase console.</div>
