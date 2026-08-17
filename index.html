@@ -424,6 +424,14 @@ h3.gsec{font-family:'Fraunces',serif;color:var(--gold);font-size:1.15rem;margin:
 .golive:active{transform:scale(.99)}
 .golive.islive{background:var(--red);color:#fff;border-color:#e08a7a}
 .gohint{text-align:center;font-size:.8rem;color:var(--dim);margin-top:.45em}
+.cchead{font-family:'Fraunces',serif;font-size:1.08rem;font-weight:640;color:var(--gold);margin-bottom:.4em}
+.ccopt{display:flex;gap:.7em;align-items:flex-start;padding:.6em .2em;border-bottom:1px solid rgba(244,237,224,.08);cursor:pointer}
+.ccopt:last-child{border-bottom:none}
+.ccopt input{width:22px;height:22px;margin-top:.15em;flex:0 0 auto;accent-color:var(--gold)}
+.ccopt span{line-height:1.4}
+.ccopt b{font-weight:600;color:var(--ivory)}
+.ccopt em{display:block;font-style:normal;font-size:.85em;color:var(--dim);margin-top:.1em}
+.ccopt:has(input:checked) b{color:var(--gold)}
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -2929,7 +2937,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v157</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v158</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -4086,6 +4094,7 @@ function render(){
     : (h==='altar')?'altar' : (h==='treasury')?'treasury' : (h==='share')?'share' : '';
   logDoor(_door);
   qaListen(); qaMountPresenter();
+  if(h==='connect'||h.indexOf('connect-')===0){connectPage();window.scrollTo(0,0);return}
   if(h==='ask'||h.indexOf('ask-')===0){askPage();window.scrollTo(0,0);return}
   if(h==='meet'||h.indexOf('meet-')===0){meetRoom();window.scrollTo(0,0);return}
   if(h==='tv'||h.indexOf('tv-')===0){tvView();window.scrollTo(0,0);return}
@@ -4647,6 +4656,215 @@ function share(){
 /* Surveys go to people who may never have met this site \u2014 school families, a
    community list. They arrive on a clean page: no treasure map, no side doors.
    The site is still reachable by typing the address; it just isn't pushed at them. */
+/* ================= THE CONNECT CARD =================
+   #connect  (or #connect-bucks / #connect-fairview)
+   A gentle card for anyone who walks in: tell us what you'd like, and nothing more. */
+const CONNECT_CHURCHES = {
+  bucks:    "Bucks County Seventh-day Adventist Church",
+  fairview: "Fairview Village Seventh-day Adventist Church"
+};
+function connectChurchId(){
+  const h=(location.hash||'').replace('#','');
+  if(h.indexOf('connect-')===0){
+    const k=h.slice(8).replace(/[^a-z0-9-]/g,'');
+    if(CONNECT_CHURCHES[k]) return k;
+  }
+  return '';
+}
+function ccBox(group,val,label,note){
+  return '<label class="ccopt"><input type="checkbox" data-g="'+group+'" value="'+esc(val)+'">'
+    +'<span><b>'+esc(label)+'</b>'+(note?'<em>'+esc(note)+'</em>':'')+'</span></label>';
+}
+function ccRadio(group,val,label,note){
+  return '<label class="ccopt"><input type="radio" name="'+group+'" data-g="'+group+'" value="'+esc(val)+'">'
+    +'<span><b>'+esc(label)+'</b>'+(note?'<em>'+esc(note)+'</em>':'')+'</span></label>';
+}
+
+function connectPage(){
+  const cid=connectChurchId();
+  const church=cid?CONNECT_CHURCHES[cid]:'';
+
+  const whoOpts = [
+    ccRadio('who','member','I\u2019m a member here',''),
+    ccRadio('who','regular','I come here often, but I\u2019m not a member',''),
+    ccRadio('who','firsttime','This is my first time \u2014 welcome me',''),
+    ccRadio('who','otherchurch','I belong to another church','You can tell us which below, if you\u2019d like'),
+    ccRadio('who','seeking','I\u2019m not a Christian, or I\u2019m still looking','You are very welcome here'),
+    ccRadio('who','rather','I\u2019d rather not say','')
+  ].join('');
+
+  const likeOpts = [
+    ccBox('like','prayer','I\u2019d like prayer','You can stay completely anonymous \u2014 see below'),
+    ccBox('like','study-online','I\u2019d like a Bible study \u2014 online',''),
+    ccBox('like','study-person','I\u2019d like a Bible study \u2014 in person',''),
+    ccBox('like','visit','I\u2019d like a visit from the pastor',''),
+    ccBox('like','baptism','I\u2019d like to talk about baptism',''),
+    ccBox('like','membership','I\u2019d like to study toward membership',''),
+    ccBox('like','justconnect','I\u2019d just like to be kept in touch','')
+  ].join('');
+
+  const serveOpts = [
+    ccBox('serve','av','Production &amp; audiovisual','Sound, streaming, slides'),
+    ccBox('serve','greet','Greeting at the door',''),
+    ccBox('serve','potluck','Potluck &amp; hospitality',''),
+    ccBox('serve','committee','Serving on a committee',''),
+    ccBox('serve','plant','Looking after the building &amp; grounds',''),
+    ccBox('serve','elder','Preparing to serve as an elder',''),
+    ccBox('serve','deacon','Serving as a deacon or deaconess',''),
+    ccBox('serve','music','Music \u2014 singing or playing',''),
+    ccBox('serve','teach','Teaching a Bible class','Tell us the ages below')
+  ].join('');
+
+  const agesOpts = ['Little ones (under 6)','Children (6\u201312)','Youth (13\u201317)',
+                    'Young adults','Adults','Any age \u2014 happy to help where needed']
+    .map(a=>ccBox('ages',a,a,'')).join('');
+
+  const outOpts = [
+    ccBox('out','service','Community service \u2014 helping our neighbours',''),
+    ccBox('out','digital','Digital evangelism \u2014 sharing online',''),
+    ccBox('out','upkeep','Keeping our church cared for',''),
+    ccBox('out','decor','D\u00e9cor &amp; making the space beautiful',''),
+    ccBox('out','visitation','Visiting those who can\u2019t come to us',''),
+    ccBox('out','other','Something else \u2014 I\u2019ll say below','')
+  ].join('');
+
+  app.innerHTML=`
+   ${church?`<div class="card" style="text-align:center;border-color:var(--gold);padding:1em">
+      <div style="font-family:Fraunces,serif;font-size:1.2em;color:var(--gold);line-height:1.3">${esc(church)}</div>
+      <div class="note" style="margin-top:.3em">Connect Card</div>
+    </div>`:`<div class="eyebrow">\ud83e\udd1d Connect Card</div>`}
+   <h2>We\u2019re glad you\u2019re here</h2>
+   <p class="sub">Tell us as much or as little as you like. Nothing here is required, and there\u2019s no wrong answer \u2014 tick one box and stop, or fill the whole card. It goes only to Pastor Josh.</p>
+
+   ${!cid?`<div class="card"><b>Which church?</b>
+     <select id="cc-church">
+       <option value="">\u2014 please choose \u2014</option>
+       <option value="bucks">${esc(CONNECT_CHURCHES.bucks)}</option>
+       <option value="fairview">${esc(CONNECT_CHURCHES.fairview)}</option>
+     </select></div>`:''}
+
+   <div class="card"><div class="cchead">A little about you</div>
+     <div class="note" style="margin-bottom:.6em">However you answer, you are welcome.</div>
+     ${whoOpts}
+     <div id="cc-denomwrap" class="hide" style="margin-top:.5em">
+       <label>Which church family, if you\u2019d like to say?</label>
+       <input type="text" id="cc-denom" placeholder="Optional">
+     </div>
+   </div>
+
+   <div class="card"><div class="cchead">How did you find us?</div>
+     <input type="text" id="cc-found" placeholder="A friend, a search, driving past, an invitation\u2026 (optional)">
+   </div>
+
+   <div class="card"><div class="cchead">I would like\u2026</div>
+     ${likeOpts}
+     <div id="cc-topicwrap" class="hide" style="margin-top:.6em">
+       <label>Is there something in particular you\u2019d like to study?</label>
+       <input type="text" id="cc-topic" placeholder="Daniel, prophecy, prayer, how to read the Bible\u2026 anything at all">
+     </div>
+   </div>
+
+   <div class="card"><div class="cchead">I\u2019d love to help with\u2026</div>
+     <div class="note" style="margin-bottom:.6em">No commitment \u2014 this only tells us where your heart is.</div>
+     ${serveOpts}
+     <div id="cc-ageswrap" class="hide" style="margin-top:.7em;padding-top:.6em;border-top:1px solid rgba(244,237,224,.12)">
+       <div class="cchead" style="font-size:.9em">Which ages would you enjoy teaching?</div>
+       ${agesOpts}
+     </div>
+   </div>
+
+   <div class="card"><div class="cchead">Reaching out beyond our doors</div>
+     ${outOpts}
+     <div style="margin-top:.6em">
+       <label>Anything else on your heart?</label>
+       <textarea id="cc-note" rows="3" placeholder="Anything you\u2019d like us to know \u2014 a need, an idea, a question"></textarea>
+     </div>
+   </div>
+
+   <div class="card" style="border-color:var(--gold)">
+     <div class="cchead">How can we reach you?</div>
+     <div class="note" style="margin-bottom:.6em">Only so we can follow through on what you asked for. If you\u2019d rather stay anonymous, leave this blank \u2014 see the note at the bottom.</div>
+     <label>Your name</label><input type="text" id="cc-name" placeholder="Optional">
+     <label>Phone</label><input type="tel" id="cc-phone" placeholder="Optional">
+     <label>Email</label><input type="email" id="cc-email" placeholder="Optional">
+     <label>Address <span style="text-transform:none;font-weight:400;color:var(--dim)">(only if you\u2019d like a visit)</span></label>
+     <textarea id="cc-address" rows="2" placeholder="Optional"></textarea>
+     <label>Best time to reach you</label><input type="text" id="cc-when" placeholder="Optional \u2014 evenings, weekends\u2026">
+   </div>
+
+   <div class="card note" id="cc-anon">
+     \ud83d\udd4a\ufe0f <b>Would you rather stay anonymous?</b> That\u2019s completely fine. If you\u2019ve only asked for prayer, you can leave every box above blank and still send this \u2014 your request will reach Pastor Josh without your name.
+   </div>
+
+   <div id="cc-err" class="err"></div>
+   <button class="btn" id="cc-send">\ud83d\udc9b Send my card</button>
+   <p class="note" style="margin-top:.6em">This goes privately to Pastor Josh. Nothing you write here is shown publicly, ever.</p>
+   ${askQuietFoot()}`;
+
+  /* reveal the follow-up boxes only when they're wanted */
+  function sync(){
+    const g=s=>Array.from(app.querySelectorAll('[data-g="'+s+'"]:checked')).map(x=>x.value);
+    const who=g('who'), like=g('like'), serve=g('serve');
+    app.querySelector('#cc-denomwrap').classList.toggle('hide', who.indexOf('otherchurch')<0);
+    const wantsStudy = like.indexOf('study-online')>=0 || like.indexOf('study-person')>=0;
+    app.querySelector('#cc-topicwrap').classList.toggle('hide', !wantsStudy);
+    app.querySelector('#cc-ageswrap').classList.toggle('hide', serve.indexOf('teach')<0);
+  }
+  app.querySelectorAll('input[type=checkbox],input[type=radio]').forEach(el=>el.addEventListener('change',sync));
+  sync();
+
+  const send=document.getElementById('cc-send');
+  send.onclick=async function(){
+    const g=s=>Array.from(app.querySelectorAll('[data-g="'+s+'"]:checked')).map(x=>x.value);
+    const v=id=>{const e=document.getElementById(id);return e?e.value.trim():'';};
+    const who=g('who')[0]||'', like=g('like'), serve=g('serve'), ages=g('ages'), out=g('out');
+    const err=document.getElementById('cc-err');
+    const anythingAsked = who||like.length||serve.length||out.length||v('cc-note');
+    if(!anythingAsked){ err.textContent='Tick at least one thing so we know how to help.'; return; }
+
+    const name=v('cc-name'), phone=v('cc-phone'), email=v('cc-email'), address=v('cc-address');
+    const hasContact = name||phone||email||address;
+    /* Anything that needs following up needs a way to follow up. Prayer alone doesn't. */
+    const needsReply = like.some(x=>x!=='prayer') || serve.length || out.length;
+    if(needsReply && !hasContact){
+      err.textContent='So we can follow through, please leave a name and one way to reach you \u2014 or tick only prayer if you\u2019d rather stay anonymous.';
+      document.getElementById('cc-name').focus();
+      return;
+    }
+    err.textContent='';
+    send.disabled=true; send.textContent='Sending\u2026';
+
+    const churchKey = cid || (document.getElementById('cc-church')?document.getElementById('cc-church').value:'') || '';
+    const row={ church:churchKey, churchName:CONNECT_CHURCHES[churchKey]||'',
+      who:who, denom:v('cc-denom'), found:v('cc-found'),
+      like:like, topic:v('cc-topic'), serve:serve, ages:ages, out:out, note:v('cc-note'),
+      name:name, phone:phone, email:email, address:address, when:v('cc-when'),
+      time:new Date().toLocaleString(), ts:Date.now() };
+    try{
+      if(db){
+        await db.ref('connect').push(row);
+        /* A prayer request also reaches the prayer inbox, so nothing is missed. */
+        if(like.indexOf('prayer')>=0){
+          await db.ref('prayer').push({ name:name||'A friend',
+            text:(v('cc-note')||'Asked for prayer on the connect card.'),
+            ts:Date.now(), from:'connect' });
+        }
+      }
+      app.innerHTML='<div class="card" style="text-align:center;border-color:var(--gold);padding:2em 1.2em">'
+        +'<div style="font-size:2.8rem">\ud83d\udc9b</div>'
+        +'<h2 style="color:var(--gold)">Thank you</h2>'
+        +'<p class="sub">We\u2019ve got it, and Pastor Josh will be in touch'
+        +(hasContact?'':' \u2014 and your request is safe with him')+'.</p>'
+        +'<p class="note">\u201cCome unto me, all ye that labour and are heavy laden, and I will give you rest.\u201d \u2014 Matthew 11:28</p>'
+        +'</div>'+askQuietFoot();
+      window.scrollTo(0,0);
+    }catch(e){
+      err.textContent='We couldn\u2019t send that \u2014 check your connection and try once more.';
+      send.disabled=false; send.textContent='\ud83d\udc9b Send my card';
+    }
+  };
+}
+
 function askQuietFoot(){
   return '<div class="qfoot">'
     +'<div>Joshua Mura \u00b7 Digital Ministry</div>'
@@ -6422,6 +6640,33 @@ document.getElementById('panelbox').innerHTML=`
  <!-- ========== 6. SCHEDULE ========== -->
   </div>
  </details>
+ <div class="pgroup">Reaching people</div>
+ <details class="ptab" id="tab-connect">
+  <summary>🤝 Connect Cards<span class="tstate" style="margin-left:auto" id="tstate-connect"></span></summary>
+  <div class="tbody">
+    <div class="note" style="margin-bottom:.6em">A warm card anyone can fill in — prayer, a Bible study, a visit, or a place to serve. Names and addresses are kept private: they can be sent but never read from the website. Download them here as a clean list.</div>
+    <label>Link for Bucks County</label>
+    <div class="note" id="cc-link-bucks" style="word-break:break-all;margin-bottom:.5em"></div>
+    <label>Link for Fairview Village</label>
+    <div class="note" id="cc-link-fairview" style="word-break:break-all;margin-bottom:.5em"></div>
+    <div style="display:flex;gap:.5em;flex-wrap:wrap">
+      <button class="btn ghost" id="cc-qr-bucks">📱 QR — Bucks County</button>
+      <button class="btn ghost" id="cc-qr-fairview">📱 QR — Fairview</button>
+    </div>
+    <div id="cc-qr-out" style="text-align:center;margin-top:.6em"></div>
+    <div class="subcard" style="margin-top:.9em">
+      <b>📥 The cards that have come in</b>
+      <div class="note" style="margin:.3em 0 .5em"><b id="cc-count">—</b></div>
+      <div style="display:flex;gap:.5em;flex-wrap:wrap">
+        <button class="btn" id="cc-dl-list">📄 Download a readable list</button>
+        <button class="btn ghost" id="cc-dl-csv">📊 Download a spreadsheet</button>
+      </div>
+      <div id="cc-dl-ok" class="ok" style="margin-top:.4em"></div>
+      <div class="note" style="margin-top:.5em">The list opens in any text app; the spreadsheet opens in Excel or Numbers — one row per person, ready for a visitation roster or a deacons' list.</div>
+    </div>
+  </div>
+ </details>
+
  <div class="pgroup">What came back</div>
  <details class="ptab" id="tab-analytics">
   <summary>📊 Analytics<span class="tstate" style="margin-left:auto" id="tstate-analytics"></span></summary>
@@ -6445,6 +6690,106 @@ document.getElementById('panelbox').innerHTML=`
  </details>
 `;
 /* ---- Each tab shows its own state, so the panel reads at a glance ---- */
+/* ---- Connect cards: turn the raw records into something you can actually read ---- */
+const CC_LABEL={
+  who:{member:'a member here',regular:'comes often, not a member',firsttime:'first time visiting',
+       otherchurch:'belongs to another church',seeking:'not a Christian / still looking',rather:'preferred not to say'},
+  like:{prayer:'prayer','study-online':'Bible study (online)','study-person':'Bible study (in person)',
+        visit:'a visit',baptism:'to talk about baptism',membership:'to study toward membership',
+        justconnect:'to be kept in touch'},
+  serve:{av:'audiovisual',greet:'greeting',potluck:'potluck & hospitality',committee:'a committee',
+         plant:'building & grounds',elder:'preparing as elder',deacon:'deacon/deaconess',music:'music',teach:'teaching'},
+  out:{service:'community service',digital:'digital evangelism',upkeep:'church upkeep',
+       decor:'décor',visitation:'visitation',other:'something else'}
+};
+function ccName(group,v){ return (CC_LABEL[group]&&CC_LABEL[group][v])||v; }
+function ccList(group,arr){ return (arr||[]).map(function(x){return ccName(group,x);}).join(', '); }
+
+var CC_ROWS=[];
+function ccPaint(){
+  var el=document.getElementById('cc-count');
+  if(el)el.textContent = CC_ROWS.length ? (CC_ROWS.length+' card'+(CC_ROWS.length===1?'':'s')+' received')
+                                        : 'No cards yet — send the link and they will appear here.';
+  var t=document.getElementById('tstate-connect');
+  if(t)t.textContent = CC_ROWS.length ? CC_ROWS.length+' cards' : '';
+}
+function ccDownloadList(){
+  if(!CC_ROWS.length) return 'No connect cards yet.';
+  var L=['CONNECT CARDS','Downloaded '+new Date().toLocaleString(),
+         CC_ROWS.length+' in total','','======================================',''];
+  CC_ROWS.slice().reverse().forEach(function(r){
+    L.push((r.name||'(no name given)').toUpperCase());
+    var reach=[];
+    if(r.phone)reach.push(r.phone);
+    if(r.email)reach.push(r.email);
+    if(reach.length)L.push('   '+reach.join('  ·  '));
+    if(r.address)L.push('   '+String(r.address).replace(/\n/g,', '));
+    if(r.when)L.push('   Best time: '+r.when);
+    if(r.churchName)L.push('   Church: '+r.churchName);
+    if(r.who)L.push('   Is: '+ccName('who',r.who)+(r.denom?' ('+r.denom+')':''));
+    if(r.found)L.push('   Found us: '+r.found);
+    if(r.like&&r.like.length)L.push('   WANTS: '+ccList('like',r.like)+(r.topic?'  — topic: '+r.topic:''));
+    if(r.serve&&r.serve.length)L.push('   CAN HELP: '+ccList('serve',r.serve)+((r.ages&&r.ages.length)?'  — ages: '+r.ages.join(', '):''));
+    if(r.out&&r.out.length)L.push('   OUTREACH: '+ccList('out',r.out));
+    if(r.note)L.push('   NOTE: '+r.note);
+    L.push('   ('+(r.time||'')+')');
+    L.push('');
+  });
+  return L.join('\n');
+}
+function ccDownloadCsv(){
+  var q=function(x){ return '"'+String(x==null?'':x).replace(/"/g,'""').replace(/\n/g,' ')+'"'; };
+  var head=['Name','Phone','Email','Address','Best time','Church','Is','Other church',
+            'Found us','Wants','Study topic','Can help','Ages','Outreach','Note','Received'];
+  var rows=[head.map(q).join(',')];
+  CC_ROWS.slice().reverse().forEach(function(r){
+    rows.push([r.name,r.phone,r.email,r.address,r.when,r.churchName,
+      r.who?ccName('who',r.who):'', r.denom, r.found,
+      ccList('like',r.like), r.topic, ccList('serve',r.serve),
+      (r.ages||[]).join('; '), ccList('out',r.out), r.note, r.time].map(q).join(','));
+  });
+  return rows.join('\n');
+}
+function ccSaveFile(text,name,type){
+  var b=new Blob([text],{type:type||'text/plain;charset=utf-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(b); a.download=name; a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+}
+function wireConnectPanel(){
+  var base=location.origin+location.pathname;
+  var lb=document.getElementById('cc-link-bucks'), lf=document.getElementById('cc-link-fairview');
+  if(lb)lb.textContent=base+'#connect-bucks';
+  if(lf)lf.textContent=base+'#connect-fairview';
+  var out=document.getElementById('cc-qr-out');
+  [['cc-qr-bucks','bucks','Bucks County'],['cc-qr-fairview','fairview','Fairview Village']].forEach(function(r){
+    var b=document.getElementById(r[0]); if(!b||b.dataset.w)return; b.dataset.w='1';
+    b.onclick=function(){
+      var u=base+'#connect-'+r[1];
+      if(out)out.innerHTML='<img src="'+qrImgURL(u,260)+'" alt="QR" style="width:210px;background:#fff;border-radius:10px;padding:8px">'
+        +'<div class="note" style="margin-top:.3em">'+esc(r[2])+' \u2014 long-press to save</div>';
+    };
+  });
+  if(db){
+    db.ref('connect').limitToLast(500).on('value',function(sn){
+      var v=sn.val()||{};
+      CC_ROWS=Object.values(v).sort(function(a,b){return (a.ts||0)-(b.ts||0);});
+      ccPaint();
+    });
+  }
+  var d1=document.getElementById('cc-dl-list');
+  if(d1)d1.onclick=function(){
+    ccSaveFile(ccDownloadList(),'connect-cards-'+new Date().toISOString().slice(0,10)+'.txt');
+    var o=document.getElementById('cc-dl-ok'); if(o)o.textContent='Downloaded \u2713';
+  };
+  var d2=document.getElementById('cc-dl-csv');
+  if(d2)d2.onclick=function(){
+    ccSaveFile(ccDownloadCsv(),'connect-cards-'+new Date().toISOString().slice(0,10)+'.csv','text/csv;charset=utf-8');
+    var o=document.getElementById('cc-dl-ok'); if(o)o.textContent='Spreadsheet downloaded \u2713';
+  };
+  ccPaint();
+}
+
 /* Show only the fields the chosen shape actually needs. A YouTube sermon has no
    use for a Jitsi room name; a group call has no use for slide folders. */
 function paintWatchfireShape(){
@@ -6826,7 +7171,7 @@ var azr=document.getElementById('az-refresh'); if(azr) azr.onclick=loadAnalytics
     }catch(e){ if(ok)ok.textContent='Could not save — check your connection.'; }
   };
 })();
-try{ paintPanelTabs(); wireGoLive(); wireWatchfireShape(); }catch(e){}
+try{ paintPanelTabs(); wireGoLive(); wireWatchfireShape(); wireConnectPanel(); }catch(e){}
 document.getElementById('save-d').onclick=async()=>{
   try{
     const old=C.devotional;
