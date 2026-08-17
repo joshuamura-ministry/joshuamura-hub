@@ -237,6 +237,22 @@
   }
   .ear.hearing .dot{background:var(--moss); box-shadow:0 0 8px var(--moss);}
   .manual-row{display:flex; gap:10px;}
+.size-row{display:flex;align-items:center;gap:.4rem;justify-content:center;margin:.5rem 0 .1rem;flex-wrap:wrap}
+.size-lbl{font-size:.78rem;opacity:.65;letter-spacing:.04em;text-transform:uppercase}
+.size-row button{min-width:3rem;padding:.45rem .7rem;font-weight:700;font-size:1rem}
+/* Pause is the "something is happening" button: set apart from the arrows,
+   round, and large enough to hit without looking. Sized to the screen, so it is
+   generous on an iPad at the pulpit and sensible on a phone. */
+.big-pause{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.15rem;
+  width:clamp(96px,22vw,190px);height:clamp(96px,22vw,190px);margin:1.1rem auto .4rem;
+  border-radius:50%;border:3px solid #c9a24b;background:#2a2118;color:#f4ede0;
+  font-weight:800;letter-spacing:.04em;cursor:pointer;
+  box-shadow:0 6px 20px rgba(0,0,0,.35);transition:transform .1s ease,background .15s ease}
+.big-pause:active{transform:scale(.96)}
+.big-pause .pause-ico{font-size:clamp(1.6rem,4.6vw,2.9rem);line-height:1}
+.big-pause .pause-txt{font-size:clamp(.8rem,2vw,1.1rem);text-transform:uppercase}
+.big-pause.paused{background:#c25b4a;border-color:#e08a7a}
+
   .level-wrap{
     height:8px; border-radius:5px; background:var(--booth-line); overflow:hidden;
   }
@@ -463,10 +479,18 @@
           <div class="level-wrap" id="levelWrap"><div class="level-bar" id="levelBar"></div></div>
           <button id="testMicBtn" class="mic-test">🎤 Test mic level</button>
         </div>
+        <div class="size-row">
+          <span class="size-lbl">Script size</span>
+          <button id="sizeDown" aria-label="Smaller text">A&minus;</button>
+          <button id="sizeUp" aria-label="Larger text">A+</button>
+        </div>
         <div class="manual-row">
           <button id="prevBtn" aria-label="Previous slide">← Back</button>
           <button id="nextBtn" aria-label="Next slide">Next →</button>
         </div>
+        <button id="pauseBtn" class="big-pause" aria-label="Pause listening">
+          <span class="pause-ico">❚❚</span><span class="pause-txt">Pause</span>
+        </button>
         <p class="tiny">Clicker &amp; keyboard always advance the real slides: →, space, or page-down forward; ← or page-up back. Voice and clicker work together — either one drives the projector, booth, and everyone following live.</p>
         <button class="reset-run" id="resetRunBtn">↺ Restart from slide 1</button>
         <div class="exit"><button id="exitLiveBtn">✕ End &amp; see report</button></div>
@@ -589,7 +613,14 @@ const OPTS = {
   // happens to echo a line further down) is ignored, so it can't leap across
   // the manuscript. Roughly a line ≈ 11 words, so these are ~5 lines each way.
   fwdReach: 60,     // farthest it may jump AHEAD on a strong phrase
-  backReach: 45     // farthest it may jump BACK on a strong phrase
+  backReach: 45,    // farthest it may jump BACK on a strong phrase
+
+  // THE RESCUE — if the tracker ever gets stuck, a long run of words that occurs
+  // in ONE place only in this manuscript is unmistakable: it can only be where he
+  // actually is. That run is allowed to reach past the fence and catch him up.
+  // Ambiguous runs (a verse quoted twice, a refrain) are excluded when the
+  // manuscript is parsed, so reading them can never cause a wrong jump.
+  rescueRun: 7      // consecutive words needed, and the run must be UNIQUE
 };
 
 /* ============================================================
@@ -665,6 +696,42 @@ function buildWordIndex(){
     m.get(t.norm).push(i);
   });
   S.wordIndex = m;
+  buildRescueIndex();
+}
+
+/* Every run of rescueRun words in the manuscript, mapped to where it starts.
+   A run that occurs more than once is DROPPED — it cannot identify a position,
+   so it is never allowed to move him. (E.g. a verse quoted twice in one sermon.)
+   Built once when the manuscript is parsed, so it costs nothing while preaching. */
+function buildRescueIndex(){
+  const N = OPTS.rescueRun, T = S.tokens;
+  const seen = new Map(), dup = new Set();
+  for (let i = 0; i + N <= T.length; i++){
+    let key = '';
+    for (let k = 0; k < N; k++) key += T[i+k].norm + ' ';
+    if (seen.has(key)) dup.add(key); else seen.set(key, i);
+  }
+  dup.forEach(k => seen.delete(k));
+  S.rescueIndex = seen;
+  S.rescueDropped = dup.size;
+}
+
+/* Has he just spoken a run that exists in exactly one place in the manuscript?
+   If so that is where he is — no ambiguity is possible. Returns that index. */
+function rescueAnchor(buf, ptr){
+  const N = OPTS.rescueRun;
+  if (!S.rescueIndex || buf.length < N) return null;
+  let key = '';
+  for (let k = buf.length - N; k < buf.length; k++) key += buf[k] + ' ';
+  const at = S.rescueIndex.get(key);
+  if (at === undefined) return null;
+  const end = at + N;                     // pointer sits just past the run
+  if (end <= ptr) return null;            // never drag him backwards
+  // Inside the fence the ordinary tracker is already doing its job, and it is the
+  // logic that has been proven in the pulpit. The rescue exists only to reach
+  // BEYOND the fence — that is, when the follower has genuinely been left behind.
+  if (end <= ptr + OPTS.fwdReach) return null;
+  return end;
 }
 
 /* Given the newest word sits at manuscript position tIdx, how long is the run
@@ -707,6 +774,11 @@ function bestAnchor(buf, ptr){
 
 /* Decide where the pointer goes given the anchor strength. */
 function trackStep(ptr, buf){
+  // A unique long run wins outright: it can only mean he is there. This is what
+  // recovers the follower if it ever falls behind or sticks.
+  const r = rescueAnchor(buf, ptr);
+  if (r !== null && r !== ptr){ S.rescues = (S.rescues||0) + 1; return r; }
+
   const a = bestAnchor(buf, ptr);
   if (!a) return ptr;                                   // newest word matched nothing → hold
   const np = a.idx + 1;                                 // pointer sits just past the matched word
@@ -756,6 +828,32 @@ function saveState(){
     document.getElementById("saveHint").textContent = "Saved on this device.";
   }catch(e){}
 }
+/* The folder and slide count are set ONCE \u2014 in the Steward's Panel or here \u2014 and
+   both places read the same record in Firebase. So whatever was saved last shows up
+   here automatically; there is never anything to re-type. */
+async function pullHubSermon(){
+  try{
+    if (typeof db === "undefined" || !db) return;
+    const snap = await db.ref("content/sermons").once("value");
+    const v = snap.val(); if (!v) return;
+    let changed = false;
+    if (v.folder !== undefined && v.folder !== null && v.folder !== S.slideFolder){
+      S.slideFolder = v.folder;
+      const fi = document.getElementById("slideFolder"); if (fi) fi.value = v.folder;
+      changed = true;
+    }
+    if (v.total && +v.total !== +S.slideTotal){
+      S.slideTotal = +v.total;
+      const ti = document.getElementById("slideTotal"); if (ti) ti.value = v.total;
+      changed = true;
+    }
+    if (changed){
+      const h = document.getElementById("saveHint");
+      if (h) h.textContent = "Slide folder and count loaded from your back office.";
+    }
+  }catch(e){}
+}
+
 function loadState(){
   try{
     const d = JSON.parse(localStorage.getItem(LS_KEY));
@@ -1306,6 +1404,41 @@ document.getElementById("copyLogBtn").addEventListener("click", async (e)=>{
 document.getElementById("listenBtn").addEventListener("click", ()=>{ S.listening?stopListening():startListening(); });
 document.getElementById("testMicBtn").addEventListener("click", toggleMicTest);
 document.getElementById("nextBtn").addEventListener("click", manualNext);
+
+/* ---- SCRIPT SIZE: the pulpit is further from the screen than a desk is ---- */
+var SCRIPT_SIZE = 3;
+try{ var _ss=parseInt(localStorage.getItem("vpScriptSize"),10); if(_ss>=1&&_ss<=7) SCRIPT_SIZE=_ss; }catch(e){}
+function applyScriptSize(){
+  var el=document.getElementById("liveScript");
+  if(!el)return;
+  var scale=[0,.95,1.1,1.25,1.45,1.7,2.0,2.4][SCRIPT_SIZE]||1.25;
+  el.style.fontSize=scale+"rem";
+  el.style.lineHeight=(SCRIPT_SIZE>=5?1.75:1.65);
+}
+function setScriptSize(step){
+  SCRIPT_SIZE=Math.max(1,Math.min(7,SCRIPT_SIZE+step));
+  try{ localStorage.setItem("vpScriptSize",String(SCRIPT_SIZE)); }catch(e){}
+  applyScriptSize();
+}
+document.getElementById("sizeUp").addEventListener("click", function(){ setScriptSize(1); });
+document.getElementById("sizeDown").addEventListener("click", function(){ setScriptSize(-1); });
+applyScriptSize();
+
+/* ---- PAUSE: stop listening without losing your place ----
+   Restart picks up exactly where the tracker was; nothing is reset. */
+var VP_PAUSED = false;
+function setPaused(on){
+  VP_PAUSED = on;
+  var b=document.getElementById("pauseBtn");
+  if(b){
+    b.classList.toggle("paused", on);
+    b.querySelector(".pause-ico").textContent = on ? "\u25b6" : "\u275a\u275a";
+    b.querySelector(".pause-txt").textContent = on ? "Resume" : "Pause";
+  }
+  if(on){ if(S.listening) stopListening(); setEar("Paused \u2014 your place is kept", false); }
+  else  { startListening(); }
+}
+document.getElementById("pauseBtn").addEventListener("click", function(){ setPaused(!VP_PAUSED); });
 document.getElementById("prevBtn").addEventListener("click", manualBack);
 document.getElementById("resetRunBtn").addEventListener("click", resetRun);
 document.getElementById("tabPaste").addEventListener("click", ()=>show("paste"));
@@ -1366,6 +1499,7 @@ if (db){
 }
 
 loadState();
+pullHubSermon();          /* whatever the back office already knows, use it */
 </script>
 </body>
 </html>
