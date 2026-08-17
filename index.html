@@ -2939,7 +2939,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v161</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v162</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -4096,6 +4096,7 @@ function render(){
     : (h==='altar')?'altar' : (h==='treasury')?'treasury' : (h==='share')?'share' : '';
   logDoor(_door);
   qaListen(); qaMountPresenter();
+  if(h==='listen'||h.indexOf('listen-')===0){listenPage();window.scrollTo(0,0);return}
   if(h==='connect'||h.indexOf('connect-')===0){connectPage();window.scrollTo(0,0);return}
   if(h==='ask'||h.indexOf('ask-')===0){askPage();window.scrollTo(0,0);return}
   if(h==='meet'||h.indexOf('meet-')===0){meetRoom();window.scrollTo(0,0);return}
@@ -4854,6 +4855,162 @@ function connectPage(){
     }catch(e){
       err.textContent='We couldn\u2019t send that \u2014 check your connection and try once more.';
       send.disabled=false; send.textContent='\ud83d\udc9b Send my card';
+    }
+  };
+}
+
+/* ================= HELP ME SERVE YOU WELL =================
+   #listen  (or #listen-bucks / #listen-fairview)
+   An anonymous listening survey. No names are taken, ever. */
+const LISTEN_DUTIES = [
+  ['preach','Preaching that opens the Scriptures'],
+  ['visit','Visiting the sick and the shut-in'],
+  ['available','Being available when you need him'],
+  ['studies','Teaching Bible studies'],
+  ['lead','Leading the direction of the church'],
+  ['community','Reaching our community'],
+  ['youth','Working with the youth and children'],
+  ['pray','Prayer and spiritual counsel'],
+  ['present','Being present at church events'],
+  ['visitors','Following up with visitors and new members'],
+  ['train','Training members to serve and share']
+];
+const LISTEN_TOPICS = [
+  'Prophecy — Daniel and Revelation','Practical Christian living','Salvation and grace',
+  'Family, marriage and parenting','Health and wholeness','Money and stewardship',
+  'Prayer','The life and teachings of Christ','Hard questions people ask',
+  'Our Adventist heritage','The Sabbath','Last-day events and preparation'
+];
+
+function listenChurchId(){
+  const h=(location.hash||'').replace('#','');
+  if(h.indexOf('listen-')===0){
+    const k=h.slice(7).replace(/[^a-z0-9-]/g,'');
+    if(CONNECT_CHURCHES[k]) return k;
+  }
+  return '';
+}
+function lsRadio(group,val,label){
+  return '<label class="ccopt"><input type="radio" name="'+group+'" data-g="'+group+'" value="'+esc(val)+'">'
+    +'<span><b>'+esc(label)+'</b></span></label>';
+}
+function lsBox(group,val,label,note){
+  return '<label class="ccopt"><input type="checkbox" data-g="'+group+'" value="'+esc(val)+'">'
+    +'<span><b>'+esc(label)+'</b>'+(note?'<em>'+esc(note)+'</em>':'')+'</span></label>';
+}
+
+function listenPage(){
+  const cid=listenChurchId();
+  const church=cid?CONNECT_CHURCHES[cid]:'';
+
+  const duties = k => LISTEN_DUTIES.map(d=>lsBox(k,d[0],d[1],'')).join('');
+  const topics = LISTEN_TOPICS.map(t=>lsBox('topics',t,t,'')).join('');
+
+  app.innerHTML=`
+   ${church?`<div class="card" style="text-align:center;border-color:var(--gold);padding:1em">
+      <div style="font-family:Fraunces,serif;font-size:1.2em;color:var(--gold);line-height:1.3">${esc(church)}</div>
+      <div class="note" style="margin-top:.3em">Help Me Serve You Well</div>
+    </div>`:`<div class="eyebrow">\ud83d\udc42 Help Me Serve You Well</div>`}
+   <h2>I\u2019d like to hear from you</h2>
+   <p class="sub">I\u2019m still new here, and the best thing I can do is listen before I lead. This takes about five minutes, and it is <b>completely anonymous</b> \u2014 no names are collected, and I have no way of knowing who wrote what. Please be honest; it\u2019s the most useful gift you can give me.</p>
+
+   ${!cid?`<div class="card"><b>Which church?</b>
+     <select id="ls-church">
+       <option value="">\u2014 please choose \u2014</option>
+       <option value="bucks">${esc(CONNECT_CHURCHES.bucks)}</option>
+       <option value="fairview">${esc(CONNECT_CHURCHES.fairview)}</option>
+     </select></div>`:''}
+
+   <div class="card"><div class="cchead">First, so I can read your answers well</div>
+     <div class="note" style="margin-bottom:.6em">This only helps me understand the whole picture \u2014 it never identifies anyone. Skip it if you\u2019d rather.</div>
+     <label style="text-transform:none;font-weight:600">How long have you been part of this church?</label>
+     ${['Less than a year','1\u20135 years','6\u201315 years','16\u201330 years','More than 30 years','This is my first visit']
+        .map(x=>lsRadio('tenure',x,x)).join('')}
+     <label style="text-transform:none;font-weight:600;margin-top:.7em">Are you a member here?</label>
+     ${[['member','Yes, a member'],['regular','Not a member, but I come regularly'],
+        ['visitor','Visiting'],['moved','I\u2019ve moved away but still care about this church']]
+        .map(x=>lsRadio('standing',x[0],x[1])).join('')}
+   </div>
+
+   <div class="card"><div class="cchead">What matters most to you in a pastor?</div>
+     <div class="note" style="margin-bottom:.6em">Choose the <b>three</b> you value most. Not everything can come first, and knowing your three helps me spend myself where it counts.</div>
+     ${duties('value')}
+     <div class="note" id="ls-valcount" style="margin-top:.4em"></div>
+   </div>
+
+   <div class="card"><div class="cchead">Where would you like more of my time?</div>
+     <div class="note" style="margin-bottom:.6em">Tick anything you\u2019d like to see more of. It isn\u2019t a complaint \u2014 it\u2019s direction.</div>
+     ${duties('more')}
+   </div>
+
+   <div class="card"><div class="cchead">What would you like to hear preached?</div>
+     <div class="note" style="margin-bottom:.6em">Tick as many as you like.</div>
+     ${topics}
+     <label style="text-transform:none;font-weight:600;margin-top:.7em">Is there a passage or a question you\u2019ve been wanting preached?</label>
+     <input type="text" id="ls-passage" placeholder="A chapter like Psalm 23, or a question you\u2019ve carried">
+   </div>
+
+   <div class="card"><div class="cchead">In your own words</div>
+     <label style="text-transform:none;font-weight:600">What has been most helpful to you so far?</label>
+     <textarea id="ls-good" rows="3" placeholder="Anything at all \u2014 large or small"></textarea>
+     <label style="text-transform:none;font-weight:600">What could I do better?</label>
+     <textarea id="ls-better" rows="3" placeholder="Say it plainly. I would rather hear it than not."></textarea>
+     <label style="text-transform:none;font-weight:600">What is one thing you\u2019d want your pastor to know?</label>
+     <textarea id="ls-know" rows="3" placeholder="About you, about this church, about anything"></textarea>
+     <label style="text-transform:none;font-weight:600">What would help you grow spiritually this year?</label>
+     <textarea id="ls-grow" rows="3" placeholder="What would actually make a difference for you"></textarea>
+   </div>
+
+   <div class="card note">
+     \ud83d\udd12 <b>Nothing here identifies you.</b> No name, no email, no record of your device.
+     If you\u2019d like to talk with me personally instead, use the <a href="#connect-${cid||'bucks'}">Connect Card</a> \u2014 that one does ask for your name, because I\u2019d be answering you.
+   </div>
+
+   <div id="ls-err" class="err"></div>
+   <button class="btn" id="ls-send">\ud83d\udc42 Send \u2014 anonymously</button>
+   <p class="note" style="margin-top:.6em">Thank you for taking the time. It genuinely helps.</p>
+   ${askQuietFoot()}`;
+
+  /* gently hold the "three" guidance without blocking anyone */
+  function counted(){
+    const n=app.querySelectorAll('[data-g="value"]:checked').length;
+    const el=document.getElementById('ls-valcount');
+    if(!el)return;
+    el.textContent = n===0 ? '' : (n<=3 ? (n+' of 3 chosen')
+      : (n+' chosen \u2014 that\u2019s fine, though three tells me more'));
+  }
+  app.querySelectorAll('[data-g="value"]').forEach(el=>el.addEventListener('change',counted));
+
+  const send=document.getElementById('ls-send');
+  send.onclick=async function(){
+    const g=s=>Array.from(app.querySelectorAll('[data-g="'+s+'"]:checked')).map(x=>x.value);
+    const v=id=>{const e=document.getElementById(id);return e?e.value.trim():'';};
+    const err=document.getElementById('ls-err');
+    const row={
+      church: cid || (document.getElementById('ls-church')?document.getElementById('ls-church').value:'') || '',
+      tenure:(g('tenure')[0]||''), standing:(g('standing')[0]||''),
+      value:g('value'), more:g('more'), topics:g('topics'), passage:v('ls-passage'),
+      good:v('ls-good'), better:v('ls-better'), know:v('ls-know'), grow:v('ls-grow'),
+      time:new Date().toLocaleString(), ts:Date.now()
+    };
+    if(!row.value.length && !row.more.length && !row.topics.length &&
+       !row.good && !row.better && !row.know && !row.grow){
+      err.textContent='Please answer at least one part \u2014 anything helps.'; return;
+    }
+    err.textContent=''; send.disabled=true; send.textContent='Sending\u2026';
+    try{
+      if(db) await db.ref('listen').push(row);
+      app.innerHTML='<div class="card" style="text-align:center;border-color:var(--gold);padding:2em 1.2em">'
+        +'<div style="font-size:2.8rem">\ud83d\ude4f</div>'
+        +'<h2 style="color:var(--gold)">Thank you</h2>'
+        +'<p class="sub">That is genuinely helpful, and it came to me without your name attached. '
+        +'I\u2019ll be reading every one of these carefully.</p>'
+        +'<p class="note">\u201cLet every man be swift to hear, slow to speak.\u201d \u2014 James 1:19</p>'
+        +'</div>'+askQuietFoot();
+      window.scrollTo(0,0);
+    }catch(e){
+      err.textContent='That didn\u2019t send \u2014 check your connection and try once more.';
+      send.disabled=false; send.textContent='\ud83d\udc42 Send \u2014 anonymously';
     }
   };
 }
@@ -6660,6 +6817,32 @@ document.getElementById('panelbox').innerHTML=`
   </div>
  </details>
 
+ <details class="ptab" id="tab-listen">
+  <summary>👂 Help Me Serve You Well<span class="tstate" style="margin-left:auto" id="tstate-listen"></span></summary>
+  <div class="tbody">
+    <div class="note" style="margin-bottom:.6em">An anonymous listening survey — what the congregation values in a pastor, where they'd like more of your time, and what they'd like preached. No names are collected.</div>
+    <label>Link for Bucks County</label>
+    <div class="note" id="ls-link-bucks" style="word-break:break-all;margin-bottom:.5em"></div>
+    <label>Link for Fairview Village</label>
+    <div class="note" id="ls-link-fairview" style="word-break:break-all;margin-bottom:.5em"></div>
+    <div style="display:flex;gap:.5em;flex-wrap:wrap">
+      <button class="btn ghost" id="ls-qr-bucks">📱 QR — Bucks County</button>
+      <button class="btn ghost" id="ls-qr-fairview">📱 QR — Fairview</button>
+    </div>
+    <div id="ls-qr-out" style="text-align:center;margin-top:.6em"></div>
+    <div class="subcard" style="margin-top:.9em">
+      <b>📊 What they've said</b>
+      <div class="note" style="margin:.3em 0 .5em"><b id="ls-count">—</b></div>
+      <div id="ls-summary" class="note"></div>
+      <div style="display:flex;gap:.5em;flex-wrap:wrap;margin-top:.6em">
+        <button class="btn" id="ls-dl">📄 Download everything they wrote</button>
+        <button class="btn ghost" id="ls-csv">📊 Download a spreadsheet</button>
+      </div>
+      <div id="ls-ok" class="ok" style="margin-top:.4em"></div>
+    </div>
+  </div>
+ </details>
+
  <div class="pgroup">What came back</div>
  <details class="ptab" id="tab-analytics">
   <summary>📊 Analytics<span class="tstate" style="margin-left:auto" id="tstate-analytics"></span></summary>
@@ -6683,6 +6866,112 @@ document.getElementById('panelbox').innerHTML=`
  </details>
 `;
 /* ---- Each tab shows its own state, so the panel reads at a glance ---- */
+/* ---- The listening survey: the finding is the GAP between what they value
+   and where they want more of your time. Show that plainly. ---- */
+var LS_ROWS=[];
+function lsLabel(k){ var d=LISTEN_DUTIES.find(function(x){return x[0]===k;}); return d?d[1]:k; }
+function lsPaint(){
+  var c=document.getElementById('ls-count'), box=document.getElementById('ls-summary'),
+      t=document.getElementById('tstate-listen');
+  if(t)t.textContent = LS_ROWS.length ? LS_ROWS.length+' replies' : '';
+  if(c)c.textContent = LS_ROWS.length ? (LS_ROWS.length+' repl'+(LS_ROWS.length===1?'y':'ies')+' so far')
+                                      : 'No replies yet — send the link and they will appear here.';
+  if(!box)return;
+  if(!LS_ROWS.length){ box.innerHTML=''; return; }
+  var val={}, more={}, top={}, ten={};
+  LS_ROWS.forEach(function(r){
+    (r.value||[]).forEach(function(k){ val[k]=(val[k]||0)+1; });
+    (r.more ||[]).forEach(function(k){ more[k]=(more[k]||0)+1; });
+    (r.topics||[]).forEach(function(k){ top[k]=(top[k]||0)+1; });
+    if(r.tenure) ten[r.tenure]=(ten[r.tenure]||0)+1;
+  });
+  var keys=LISTEN_DUTIES.map(function(d){return d[0];});
+  var rows=keys.map(function(k){ return {k:k,v:val[k]||0,m:more[k]||0,gap:(more[k]||0)-(val[k]||0)}; })
+               .sort(function(a,b){ return b.m-a.m; });
+  var h='<div style="margin:.5em 0 .3em"><b style="color:var(--gold)">Where they want more of you</b></div><table style="width:100%;font-size:.85rem;border-collapse:collapse">'
+   +'<tr><th style="text-align:left;padding:.2em 0">&nbsp;</th><th style="text-align:right">Values it</th><th style="text-align:right">Wants more</th></tr>';
+  rows.forEach(function(r){
+    if(!r.v && !r.m) return;
+    h+='<tr><td style="padding:.25em 0;border-bottom:1px solid rgba(244,237,224,.08)">'+esc(lsLabel(r.k))+'</td>'
+      +'<td style="text-align:right;border-bottom:1px solid rgba(244,237,224,.08)">'+r.v+'</td>'
+      +'<td style="text-align:right;border-bottom:1px solid rgba(244,237,224,.08)"><b'
+      +(r.m>=Math.max(2,LS_ROWS.length*0.3)?' style="color:var(--gold)"':'')+'>'+r.m+'</b></td></tr>';
+  });
+  h+='</table>';
+  var tk=Object.keys(top).sort(function(a,b){return top[b]-top[a];}).slice(0,5);
+  if(tk.length){
+    h+='<div style="margin:.9em 0 .3em"><b style="color:var(--gold)">Most-wanted sermon topics</b></div>';
+    tk.forEach(function(k){ h+='<div>'+esc(k)+' \u2014 <b>'+top[k]+'</b></div>'; });
+  }
+  var tn=Object.keys(ten);
+  if(tn.length){
+    h+='<div style="margin:.9em 0 .3em"><b style="color:var(--gold)">Who answered</b></div>';
+    tn.forEach(function(k){ h+='<div>'+esc(k)+' \u2014 <b>'+ten[k]+'</b></div>'; });
+  }
+  box.innerHTML=h;
+}
+function lsText(){
+  if(!LS_ROWS.length) return 'No replies yet.';
+  var L=['HELP ME SERVE YOU WELL \u2014 anonymous replies',
+         'Downloaded '+new Date().toLocaleString(), LS_ROWS.length+' in total','',
+         '======================================',''];
+  LS_ROWS.slice().reverse().forEach(function(r,n){
+    L.push('--- reply '+(LS_ROWS.length-n)+' \u00b7 '+(r.time||'')+' ---');
+    if(r.tenure||r.standing) L.push('   '+[r.tenure,r.standing].filter(Boolean).join(' \u00b7 '));
+    if((r.value||[]).length) L.push('   VALUES MOST: '+r.value.map(lsLabel).join(', '));
+    if((r.more ||[]).length) L.push('   WANTS MORE OF: '+r.more.map(lsLabel).join(', '));
+    if((r.topics||[]).length) L.push('   TOPICS: '+r.topics.join(', '));
+    if(r.passage) L.push('   PASSAGE ASKED FOR: '+r.passage);
+    if(r.good)   L.push('   MOST HELPFUL SO FAR:\n      '+r.good);
+    if(r.better) L.push('   COULD DO BETTER:\n      '+r.better);
+    if(r.know)   L.push('   WANTS ME TO KNOW:\n      '+r.know);
+    if(r.grow)   L.push('   WOULD HELP THEM GROW:\n      '+r.grow);
+    L.push('');
+  });
+  return L.join('\n');
+}
+function lsCsv(){
+  var q=function(x){ return '"'+String(x==null?'':x).replace(/"/g,'""').replace(/\n/g,' ')+'"'; };
+  var head=['Received','How long here','Standing','Values most','Wants more of','Topics',
+            'Passage asked for','Most helpful','Could do better','Wants me to know','Would help them grow'];
+  var out=[head.map(q).join(',')];
+  LS_ROWS.slice().reverse().forEach(function(r){
+    out.push([r.time,r.tenure,r.standing,(r.value||[]).map(lsLabel).join('; '),
+      (r.more||[]).map(lsLabel).join('; '),(r.topics||[]).join('; '),
+      r.passage,r.good,r.better,r.know,r.grow].map(q).join(','));
+  });
+  return out.join('\n');
+}
+function wireListenPanel(){
+  var base=location.origin+location.pathname;
+  var a=document.getElementById('ls-link-bucks'), b=document.getElementById('ls-link-fairview');
+  if(a)a.textContent=base+'#listen-bucks';
+  if(b)b.textContent=base+'#listen-fairview';
+  var out=document.getElementById('ls-qr-out');
+  [['ls-qr-bucks','bucks','Bucks County'],['ls-qr-fairview','fairview','Fairview Village']].forEach(function(r){
+    var btn=document.getElementById(r[0]); if(!btn||btn.dataset.w)return; btn.dataset.w='1';
+    btn.onclick=function(){
+      var u=base+'#listen-'+r[1];
+      if(out)out.innerHTML='<img src="'+qrImgURL(u,260)+'" alt="QR" style="width:210px;background:#fff;border-radius:10px;padding:8px">'
+        +'<div class="note" style="margin-top:.3em">'+esc(r[2])+' \u2014 long-press to save</div>';
+    };
+  });
+  if(db){
+    db.ref('listen').limitToLast(600).on('value',function(sn){
+      var v=sn.val()||{};
+      LS_ROWS=Object.values(v).sort(function(x,y){return (x.ts||0)-(y.ts||0);});
+      lsPaint();
+    });
+  }
+  var d1=document.getElementById('ls-dl');
+  if(d1)d1.onclick=function(){ ccSaveFile(lsText(),'listening-'+new Date().toISOString().slice(0,10)+'.txt');
+    var o=document.getElementById('ls-ok'); if(o)o.textContent='Downloaded \u2713'; };
+  var d2=document.getElementById('ls-csv');
+  if(d2)d2.onclick=function(){ ccSaveFile(lsCsv(),'listening-'+new Date().toISOString().slice(0,10)+'.csv','text/csv;charset=utf-8');
+    var o=document.getElementById('ls-ok'); if(o)o.textContent='Spreadsheet downloaded \u2713'; };
+  lsPaint();
+}
+
 /* ---- Connect cards: turn the raw records into something you can actually read ---- */
 const CC_LABEL={
   who:{member:'a member here',regular:'comes often, not a member',firsttime:'first time visiting',
@@ -7166,7 +7455,7 @@ var azr=document.getElementById('az-refresh'); if(azr) azr.onclick=loadAnalytics
     }catch(e){ if(ok)ok.textContent='Could not save — check your connection.'; }
   };
 })();
-try{ paintPanelTabs(); wireGoLive(); wireWatchfireShape(); wireConnectPanel(); }catch(e){}
+try{ paintPanelTabs(); wireGoLive(); wireWatchfireShape(); wireConnectPanel(); wireListenPanel(); }catch(e){}
 document.getElementById('save-d').onclick=async()=>{
   try{
     const old=C.devotional;
