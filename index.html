@@ -2903,7 +2903,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v154</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v155</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -6059,11 +6059,6 @@ document.getElementById('panelbox').innerHTML=`
   <div class="tbody">
 <b>🔥 The Watchfire — your main live service</b>
    <div class="note" style="margin:.15em 0 .5em">A sermon (YouTube), a group video call, or a slideshow — you pick the shape below.</div>
-   <div class="subcard" style="background:var(--card2);border-color:var(--gold);margin:.5em 0 .6em;text-align:center">
-     <b>🎙️ Voice Preach — the pulpit desk</b>
-     <div class="note" style="margin:.3em 0 .5em">Paste your manuscript with <b>@@@</b> where slides change, then just preach — your voice turns the slides for the projector, the booth, and everyone following live. Your clicker still works.</div>
-     <a class="btn" href="/voice-preach.html" target="_blank" rel="noopener">🎙️ Open Voice Preach ↗</a>
-   </div>
    <label>Underway?</label>${pToggle('e-on',lv.expedition.on,'🧭 Not live','🔥 LIVE NOW')}
    <label>Journey title</label><input type="text" id="e-title" value="${esc(lv.expedition.title||'')}" placeholder="e.g. Sabbath Worship · The God Who Sees">
    <div class="subcard" style="background:var(--card2);border-color:var(--red);margin:.7em 0 .3em;text-align:center">
@@ -6238,6 +6233,18 @@ document.getElementById('panelbox').innerHTML=`
   <div class="tbody">
     <div class="note" style="margin-bottom:.6em">Paste your manuscript with <b>@@@</b> where the slides change, then preach. Your voice turns the slides for the projector, the booth, and everyone following live — and the clicker still works.</div>
     <a class="btn" href="/voice-preach.html" target="_blank" rel="noopener">🎙️ Open Voice Preach ↗</a>
+    <div class="subcard" style="margin-top:.9em">
+      <b>📁 This sermon's slides</b>
+      <div class="note" style="margin:.3em 0 .5em">You can set these here or inside Voice Preach — it's the same setting either way, so whichever you reach first is fine.</div>
+      <label>Sermon folder <span style="text-transform:none;font-weight:400;color:var(--dim)">(inside /SERMONS — leave blank for the loose files)</span></label>
+      <input type="text" id="vp-set" placeholder="e.g. john-mark" value="${esc((C.sermons&&C.sermons.folder)||'')}">
+      <label>How many slides?</label>
+      <input type="number" id="vp-total" min="0" max="50" value="${(C.sermons&&C.sermons.total)||0}">
+      <label>Hold the online slides back <span style="text-transform:none;font-weight:400;color:var(--dim)">(seconds — matches a delayed stream; the projector is always instant)</span></label>
+      <input type="number" id="vp-delay" min="0" max="60" value="${(C.config&&C.config.slidedelay)||0}">
+      <button class="btn psave" id="save-vp">💾 Save the slide settings</button> <span id="vp-ok" class="ok"></span>
+      <div class="note" style="margin-top:.5em">Now showing: <b id="vp-now">—</b></div>
+    </div>
   </div>
  </details>
  <div class="pgroup">This week’s content</div>
@@ -6737,6 +6744,30 @@ var azr=document.getElementById('az-refresh'); if(azr) azr.onclick=loadAnalytics
     }
     var ok=document.getElementById('mt-ok');
     if(ok){ ok.textContent='Copied ✓ — paste it into a text or email.'; setTimeout(function(){ok.textContent='';},3000); }
+  };
+})();
+/* The Voice Preach tab writes the SAME sermon settings the Watchfire card does,
+   so wherever you set the folder and slide count, both places agree. */
+(function(){
+  var save=document.getElementById('save-vp');
+  var now=document.getElementById('vp-now');
+  function paintNow(){
+    if(!now)return;
+    var f=(C.sermons&&C.sermons.folder)||'', t=(C.sermons&&C.sermons.total)||0;
+    now.textContent = t ? ((f?('/SERMONS/'+f+'/'):'/SERMONS/')+'1…'+t+'.jpg') : 'no slides set';
+  }
+  paintNow();
+  if(save)save.onclick=async function(){
+    var ok=document.getElementById('vp-ok');
+    var g=function(id){var e=document.getElementById(id);return e?e.value:'';};
+    try{
+      await sermonWrite({folder:g('vp-set').trim(), total:+(g('vp-total')||0)});
+      await cfgSet({slidedelay:+(g('vp-delay')||0)});
+      var se=document.getElementById('se-set'), st=document.getElementById('se-total'), sd=document.getElementById('se-delay');
+      if(se)se.value=g('vp-set'); if(st)st.value=g('vp-total'); if(sd)sd.value=g('vp-delay');
+      paintNow();
+      if(ok)ok.textContent='Saved ✓ — Voice Preach will use these.';
+    }catch(e){ if(ok)ok.textContent='Could not save — check your connection.'; }
   };
 })();
 try{ paintPanelTabs(); wireGoLive(); }catch(e){}
