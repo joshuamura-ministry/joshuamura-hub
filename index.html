@@ -2903,7 +2903,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v153</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v154</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -6053,84 +6053,11 @@ function openPanel(){
 const dv=C.devotional,lv=C.live;
 document.getElementById('panelbox').innerHTML=`
  <!-- ========== LIVE GATHERINGS (each gathering = one card) ========== -->
- <div class="psec">
-  <div style="text-align:right;margin-bottom:.4em"><a href="#map" id="panel-lock" class="note" style="color:var(--dim)">🔒 Lock &amp; leave</a></div>
-  <h2>📝 The Asking · surveys &amp; sign-ups</h2>
-  <div class="pdesc">Ask a question, send the link, watch the answers add up. Good for gauging interest \u2014 an after-school sports program, a class, a trip \u2014 before you build it. Anyone who wants to be contacted can leave their details, and those stay private to you.</div>
-  <div class="subcard">
-    <b>📂 Your surveys</b>
-    <div class="note" style="margin:.3em 0 .5em">Each survey keeps its own name, questions, link, and answers. Pick one to edit it, or start a new one.</div>
-    <select id="sv-pick"></select>
-    <div style="display:flex;gap:.5em;flex-wrap:wrap;margin-top:.3em">
-      <button class="btn ghost" id="sv-new">➕ Start a new survey</button>
-      <button class="btn ghost" id="sv-del">🗑️ Delete this survey</button>
-    </div>
-  </div>
-  <div class="subcard">
-    <label>Short name for the link <span style="text-transform:none">(letters and hyphens — e.g. <code>sports</code>)</span></label>
-    <input type="text" id="sv-id" placeholder="sports" value="${esc((C.survey&&C.survey.id)||'')}">
-    <label>Heading at the top <span style="text-transform:none;font-weight:400;color:var(--dim)">(a school or church name — leave blank for none)</span></label>
-    <input type="text" id="sv-org" value="${esc((C.survey&&C.survey.org)||'')}" placeholder="Huntingdon Valley Christian Academy">
-    <label>Address under it <span style="text-transform:none;font-weight:400;color:var(--dim)">(optional)</span></label>
-    <input type="text" id="sv-orgaddr" value="${esc((C.survey&&C.survey.orgaddr)||'')}" placeholder="1845 Byberry Rd, Huntingdon Valley, PA 19006">
-    <label>Survey title</label>
-    <input type="text" id="sv-title" value="${esc((C.survey&&C.survey.title)||'')}" placeholder="e.g. After-School Sports \u2014 would your child join?">
-    <label>A sentence or two of introduction</label>
-    <textarea id="sv-intro" rows="2" placeholder="Why you're asking, and what it might look like">${esc((C.survey&&C.survey.intro)||'')}</textarea>
-    <label>Your questions \u2014 one per line. Put the answer choices after a <b>|</b> , separated by commas.<br>
-      <span style="text-transform:none">e.g. <code>Would your child join basketball? | Yes, No, Maybe</code><br>
-      Leave off the choices and it just uses Yes / No.</span></label>
-    <textarea id="sv-q" rows="6" placeholder="Would your child be interested in basketball? | Yes, No, Maybe&#10;Would your child be interested in flag football? | Yes, No, Maybe&#10;Would you be willing to help coach sometimes? | Yes, No">${((C.survey&&C.survey.q)||[]).map(function(q){return esc(q.text)+' | '+esc((q.opts||['Yes','No']).join(', '));}).join('\n')}</textarea>
-    <label>Thank-you message</label>
-    <input type="text" id="sv-thanks" value="${esc((C.survey&&C.survey.thanks)||'Thank you \u2014 your answer has been counted.')}">
-    <label>Open for answers?</label>${pToggle('sv-on',(C.survey&&C.survey.on),'🔒 Closed','📝 OPEN — accepting answers')}
-    <div style="display:flex;gap:.5em;flex-wrap:wrap;margin-top:.5em">
-      <button class="btn" id="save-sv">💾 Save the survey</button>
-      <button class="btn ghost" id="sv-copy">🔗 Copy the link to send</button>
-      <button class="btn ghost" id="sv-see">👁️ Preview it</button>
-    </div>
-    <div id="sv-ok" class="ok" style="margin-top:.4em"></div>
-    <div class="note" style="margin-top:.3em">Link to send: <b id="sv-link"></b></div>
-    <div style="text-align:center;margin-top:.6em">
-      <div id="sv-qr"></div>
-      <button class="btn ghost" id="sv-qr-dl" style="margin-top:.4em">⬇️ Download the QR code</button>
-      <div class="note" style="margin-top:.3em">Print this on a flyer or slide — parents point a phone camera at it and the survey opens.</div>
-    </div>
-  </div>
-  <div class="subcard">
-    <b>📊 The answers so far</b>
-    <div class="note" style="margin:.3em 0 .5em">Updates as people reply. Names and contacts show only for those who chose to leave them.</div>
-    <div id="sv-results" class="note">Loading\u2026</div>
-    <div style="display:flex;gap:.5em;flex-wrap:wrap;margin-top:.5em">
-      <button class="btn" id="sv-pdf">📄 Results as PDF / print</button>
-      <button class="btn ghost" id="sv-download">⬇️ Download the replies</button>
-      <button class="btn ghost" id="sv-clear">🧹 Clear all replies</button>
-    </div>
-  </div>
- </div>
-
- <div class="psec">
-  <h2>🚪 The Upper Room · private meetings</h2>
-  <div class="pdesc">A private video room for planning, elders, counselling — anything that isn't for the whole church. It is <b>not</b> on the treasure map and nothing links to it: only someone you send the link to can find it. No time limit.</div>
-  <div class="subcard">
-    <b>Name this meeting</b>
-    <div class="note" style="margin:.3em 0 .5em">Anything you like — <code>planning</code>, <code>elders</code>, <code>board</code>. Each name is its own separate room. Same name = same room, so you can reuse it every week.</div>
-    <input type="text" id="mt-name" value="planning" placeholder="planning">
-    <div style="display:flex;gap:.5em;flex-wrap:wrap;margin-top:.4em">
-      <button class="btn" id="mt-open">🚪 Open the room</button>
-      <button class="btn ghost" id="mt-copy">🔗 Copy the invite link</button>
-    </div>
-    <div id="mt-link" class="note" style="margin-top:.5em;word-break:break-all"></div>
-    <div id="mt-ok" class="ok"></div>
-  </div>
- </div>
-
- <div class="psec">
-  <h2>🔴 Live Gatherings</h2>
-  <div class="pdesc">Each gathering is one card — turn it on, set what people see, and save, all in the same place. One flip to ON lights the red "live" banner on the site.</div>
-
-  <div class="subcard" style="border-color:var(--gold)">
-   <b>🔥 The Watchfire — your main live service</b>
+ <div class="pgroup">Gatherings — set it up, then go live</div>
+ <details class="ptab" id="tab-wf">
+  <summary>🔥 The Watchfire<span class="tstate" id="tstate-wf"></span></summary>
+  <div class="tbody">
+<b>🔥 The Watchfire — your main live service</b>
    <div class="note" style="margin:.15em 0 .5em">A sermon (YouTube), a group video call, or a slideshow — you pick the shape below.</div>
    <div class="subcard" style="background:var(--card2);border-color:var(--gold);margin:.5em 0 .6em;text-align:center">
      <b>🎙️ Voice Preach — the pulpit desk</b>
@@ -6205,7 +6132,14 @@ document.getElementById('panelbox').innerHTML=`
   </div>
 
   <div class="subcard" style="border-color:var(--gold)">
-   <b>🙏 The Prayer Circle — lives at the Altar</b>
+    <button class="golive" id="golive-wf">🔴 GO LIVE — the Watchfire</button>
+    <div class="gohint" id="gohint-wf"></div>
+  </div>
+ </details>
+ <details class="ptab" id="tab-pc">
+  <summary>🙏 The Altar · Prayer Circle<span class="tstate" id="tstate-pc"></span></summary>
+  <div class="tbody">
+<b>🙏 The Prayer Circle — lives at the Altar</b>
    <div class="note" style="margin:.15em 0 .5em">A live <b>group video call</b> (Jitsi). Under it, people post one-sentence requests and pray through them together.</div>
    <label>Open?</label>${pToggle('p2-on',lv.prayer.on,'🕯️ Closed','🔥 OPEN — gathered')}
    <label>Room name</label><input type="text" id="p2-room" value="${esc(lv.prayer.room)}">
@@ -6246,7 +6180,14 @@ document.getElementById('panelbox').innerHTML=`
   </div>
 
   <div class="subcard" style="border-color:var(--gold)">
-   <b>📖 The Live Class — lives in the Mine</b>
+    <button class="golive" id="golive-pc">🔴 GO LIVE — the Prayer Circle</button>
+    <div class="gohint" id="gohint-pc"></div>
+  </div>
+ </details>
+ <details class="ptab" id="tab-lc">
+  <summary>📖 The Live Class<span class="tstate" id="tstate-lc"></span></summary>
+  <div class="tbody">
+<b>📖 The Live Class — lives in the Mine</b>
    <div class="note" style="margin:.15em 0 .5em">A live <b>group video call</b> (Jitsi) pinned above the Bible lessons. It uses the <b>same picture-slide deck</b> as the Prayer Circle — set that in the Prayer Circle card above.</div>
    <label>In session?</label>${pToggle('t-on',lv.teaching.on,'🪑 Not in session','🔥 IN SESSION')}
    <label>Room name</label><input type="text" id="t-room" value="${esc(lv.teaching.room)}">
@@ -6269,8 +6210,41 @@ document.getElementById('panelbox').innerHTML=`
  </div>
 
  <!-- ========== 1. THIS WEEK'S CONTENT ========== -->
- <div class="psec">
-  <h2>💧 The Spring — weekly devotional</h2>
+    <button class="golive" id="golive-lc">🔴 GO LIVE — the Live Class</button>
+    <div class="gohint" id="gohint-lc"></div>
+  </div>
+ </details>
+ <details class="ptab" id="tab-meet">
+  <summary>🚪 The Upper Room · private meeting<span class="tstate" id="tstate-meet"></span></summary>
+  <div class="tbody">
+<h2>🚪 The Upper Room · private meetings</h2>
+  <div class="pdesc">A private video room for planning, elders, counselling — anything that isn't for the whole church. It is <b>not</b> on the treasure map and nothing links to it: only someone you send the link to can find it. No time limit.</div>
+  <div class="subcard">
+    <b>Name this meeting</b>
+    <div class="note" style="margin:.3em 0 .5em">Anything you like — <code>planning</code>, <code>elders</code>, <code>board</code>. Each name is its own separate room. Same name = same room, so you can reuse it every week.</div>
+    <input type="text" id="mt-name" value="planning" placeholder="planning">
+    <div style="display:flex;gap:.5em;flex-wrap:wrap;margin-top:.4em">
+      <button class="btn" id="mt-open">🚪 Open the room</button>
+      <button class="btn ghost" id="mt-copy">🔗 Copy the invite link</button>
+    </div>
+    <div id="mt-link" class="note" style="margin-top:.5em;word-break:break-all"></div>
+    <div id="mt-ok" class="ok"></div>
+  </div>
+  </div>
+ </details>
+ <div class="pgroup">Preaching</div>
+ <details class="ptab" id="tab-vp">
+  <summary>🎙️ Voice Preach<span class="tstate" id="tstate-vp"></span></summary>
+  <div class="tbody">
+    <div class="note" style="margin-bottom:.6em">Paste your manuscript with <b>@@@</b> where the slides change, then preach. Your voice turns the slides for the projector, the booth, and everyone following live — and the clicker still works.</div>
+    <a class="btn" href="/voice-preach.html" target="_blank" rel="noopener">🎙️ Open Voice Preach ↗</a>
+  </div>
+ </details>
+ <div class="pgroup">This week’s content</div>
+ <details class="ptab" id="tab-spring">
+  <summary>💧 The Spring — devotional<span class="tstate" id="tstate-spring"></span></summary>
+  <div class="tbody">
+<h2>💧 The Spring — weekly devotional</h2>
   <div class="pdesc">The video devotional shown at the Spring. Saving a new one lowers last week's into the Deep Well automatically.</div>
   <label>Title</label><input type="text" id="d-title" value="${esc(dv.title)}">
   <label>YouTube video ID <span style="text-transform:none">(the part after v= in the link)</span></label><input type="text" id="d-yt" value="${esc(dv.youtubeId)}">
@@ -6283,8 +6257,98 @@ document.getElementById('panelbox').innerHTML=`
  </div>
 
  <!-- ========== 5. QR CODES ========== -->
- <div class="psec">
-  <h2>📱 QR Codes</h2>
+  </div>
+ </details>
+ <details class="ptab" id="tab-trail">
+  <summary>🥾 The Trail — schedule<span class="tstate" id="tstate-trail"></span></summary>
+  <div class="tbody">
+<h2>🥾 The Trail — schedule</h2>
+  <div class="pdesc">Where you'll be, and your weekly rhythm. Each saves separately.</div>
+
+  <div class="subcard">
+   <b>📍 Trail stops (dated events)</b>
+   <label>One per line: DATE | TITLE | PLACE | TIME | live yes/no | ICON | details</label>
+   <textarea id="tr-items" rows="6">${(C.trail||[]).map(x=>[x.date,x.title,x.place,x.time||'',x.live?'yes':'no',x.icon||'church',x.details||''].join(' | ')).join('\n')}</textarea>
+   <button class="btn psave" id="save-tr">Save the Trail</button> <span id="tr-ok" class="ok"></span>
+  </div>
+
+  <div class="subcard">
+   <b>🕰️ Weekly Rhythm (standing appointments)</b>
+   <label>One per line: DAY | TIME | WHAT | WHERE | door(altar/class/watchfire) · none = 📍 map · plain = no link</label>
+   <textarea id="rh-items" rows="5">${(C.rhythm||[]).map(x=>[x.day,x.time,x.what,x.where,x.link||'none'].join(' | ')).join('\n')}</textarea>
+   <button class="btn psave" id="save-rh">Save the Rhythm</button> <span id="rh-ok" class="ok"></span>
+  </div>
+ </div>
+
+
+ <p class="note" style="margin-bottom:1em">Tap a section to fill it in, then hit its own <b>Save</b> button. Each section saves on its own.</p>
+
+ <!-- ========== ANALYTICS ========== -->
+  </div>
+ </details>
+ <div class="pgroup">Reaching people</div>
+ <details class="ptab" id="tab-ask">
+  <summary>📝 The Asking — surveys<span class="tstate" id="tstate-ask"></span></summary>
+  <div class="tbody">
+<div style="text-align:right;margin-bottom:.4em"><a href="#map" id="panel-lock" class="note" style="color:var(--dim)">🔒 Lock &amp; leave</a></div>
+  <h2>📝 The Asking · surveys &amp; sign-ups</h2>
+  <div class="pdesc">Ask a question, send the link, watch the answers add up. Good for gauging interest \u2014 an after-school sports program, a class, a trip \u2014 before you build it. Anyone who wants to be contacted can leave their details, and those stay private to you.</div>
+  <div class="subcard">
+    <b>📂 Your surveys</b>
+    <div class="note" style="margin:.3em 0 .5em">Each survey keeps its own name, questions, link, and answers. Pick one to edit it, or start a new one.</div>
+    <select id="sv-pick"></select>
+    <div style="display:flex;gap:.5em;flex-wrap:wrap;margin-top:.3em">
+      <button class="btn ghost" id="sv-new">➕ Start a new survey</button>
+      <button class="btn ghost" id="sv-del">🗑️ Delete this survey</button>
+    </div>
+  </div>
+  <div class="subcard">
+    <label>Short name for the link <span style="text-transform:none">(letters and hyphens — e.g. <code>sports</code>)</span></label>
+    <input type="text" id="sv-id" placeholder="sports" value="${esc((C.survey&&C.survey.id)||'')}">
+    <label>Heading at the top <span style="text-transform:none;font-weight:400;color:var(--dim)">(a school or church name — leave blank for none)</span></label>
+    <input type="text" id="sv-org" value="${esc((C.survey&&C.survey.org)||'')}" placeholder="Huntingdon Valley Christian Academy">
+    <label>Address under it <span style="text-transform:none;font-weight:400;color:var(--dim)">(optional)</span></label>
+    <input type="text" id="sv-orgaddr" value="${esc((C.survey&&C.survey.orgaddr)||'')}" placeholder="1845 Byberry Rd, Huntingdon Valley, PA 19006">
+    <label>Survey title</label>
+    <input type="text" id="sv-title" value="${esc((C.survey&&C.survey.title)||'')}" placeholder="e.g. After-School Sports \u2014 would your child join?">
+    <label>A sentence or two of introduction</label>
+    <textarea id="sv-intro" rows="2" placeholder="Why you're asking, and what it might look like">${esc((C.survey&&C.survey.intro)||'')}</textarea>
+    <label>Your questions \u2014 one per line. Put the answer choices after a <b>|</b> , separated by commas.<br>
+      <span style="text-transform:none">e.g. <code>Would your child join basketball? | Yes, No, Maybe</code><br>
+      Leave off the choices and it just uses Yes / No.</span></label>
+    <textarea id="sv-q" rows="6" placeholder="Would your child be interested in basketball? | Yes, No, Maybe&#10;Would your child be interested in flag football? | Yes, No, Maybe&#10;Would you be willing to help coach sometimes? | Yes, No">${((C.survey&&C.survey.q)||[]).map(function(q){return esc(q.text)+' | '+esc((q.opts||['Yes','No']).join(', '));}).join('\n')}</textarea>
+    <label>Thank-you message</label>
+    <input type="text" id="sv-thanks" value="${esc((C.survey&&C.survey.thanks)||'Thank you \u2014 your answer has been counted.')}">
+    <label>Open for answers?</label>${pToggle('sv-on',(C.survey&&C.survey.on),'🔒 Closed','📝 OPEN — accepting answers')}
+    <div style="display:flex;gap:.5em;flex-wrap:wrap;margin-top:.5em">
+      <button class="btn" id="save-sv">💾 Save the survey</button>
+      <button class="btn ghost" id="sv-copy">🔗 Copy the link to send</button>
+      <button class="btn ghost" id="sv-see">👁️ Preview it</button>
+    </div>
+    <div id="sv-ok" class="ok" style="margin-top:.4em"></div>
+    <div class="note" style="margin-top:.3em">Link to send: <b id="sv-link"></b></div>
+    <div style="text-align:center;margin-top:.6em">
+      <div id="sv-qr"></div>
+      <button class="btn ghost" id="sv-qr-dl" style="margin-top:.4em">⬇️ Download the QR code</button>
+      <div class="note" style="margin-top:.3em">Print this on a flyer or slide — parents point a phone camera at it and the survey opens.</div>
+    </div>
+  </div>
+  <div class="subcard">
+    <b>📊 The answers so far</b>
+    <div class="note" style="margin:.3em 0 .5em">Updates as people reply. Names and contacts show only for those who chose to leave them.</div>
+    <div id="sv-results" class="note">Loading\u2026</div>
+    <div style="display:flex;gap:.5em;flex-wrap:wrap;margin-top:.5em">
+      <button class="btn" id="sv-pdf">📄 Results as PDF / print</button>
+      <button class="btn ghost" id="sv-download">⬇️ Download the replies</button>
+      <button class="btn ghost" id="sv-clear">🧹 Clear all replies</button>
+    </div>
+  </div>
+  </div>
+ </details>
+ <details class="ptab" id="tab-qr">
+  <summary>📱 QR Codes<span class="tstate" id="tstate-qr"></span></summary>
+  <div class="tbody">
+<h2>📱 QR Codes</h2>
   <div class="pdesc">Each code shows its link underneath — scan it, or copy the link for a bulletin or slide. Tap <b>Download</b> to save the QR as an image.</div>
   ${qrCard('🗺️ The whole hub','','joshuamura-hub')}
   ${qrCard('🙏 The Altar (prayer)','altar','altar')}
@@ -6312,44 +6376,74 @@ document.getElementById('panelbox').innerHTML=`
  </div>
 
  <!-- ========== 6. SCHEDULE ========== -->
- <div class="psec">
-  <h2>🥾 The Trail — schedule</h2>
-  <div class="pdesc">Where you'll be, and your weekly rhythm. Each saves separately.</div>
-
-  <div class="subcard">
-   <b>📍 Trail stops (dated events)</b>
-   <label>One per line: DATE | TITLE | PLACE | TIME | live yes/no | ICON | details</label>
-   <textarea id="tr-items" rows="6">${(C.trail||[]).map(x=>[x.date,x.title,x.place,x.time||'',x.live?'yes':'no',x.icon||'church',x.details||''].join(' | ')).join('\n')}</textarea>
-   <button class="btn psave" id="save-tr">Save the Trail</button> <span id="tr-ok" class="ok"></span>
   </div>
-
-  <div class="subcard">
-   <b>🕰️ Weekly Rhythm (standing appointments)</b>
-   <label>One per line: DAY | TIME | WHAT | WHERE | door(altar/class/watchfire) · none = 📍 map · plain = no link</label>
-   <textarea id="rh-items" rows="5">${(C.rhythm||[]).map(x=>[x.day,x.time,x.what,x.where,x.link||'none'].join(' | ')).join('\n')}</textarea>
-   <button class="btn psave" id="save-rh">Save the Rhythm</button> <span id="rh-ok" class="ok"></span>
-  </div>
- </div>
-
-
- <p class="note" style="margin-bottom:1em">Tap a section to fill it in, then hit its own <b>Save</b> button. Each section saves on its own.</p>
-
- <!-- ========== ANALYTICS ========== -->
- <div class="psec">
-  <h2>📊 Analytics — who's visiting &amp; studying</h2>
+ </details>
+ <div class="pgroup">What came back</div>
+ <details class="ptab" id="tab-analytics">
+  <summary>📊 Analytics<span class="tstate" id="tstate-analytics"></span></summary>
+  <div class="tbody">
+<h2>📊 Analytics — who's visiting &amp; studying</h2>
   <div class="pdesc">Anonymous counts from your own vault. It counts visits and devices (not named people), and only from the day it was switched on.</div>
   <div id="az-dash"><p class="note">Loading the numbers…</p></div>
   <button class="btn" id="az-refresh" style="margin-top:.6em">↻ Refresh</button>
  </div>
 
  <!-- ========== 7. READING RESPONSES ========== -->
- <div class="psec">
-  <h2>📬 Reading what comes in</h2>
+  </div>
+ </details>
+ <details class="ptab" id="tab-inbox">
+  <summary>📬 Reading what comes in<span class="tstate" id="tstate-inbox"></span></summary>
+  <div class="tbody">
+<h2>📬 Reading what comes in</h2>
   <div class="pdesc">Responses are private — read them in your Firebase console.</div>
   <p class="note">Prayer requests → <b>prayer</b> &nbsp;·&nbsp; Bible-school completions &amp; gift addresses → <b>completions</b><br>console.firebase.google.com → joshuamura → Realtime Database → Data</p>
- </div>
-
+  </div>
+ </details>
 `;
+/* ---- Each tab shows its own state, so the panel reads at a glance ---- */
+function paintPanelTabs(){
+  var lv=(C.live||{}), sv=(C.survey||{});
+  function set(id,text,live){
+    var el=document.getElementById('tstate-'+id), tab=document.getElementById('tab-'+id);
+    if(el)el.textContent=text||'';
+    if(tab)tab.classList.toggle('live',!!live);
+  }
+  var ex=lv.expedition||{}, pr=lv.prayer||{}, te=lv.teaching||{};
+  set('wf', ex.on?'live now':'off', ex.on);
+  set('pc', pr.on?'live now':'off', pr.on);
+  set('lc', te.on?'live now':'off', te.on);
+  set('spring', (C.devotional&&C.devotional.title)?'ready':'empty', false);
+  var trN=(C.trail&&C.trail.items&&C.trail.items.length)||0;
+  set('trail', trN?trN+' stops':'empty', false);
+  set('ask', sv.on?'open for answers':'closed', false);
+  var st=document.getElementById('tstate-ask');
+  if(st&&sv.on)st.classList.add('on'); else if(st)st.classList.remove('on');
+  set('meet','', false);
+  /* Go Live buttons reflect the truth and flip to END while running */
+  [['wf',ex.on,'the Watchfire'],['pc',pr.on,'the Prayer Circle'],['lc',te.on,'the Live Class']]
+   .forEach(function(r){
+    var b=document.getElementById('golive-'+r[0]), h=document.getElementById('gohint-'+r[0]);
+    if(!b)return;
+    b.classList.toggle('islive',!!r[1]);
+    b.textContent = r[1] ? ('\u23f9 END \u2014 '+r[2]+' is live') : ('\ud83d\udd34 GO LIVE \u2014 '+r[2]);
+    if(h)h.textContent = r[1] ? 'Everyone can see it now.' : 'Nothing goes out until you press this.';
+  });
+}
+/* Go Live / End: save whatever is on screen, then flip the switch. */
+function wireGoLive(){
+  [['wf','e-on','expedition'],['pc','p2-on','prayer'],['lc','t-on','teaching']].forEach(function(r){
+    var b=document.getElementById('golive-'+r[0]); if(!b||b.dataset.gw)return; b.dataset.gw='1';
+    b.onclick=async function(){
+      var cur=((C.live||{})[r[2]]||{}).on;
+      var t=document.getElementById(r[1]);
+      if(t)t.value = cur ? 'no' : 'yes';
+      var saver=document.getElementById('save-'+(r[0]==='wf'?'wf':r[0]));
+      if(saver){ saver.click(); }
+      else { try{ await saveLive(); }catch(e){} }
+      setTimeout(paintPanelTabs,350);
+    };
+  });
+}
 // QR downloads (delegated)
 document.querySelectorAll('[data-qrdl]').forEach(function(b){
   b.onclick=function(){ downloadQR(b.getAttribute('data-qrdl'), b.getAttribute('data-qrname')||'qr'); };
@@ -6645,6 +6739,7 @@ var azr=document.getElementById('az-refresh'); if(azr) azr.onclick=loadAnalytics
     if(ok){ ok.textContent='Copied ✓ — paste it into a text or email.'; setTimeout(function(){ok.textContent='';},3000); }
   };
 })();
+try{ paintPanelTabs(); wireGoLive(); }catch(e){}
 document.getElementById('save-d').onclick=async()=>{
   try{
     const old=C.devotional;
