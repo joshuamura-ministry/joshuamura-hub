@@ -2939,7 +2939,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v165</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v167</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -6761,7 +6761,8 @@ document.getElementById('panelbox').innerHTML=`
       <div class="note" style="margin:.3em 0 .5em"><b id="ls-count">—</b></div>
       <div id="ls-summary" class="note"></div>
       <div style="display:flex;gap:.5em;flex-wrap:wrap;margin-top:.6em">
-        <button class="btn" id="ls-dl">📄 Download everything they wrote</button>
+        <button class="btn" id="ls-report">📊 Board report — charts, printable</button>
+        <button class="btn ghost" id="ls-dl">📄 Everything they wrote (private)</button>
         <button class="btn ghost" id="ls-csv">📊 Download a spreadsheet</button>
       </div>
       <div id="ls-ok" class="ok" style="margin-top:.4em"></div>
@@ -6998,6 +6999,182 @@ function lsText(){
   });
   return L.join('\n');
 }
+/* A one-page report for the board: charts, no raw comments.
+   The full text stays private to the pastor \u2014 some of it names no one but
+   would be recognised in a small room. */
+function lsReport(){
+  if(!LS_ROWS.length) return;
+  var N=LS_ROWS.length;
+  var val={},weak={},more={},top={},ten={},stand={};
+  LS_ROWS.forEach(function(r){
+    (r.value ||[]).forEach(function(k){ val[k]=(val[k]||0)+1; });
+    (r.weak  ||[]).forEach(function(k){ weak[k]=(weak[k]||0)+1; });
+    (r.more  ||[]).forEach(function(k){ more[k]=(more[k]||0)+1; });
+    (r.topics||[]).forEach(function(k){ top[k]=(top[k]||0)+1; });
+    if(r.tenure) ten[r.tenure]=(ten[r.tenure]||0)+1;
+    if(r.standing) stand[r.standing]=(stand[r.standing]||0)+1;
+  });
+  var churches={};
+  LS_ROWS.forEach(function(r){ var c=r.church||'\u2014'; churches[c]=(churches[c]||0)+1; });
+
+  function bars(title,pairs,note,accent){
+    if(!pairs.length) return '';
+    var max=Math.max.apply(null,pairs.map(function(p){return p[1];}))||1;
+    var h='<h2>'+esc(title)+'</h2>'+(note?'<p class="sub">'+esc(note)+'</p>':'')+'<table class="bars">';
+    pairs.forEach(function(p,i){
+      var pct=Math.round(p[1]/max*100), share=Math.round(p[1]/N*100);
+      h+='<tr><td class="lbl">'+esc(p[0])+'</td>'
+        +'<td class="bar"><span style="width:'+pct+'%'+(accent&&i<2?';background:#8a2c2c':'')+'"></span></td>'
+        +'<td class="num">'+p[1]+'</td><td class="pct">'+share+'%</td></tr>';
+    });
+    return h+'</table>';
+  }
+  /* a real pie, drawn as SVG so it prints */
+  function pie(title,obj,labels){
+    var keys=Object.keys(obj); if(!keys.length) return '';
+    var total=keys.reduce(function(a,k){return a+obj[k];},0);
+    var cols=['#8a6c2c','#4a6d8c','#6d8a4a','#8c5a4a','#5a4a8c','#8c7a4a','#4a8c7a'];
+    var a0=-Math.PI/2, parts='', legend='';
+    keys.sort(function(a,b){return obj[b]-obj[a];}).forEach(function(k,i){
+      var frac=obj[k]/total, a1=a0+frac*Math.PI*2, big=frac>0.5?1:0;
+      var x0=100+95*Math.cos(a0), y0=100+95*Math.sin(a0);
+      var x1=100+95*Math.cos(a1), y1=100+95*Math.sin(a1);
+      var col=cols[i%cols.length];
+      parts += frac>0.999
+        ? '<circle cx="100" cy="100" r="95" fill="'+col+'"/>'
+        : '<path d="M100,100 L'+x0.toFixed(1)+','+y0.toFixed(1)+' A95,95 0 '+big+',1 '+x1.toFixed(1)+','+y1.toFixed(1)+' Z" fill="'+col+'"/>';
+      legend += '<div class="leg"><span class="sw" style="background:'+col+'"></span>'
+        +esc((labels&&labels[k])||k)+' \u2014 <b>'+obj[k]+'</b> ('+Math.round(frac*100)+'%)</div>';
+      a0=a1;
+    });
+    return '<h2>'+esc(title)+'</h2><div class="pierow">'
+      +'<svg viewBox="0 0 200 200" class="pie">'+parts+'</svg>'
+      +'<div class="legend">'+legend+'</div></div>';
+  }
+  var pairs=function(src,list){
+    return list.map(function(d){return [d[1], src[d[0]]||0];})
+               .filter(function(x){return x[1];})
+               .sort(function(a,b){return b[1]-a[1];});
+  };
+  var plain=function(src,n){
+    return Object.keys(src).sort(function(a,b){return src[b]-src[a];})
+                 .slice(0,n||99).map(function(k){return [k,src[k]];});
+  };
+  var STAND={member:'Members',regular:'Regular attenders',visitor:'Visitors',moved:'Moved away'};
+  var CH={};
+  Object.keys(CONNECT_CHURCHES).forEach(function(k){ CH[k]=CONNECT_CHURCHES[k]; });
+
+  /* --- three cross-cuts that a single chart cannot show --- */
+  function subset(fn){ return LS_ROWS.filter(fn); }
+  function tally(rows,field){
+    var o={}; rows.forEach(function(r){ (r[field]||[]).forEach(function(k){ o[k]=(o[k]||0)+1; }); }); return o;
+  }
+  /* two groups side by side on the same scale */
+  function compare(title,note,list,rowsA,labelA,rowsB,labelB,field){
+    if(!rowsA.length && !rowsB.length) return '';
+    var A=tally(rowsA,field), B=tally(rowsB,field);
+    var items=list.map(function(d){
+      var a=A[d[0]]||0,b=B[d[0]]||0;
+      return {label:d[1], a:a, b:b,
+              pa: rowsA.length?a/rowsA.length:0, pb: rowsB.length?b/rowsB.length:0};
+    }).filter(function(x){return x.a||x.b;})
+      .sort(function(x,y){ return (y.pa+y.pb)-(x.pa+x.pb); });
+    if(!items.length) return '';
+    var thin = (rowsA.length<6||rowsB.length<6);
+    var h='<h2>'+esc(title)+'</h2>'
+      +'<p class="sub">'+esc(note)+'</p>'
+      +'<div class="key"><span class="sw" style="background:#8a6c2c"></span>'+esc(labelA)+' ('+rowsA.length+')'
+      +'<span class="sw" style="background:#4a6d8c;margin-left:14px"></span>'+esc(labelB)+' ('+rowsB.length+')</div>'
+      +(thin?'<p class="warn">One group is small \u2014 read these as a hint, not a verdict.</p>':'')
+      +'<table class="bars">';
+    items.forEach(function(it){
+      h+='<tr><td class="lbl">'+esc(it.label)+'</td>'
+        +'<td class="bar2">'
+          +'<span class="b1" style="width:'+Math.round(it.pa*100)+'%"></span>'
+          +'<span class="b2" style="width:'+Math.round(it.pb*100)+'%"></span>'
+        +'</td><td class="num">'+it.a+' / '+it.b+'</td></tr>';
+    });
+    return h+'</table>';
+  }
+
+  var longT=subset(function(r){ return ['6\u201315 years','16\u201330 years','More than 30 years'].indexOf(r.tenure)>=0; });
+  var newT =subset(function(r){ return ['Less than a year','1\u20135 years','This is my first visit'].indexOf(r.tenure)>=0; });
+  var bucks=subset(function(r){ return r.church==='bucks'; });
+  var fair =subset(function(r){ return r.church==='fairview'; });
+
+  var crossTenure = compare(
+    'Long-timers and newcomers \u2014 where we are weakest',
+    'The same question, split by how long people have been here. Where the two disagree is worth the most attention: newcomers notice what long-timers stopped seeing years ago. Bars show the share within each group; numbers are the actual counts.',
+    LISTEN_HEALTH, longT, '6 years or more', newT, 'Under 6 years, or visiting', 'weak');
+
+  var crossChurch = (bucks.length && fair.length) ? compare(
+    'Bucks County and Fairview Village \u2014 side by side',
+    'Two congregations, two sets of needs. Applying one church\u2019s answer to the other is the easiest mistake to make.',
+    LISTEN_HEALTH, bucks, 'Bucks County', fair, 'Fairview Village', 'weak') : '';
+
+  /* value vs reality */
+  function tension(){
+    var wkTop=pairs(weak,LISTEN_HEALTH).slice(0,3);
+    var vlTop=pairs(val,LISTEN_DUTIES).slice(0,3);
+    if(!wkTop.length||!vlTop.length) return '';
+    var h='<h2>What they want, and what needs the work</h2>'
+      +'<p class="sub">The congregation\u2019s top three asks for the pastor\u2019s time, beside the three areas they say are weakest. Where these do not line up, the answer is usually not the pastor working harder \u2014 it is the church being equipped to carry it.</p>'
+      +'<table class="two"><tr><th>They want the pastor here</th><th>The church is weakest here</th></tr>';
+    for(var i=0;i<3;i++){
+      h+='<tr><td>'+(vlTop[i]?esc(vlTop[i][0])+' <b>('+vlTop[i][1]+')</b>':'')+'</td>'
+        +'<td>'+(wkTop[i]?esc(wkTop[i][0])+' <b>('+wkTop[i][1]+')</b>':'')+'</td></tr>';
+    }
+    return h+'</table>';
+  }
+
+  var body =
+      bars('Where the church is weakest', pairs(weak,LISTEN_HEALTH),
+           'Each person chose the two areas most needing attention. A church rises only as far as its weakest area allows \u2014 so the top of this list is where to begin.', true)
+    + bars('Where the congregation wants the pastor\u2019s time', pairs(val,LISTEN_DUTIES),
+           'Each person chose three. This shows where the church would have its pastor spend his week.')
+    + bars('What the church would like more of', plain(more,10), '')
+    + bars('Sermon topics most asked for', plain(top,10), '')
+    + tension()
+    + crossTenure
+    + crossChurch
+    + pie('Who answered \u2014 years in this church', ten)
+    + pie('Who answered \u2014 standing', stand, STAND);
+
+  var w=window.open('','_blank');
+  if(!w){ var o=document.getElementById('ls-ok'); if(o)o.textContent='Please allow pop-ups to build the report.'; return; }
+  var when=new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Church &amp; Ministry Survey</title><style>'
+   +'*{box-sizing:border-box}body{font-family:Georgia,serif;color:#1a1a1a;max-width:760px;margin:0 auto;padding:40px 34px;line-height:1.5}'
+   +'h1{font-size:25px;margin:0 0 2px}h2{font-size:16px;margin:26px 0 6px;border-bottom:1px solid #ccc;padding-bottom:4px;page-break-after:avoid}'
+   +'.sub{color:#666;font-size:12.5px;margin:0 0 10px}'
+   +'table.bars{width:100%;border-collapse:collapse;margin-bottom:6px;page-break-inside:avoid}'
+   +'.bars td{padding:3px 5px;font-size:13px;vertical-align:middle}'
+   +'.lbl{width:42%}.bar{width:38%}.num{width:8%;text-align:right;font-weight:bold}'
+   +'.pct{width:10%;text-align:right;color:#777;font-size:12px}'
+   +'.bar span{display:block;height:13px;background:#8a6c2c;border-radius:3px;min-width:2px}'
+   +'.pierow{display:flex;gap:20px;align-items:center;page-break-inside:avoid;margin-bottom:8px}'
+   +'.pie{width:180px;height:180px;flex:0 0 auto}'
+   +'.legend{font-size:12.5px}.leg{margin:3px 0}'
+   +'.sw{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:6px;vertical-align:middle}'
+   +'.bar2{width:38%}.bar2 span{display:block;height:8px;border-radius:2px;min-width:2px;margin:1px 0}'
+   +'.b1{background:#8a6c2c}.b2{background:#4a6d8c}'
+   +'.key{font-size:12px;color:#555;margin:2px 0 6px}'
+   +'.warn{font-size:11.5px;color:#8a5a2c;font-style:italic;margin:0 0 6px}'
+   +'table.two{width:100%;border-collapse:collapse;margin:4px 0 10px;page-break-inside:avoid}'
+   +'.two th{text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:#555;border-bottom:1px solid #999;padding:4px 6px}'
+   +'.two td{border-bottom:1px solid #e6e6e6;padding:5px 6px;font-size:13px;width:50%}'
+   +'.foot{margin-top:28px;font-size:11.5px;color:#777;border-top:1px solid #ccc;padding-top:8px}'
+   +'.noprint{margin-bottom:18px}@media print{.noprint{display:none}body{padding:0}}'
+   +'</style></head><body>'
+   +'<div class="noprint"><button onclick="window.print()" style="font-size:15px;padding:9px 18px">\ud83d\udcc4 Save as PDF / Print</button></div>'
+   +'<h1>Church &amp; Ministry Survey</h1>'
+   +'<div class="sub"><b>'+N+'</b> anonymous responses \u00b7 '+esc(when)+'</div>'
+   +body
+   +'<div class="foot">Responses were anonymous. Written comments are held by the pastor and are not reproduced here.<br>'
+   +'Joshua Mura \u00b7 Digital Ministry</div></body></html>');
+  w.document.close();
+}
+
 function lsCsv(){
   var q=function(x){ return '"'+String(x==null?'':x).replace(/"/g,'""').replace(/\n/g,' ')+'"'; };
   var head=['Received','How long here','Standing','Pastor should focus on','Church weakest in',
@@ -7033,6 +7210,11 @@ function wireListenPanel(){
       lsPaint();
     });
   }
+  var rp=document.getElementById('ls-report');
+  if(rp)rp.onclick=function(){
+    if(!LS_ROWS.length){ var o=document.getElementById('ls-ok'); if(o)o.textContent='No replies yet.'; return; }
+    lsReport();
+  };
   var d1=document.getElementById('ls-dl');
   if(d1)d1.onclick=function(){ ccSaveFile(lsText(),'listening-'+new Date().toISOString().slice(0,10)+'.txt');
     var o=document.getElementById('ls-ok'); if(o)o.textContent='Downloaded \u2713'; };
