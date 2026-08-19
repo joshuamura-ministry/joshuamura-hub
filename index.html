@@ -2939,7 +2939,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v162</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v164</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -6699,9 +6699,66 @@ document.getElementById('panelbox').innerHTML=`
   </div>
  </details>
  <div class="pgroup">Reaching people</div>
- <details class="ptab" id="tab-ask">
-  <summary>📝 The Asking — surveys<span class="tstate" style="margin-left:auto" id="tstate-ask"></span></summary>
+ <details class="ptab" id="tab-surveys">
+  <summary>📝 Surveys<span class="tstate" style="margin-left:auto" id="tstate-surveys"></span></summary>
   <div class="tbody">
+    <div class="note" style="margin-bottom:.8em">Every survey and card you’re running. Each one has its own link, QR code and results.</div>
+
+    <details class="ptab" style="margin:.4em 0">
+      <summary>Pastoral Performance Survey<span class="tstate" style="margin-left:auto" id="tstate-listen"></span></summary>
+      <div class="tbody">
+    <div class="note" style="margin-bottom:.6em">An anonymous listening survey — what the congregation values in a pastor, where they'd like more of your time, and what they'd like preached. No names are collected.</div>
+    <label>Link for Bucks County</label>
+    <div class="note" id="ls-link-bucks" style="word-break:break-all;margin-bottom:.5em"></div>
+    <label>Link for Fairview Village</label>
+    <div class="note" id="ls-link-fairview" style="word-break:break-all;margin-bottom:.5em"></div>
+    <div style="display:flex;gap:.5em;flex-wrap:wrap">
+      <button class="btn ghost" id="ls-qr-bucks">📱 QR — Bucks County</button>
+      <button class="btn ghost" id="ls-qr-fairview">📱 QR — Fairview</button>
+    </div>
+    <div id="ls-qr-out" style="text-align:center;margin-top:.6em"></div>
+    <div class="subcard" style="margin-top:.9em">
+      <b>📊 What they've said</b>
+      <div class="note" style="margin:.3em 0 .5em"><b id="ls-count">—</b></div>
+      <div id="ls-summary" class="note"></div>
+      <div style="display:flex;gap:.5em;flex-wrap:wrap;margin-top:.6em">
+        <button class="btn" id="ls-dl">📄 Download everything they wrote</button>
+        <button class="btn ghost" id="ls-csv">📊 Download a spreadsheet</button>
+      </div>
+      <div id="ls-ok" class="ok" style="margin-top:.4em"></div>
+    </div>
+  </div>
+    </details>
+
+    <details class="ptab" style="margin:.4em 0">
+      <summary>Connect Cards<span class="tstate" style="margin-left:auto" id="tstate-connect"></span></summary>
+      <div class="tbody">
+    <div class="note" style="margin-bottom:.6em">A warm card anyone can fill in — prayer, a Bible study, a visit, or a place to serve. Names and addresses are kept private: they can be sent but never read from the website. Download them here as a clean list.</div>
+    <label>Link for Bucks County</label>
+    <div class="note" id="cc-link-bucks" style="word-break:break-all;margin-bottom:.5em"></div>
+    <label>Link for Fairview Village</label>
+    <div class="note" id="cc-link-fairview" style="word-break:break-all;margin-bottom:.5em"></div>
+    <div style="display:flex;gap:.5em;flex-wrap:wrap">
+      <button class="btn ghost" id="cc-qr-bucks">📱 QR — Bucks County</button>
+      <button class="btn ghost" id="cc-qr-fairview">📱 QR — Fairview</button>
+    </div>
+    <div id="cc-qr-out" style="text-align:center;margin-top:.6em"></div>
+    <div class="subcard" style="margin-top:.9em">
+      <b>📥 The cards that have come in</b>
+      <div class="note" style="margin:.3em 0 .5em"><b id="cc-count">—</b></div>
+      <div style="display:flex;gap:.5em;flex-wrap:wrap">
+        <button class="btn" id="cc-dl-list">📄 Download a readable list</button>
+        <button class="btn ghost" id="cc-dl-csv">📊 Download a spreadsheet</button>
+      </div>
+      <div id="cc-dl-ok" class="ok" style="margin-top:.4em"></div>
+      <div class="note" style="margin-top:.5em">The list opens in any text app; the spreadsheet opens in Excel or Numbers — one row per person, ready for a visitation roster or a deacons' list.</div>
+    </div>
+  </div>
+    </details>
+
+    <details class="ptab" style="margin:.4em 0">
+      <summary>After-School Sports<span class="tstate" style="margin-left:auto" id="tstate-ask"></span></summary>
+      <div class="tbody">
 <div style="text-align:right;margin-bottom:.4em"><a href="#map" id="panel-lock" class="note" style="color:var(--dim)">🔒 Lock &amp; leave</a></div>
   <h2>📝 The Asking · surveys &amp; sign-ups</h2>
   <div class="pdesc">Ask a question, send the link, watch the answers add up. Good for gauging interest \u2014 an after-school sports program, a class, a trip \u2014 before you build it. Anyone who wants to be contacted can leave their details, and those stay private to you.</div>
@@ -6756,6 +6813,8 @@ document.getElementById('panelbox').innerHTML=`
     </div>
   </div>
   </div>
+    </details>
+  </div>
  </details>
  <details class="ptab" id="tab-qr">
   <summary>📱 QR Codes<span class="tstate" style="margin-left:auto" id="tstate-qr"></span></summary>
@@ -6790,58 +6849,8 @@ document.getElementById('panelbox').innerHTML=`
  <!-- ========== 6. SCHEDULE ========== -->
   </div>
  </details>
- <div class="pgroup">Reaching people</div>
- <details class="ptab" id="tab-connect">
-  <summary>🤝 Connect Cards<span class="tstate" style="margin-left:auto" id="tstate-connect"></span></summary>
-  <div class="tbody">
-    <div class="note" style="margin-bottom:.6em">A warm card anyone can fill in — prayer, a Bible study, a visit, or a place to serve. Names and addresses are kept private: they can be sent but never read from the website. Download them here as a clean list.</div>
-    <label>Link for Bucks County</label>
-    <div class="note" id="cc-link-bucks" style="word-break:break-all;margin-bottom:.5em"></div>
-    <label>Link for Fairview Village</label>
-    <div class="note" id="cc-link-fairview" style="word-break:break-all;margin-bottom:.5em"></div>
-    <div style="display:flex;gap:.5em;flex-wrap:wrap">
-      <button class="btn ghost" id="cc-qr-bucks">📱 QR — Bucks County</button>
-      <button class="btn ghost" id="cc-qr-fairview">📱 QR — Fairview</button>
-    </div>
-    <div id="cc-qr-out" style="text-align:center;margin-top:.6em"></div>
-    <div class="subcard" style="margin-top:.9em">
-      <b>📥 The cards that have come in</b>
-      <div class="note" style="margin:.3em 0 .5em"><b id="cc-count">—</b></div>
-      <div style="display:flex;gap:.5em;flex-wrap:wrap">
-        <button class="btn" id="cc-dl-list">📄 Download a readable list</button>
-        <button class="btn ghost" id="cc-dl-csv">📊 Download a spreadsheet</button>
-      </div>
-      <div id="cc-dl-ok" class="ok" style="margin-top:.4em"></div>
-      <div class="note" style="margin-top:.5em">The list opens in any text app; the spreadsheet opens in Excel or Numbers — one row per person, ready for a visitation roster or a deacons' list.</div>
-    </div>
-  </div>
- </details>
 
- <details class="ptab" id="tab-listen">
-  <summary>👂 Help Me Serve You Well<span class="tstate" style="margin-left:auto" id="tstate-listen"></span></summary>
-  <div class="tbody">
-    <div class="note" style="margin-bottom:.6em">An anonymous listening survey — what the congregation values in a pastor, where they'd like more of your time, and what they'd like preached. No names are collected.</div>
-    <label>Link for Bucks County</label>
-    <div class="note" id="ls-link-bucks" style="word-break:break-all;margin-bottom:.5em"></div>
-    <label>Link for Fairview Village</label>
-    <div class="note" id="ls-link-fairview" style="word-break:break-all;margin-bottom:.5em"></div>
-    <div style="display:flex;gap:.5em;flex-wrap:wrap">
-      <button class="btn ghost" id="ls-qr-bucks">📱 QR — Bucks County</button>
-      <button class="btn ghost" id="ls-qr-fairview">📱 QR — Fairview</button>
-    </div>
-    <div id="ls-qr-out" style="text-align:center;margin-top:.6em"></div>
-    <div class="subcard" style="margin-top:.9em">
-      <b>📊 What they've said</b>
-      <div class="note" style="margin:.3em 0 .5em"><b id="ls-count">—</b></div>
-      <div id="ls-summary" class="note"></div>
-      <div style="display:flex;gap:.5em;flex-wrap:wrap;margin-top:.6em">
-        <button class="btn" id="ls-dl">📄 Download everything they wrote</button>
-        <button class="btn ghost" id="ls-csv">📊 Download a spreadsheet</button>
-      </div>
-      <div id="ls-ok" class="ok" style="margin-top:.4em"></div>
-    </div>
-  </div>
- </details>
+
 
  <div class="pgroup">What came back</div>
  <details class="ptab" id="tab-analytics">
@@ -6871,6 +6880,7 @@ document.getElementById('panelbox').innerHTML=`
 var LS_ROWS=[];
 function lsLabel(k){ var d=LISTEN_DUTIES.find(function(x){return x[0]===k;}); return d?d[1]:k; }
 function lsPaint(){
+  try{ paintPanelTabs(); }catch(e){}
   var c=document.getElementById('ls-count'), box=document.getElementById('ls-summary'),
       t=document.getElementById('tstate-listen');
   if(t)t.textContent = LS_ROWS.length ? LS_ROWS.length+' replies' : '';
@@ -6991,6 +7001,7 @@ function ccList(group,arr){ return (arr||[]).map(function(x){return ccName(group
 
 var CC_ROWS=[];
 function ccPaint(){
+  try{ paintPanelTabs(); }catch(e){}
   var el=document.getElementById('cc-count');
   if(el)el.textContent = CC_ROWS.length ? (CC_ROWS.length+' card'+(CC_ROWS.length===1?'':'s')+' received')
                                         : 'No cards yet — send the link and they will appear here.';
@@ -7107,9 +7118,13 @@ function paintPanelTabs(){
   set('spring', (C.devotional&&C.devotional.title)?'ready':'empty', false);
   var trN=(C.trail&&C.trail.items&&C.trail.items.length)||0;
   set('trail', trN?trN+' stops':'empty', false);
-  set('ask', sv.on?'open for answers':'closed', false);
+  set('ask', sv.on?'open':'closed', false);
   var st=document.getElementById('tstate-ask');
   if(st&&sv.on)st.classList.add('on'); else if(st)st.classList.remove('on');
+  /* the Surveys tab shows the total waiting, so you know at a glance */
+  var tot=(typeof CC_ROWS!=='undefined'?CC_ROWS.length:0)+(typeof LS_ROWS!=='undefined'?LS_ROWS.length:0);
+  var sT=document.getElementById('tstate-surveys');
+  if(sT)sT.textContent = tot ? (tot+' replies') : '';
   set('meet','', false);
   /* Go Live buttons reflect the truth and flip to END while running */
   [['wf',ex.on,'the Watchfire'],['pc',pr.on,'the Prayer Circle'],['lc',te.on,'the Live Class']]
