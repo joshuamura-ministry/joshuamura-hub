@@ -2940,7 +2940,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v170</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v171</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -6887,6 +6887,15 @@ document.getElementById('panelbox').innerHTML=`
   ${qrCard('🙏 The Altar (prayer)','altar','altar')}
   ${qrCard('⛏️ The Mine (all the Bible studies)','mine','mine')}
   ${qrCard('🔥 The Watchfire (live — follow the slides)','watchfire','watchfire-live')}
+  ${qrCard('🤝 Connect Card — Bucks County','connect-bucks','connect-bucks')}
+  ${qrCard('🤝 Connect Card — Fairview Village','connect-fairview','connect-fairview')}
+  ${qrCard('👂 Church Survey — Bucks County','listen-bucks','church-survey-bucks')}
+  ${qrCard('👂 Church Survey — Fairview Village','listen-fairview','church-survey-fairview')}
+  ${qrCard('📖 The Live Class','class','live-class')}
+  ${qrCard('💧 The Spring (devotional)','spring','spring')}
+  ${qrCard('🌧️ Reclamation — the book study','vein-reclamation','reclamation-study')}
+  ${qrCard('🥾 The Trail (schedule)','trail','trail')}
+  ${qrCard('📚 The Library','library','library')}
   ${qrCard('🤝 Share the Treasure (invite a friend)','share','share-the-treasure')}
   <div class="subcard">
    <b>🤝 Share the Treasure — settings</b>
