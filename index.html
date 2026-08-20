@@ -158,11 +158,11 @@ footer .v{font-family:'Fraunces',serif;font-style:italic;font-size:1.05em;color:
   max-width:880px;margin:0 auto;padding:0 clamp(16px,4vw,40px)}   /* line up with .wrap */
 #classpin{position:sticky;top:0;z-index:40;background:var(--walnut);
   padding:.5em 0 .6em;margin:-.4em 0 .8em;border-bottom:1px solid rgba(201,162,75,.3)}
-#classpin .pinvid{width:100%;aspect-ratio:16/9;max-height:34dvh;border-radius:12px;overflow:hidden;background:#000;transition:max-height .22s ease,height .22s ease}
+#classpin .pinvid{width:100%;aspect-ratio:16/9;max-height:62dvh;border-radius:12px;overflow:hidden;background:#000;transition:max-height .22s ease,height .22s ease}
 /* Tucked: the call stays connected — you still hear everyone and they still hear you —
    but the page gives the reading almost the whole screen. */
 .pinvid.tucked{aspect-ratio:auto;height:64px;max-height:64px}
-@media(max-width:700px){.pinvid{max-height:30dvh}}
+@media(max-width:700px){.pinvid{max-height:46dvh}}
 .pintuck{background:var(--card);border:1px solid rgba(201,162,75,.35);color:var(--gold);border-radius:8px;padding:.25em .7em;font-size:.8em;font-weight:700;cursor:pointer;margin-left:auto}
 .pinclose2{margin-left:.4em}
 #classpin .pinvid iframe{width:100%;height:100%;border:0}
@@ -539,6 +539,7 @@ h3.gsec{font-family:'Fraunces',serif;color:var(--gold);font-size:1.15rem;margin:
 <script>
 /* Big-screen (TV) flags — declared FIRST because the live content listener reads TV_MODE. */
 var TV_MODE=false, PRES_REQ=null, PRES_CONN=null;
+var CLASS_SIZE=2;   /* pinned class video: 0 small … 3 large. Declared early — read on first paint. */
 var SLIDE_SHAPE='';   /* on/off + mode + deck: if this changes we must re-render, not patch */
 
 // --- Add-to-home-screen support ---
@@ -2939,7 +2940,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v168</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v169</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -3368,9 +3369,21 @@ var CLASS_TUCKED=false;
 try{ CLASS_TUCKED = sessionStorage.getItem('classtuck')==='1'; }catch(e){}
 /* Shrink the pinned video to a slim strip WITHOUT unmounting it — the call stays
    connected, the audio keeps flowing, and the reader gets the screen back. */
+try{ var _cs=parseInt(sessionStorage.getItem('classsize'),10); if(_cs>=0&&_cs<=3)CLASS_SIZE=_cs; }catch(e){}
 function applyClassTuck(){
   var v=document.getElementById('classpin-video');
-  if(v)v.classList.toggle('tucked',CLASS_TUCKED);
+  if(!v)return;
+  v.classList.toggle('tucked',CLASS_TUCKED);
+  if(!CLASS_TUCKED) v.style.maxHeight=[ '34dvh','46dvh','62dvh','80dvh' ][CLASS_SIZE];
+  else v.style.maxHeight='';
+}
+function cycleClassSize(){
+  CLASS_SIZE=(CLASS_SIZE+1)%4;
+  try{ sessionStorage.setItem('classsize',String(CLASS_SIZE)); }catch(e){}
+  if(CLASS_TUCKED){ CLASS_TUCKED=false; try{sessionStorage.setItem('classtuck','0');}catch(e){} }
+  applyClassTuck();
+  var b=document.getElementById('class-tuck');
+  if(b)b.textContent='\u25b4 Tuck video away';
 }
 function syncClassPin(){
   var host=document.getElementById('classpin-persist');
@@ -3415,6 +3428,7 @@ function syncClassPin(){
   }
   var asMod=!!SESSION_MOD_PASS;
   host.innerHTML='<div id="classpin"><div class="pinbar"><b>🔥 '+(asMod?'You are leading the class':"You're in the live class")+topic+'</b>'
+    +'<button class="pintuck" id="class-size" title="Make the video bigger or smaller">\u2b0d Size</button>'
     +'<button class="pintuck" id="class-tuck">'+(CLASS_TUCKED?'\u25be Show video':'\u25b4 Tuck video away')+'</button>'
     +'<button class="pinclose pinclose2" id="class-leave">Leave class ✕</button></div>'
     +'<div class="pinvid" id="classpin-video"></div>'
@@ -3424,6 +3438,8 @@ function syncClassPin(){
   mountCircle('classpin-video',k.room,asMod?'Pastor Josh':'Friend');
   CLASS_VIDEO_UP=true;CLASS_ROOM_MOUNTED=k.room;
   applyClassTuck();
+  var sz=document.getElementById('class-size');
+  if(sz)sz.onclick=cycleClassSize;
   var tuck=document.getElementById('class-tuck');
   if(tuck)tuck.onclick=function(){
     CLASS_TUCKED=!CLASS_TUCKED;
