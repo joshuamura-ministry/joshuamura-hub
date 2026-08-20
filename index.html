@@ -2939,7 +2939,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v167</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v168</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -3401,7 +3401,8 @@ function syncClassPin(){
     var join=document.getElementById('class-join');
     if(join)join.onclick=function(){
       var code=(document.getElementById('class-code').value||'').trim();
-      if(code!==(C.config.classcode||'class2026')){document.getElementById('class-code-err').textContent='That is not the class code. Ask Pastor Josh for the code to this invited class.';return;}
+      var need=((C.config&&C.config.classcode)||'').trim();   /* blank = open to all */
+      if(need && code!==need){document.getElementById('class-code-err').textContent='That is not the class code. Ask Pastor Josh for it.';return;}
       CLASS_JOINED=true;syncClassPin();
     };
     var lead=document.getElementById('class-lead');
@@ -6558,6 +6559,8 @@ document.getElementById('panelbox').innerHTML=`
 
   <div class="subcard" style="border-color:var(--gold)">
        </div>
+   <label>"Not underway" message</label>
+   <input type="text" id="e-note" value="${esc(lv.expedition.note||'')}" placeholder="When the fire is lit, this is the gathering place.">
    <details class="wf-extra"><summary>More — study link, presenter code</summary>
    <label>Companion study link <span style="text-transform:none;font-weight:400;color:var(--dim)">(e.g. dig-forge-1 · blank = none)</span></label><input type="text" id="e-study" value="${esc(lv.expedition.study||'')}">
    </details>
@@ -6642,7 +6645,8 @@ document.getElementById('panelbox').innerHTML=`
    </select>
    <div class="note" style="margin:-.2em 0 .5em">The whole study appears under the class video — verses, blanks, commentary and all. Their answers save on their own device, so they can finish it later in the Mine.</div>
    <label>Class code <span style="text-transform:none;font-weight:400;color:var(--dim)">(to join the live video class)</span></label>
-   <input type="text" id="cl-code" value="${esc((C.config&&C.config.classcode)||'class2026')}">
+   <input type="text" id="cl-code" value="${esc((C.config&&C.config.classcode)||'')}" placeholder="Leave blank — anyone can walk in">
+   <div class="note" style="margin:-.2em 0 .5em">Leave this empty and no code is asked for — people simply join when the class is live. Fill it in only if you want the class kept to those you invite.</div>
    <label>"Not in session" message</label><input type="text" id="t-note" value="${esc(lv.teaching.note)}">
    <button class="btn psave" id="save-lc">📖 Save the Live Class</button> <span id="lc-ok" class="ok"></span>
   </div>
@@ -7385,7 +7389,10 @@ function wireGoLive(){
     b.onclick=async function(){
       var cur=((C.live||{})[r[2]]||{}).on;
       var t=document.getElementById(r[1]);
-      if(t)t.value = cur ? 'no' : 'yes';
+      if(t){ t.value = cur ? 'no' : 'yes'; }
+      else { /* the Watchfire has no on/off toggle any more — Go Live IS the switch */
+        C.live[r[2]] = {...(C.live[r[2]]||{}), on: !cur};
+      }
       var saver=document.getElementById('save-'+(r[0]==='wf'?'wf':r[0]));
       if(saver){ saver.click(); }
       else { try{ await saveLive(); }catch(e){} }
@@ -7726,10 +7733,22 @@ document.getElementById('save-d').onclick=async()=>{
   }catch(e){document.getElementById('d-ok').textContent='Save failed — rules published?';}
 };
 async function saveLive(){
-  var exp={on:document.getElementById('e-on').value==='yes',title:v('e-title'),source:document.getElementById('e-src').value,youtubeId:v('e-yt'),room:v('e-room'),deckUrl:v('e-deck'),study:v('e-study'),note:v('e-note')};
-  var pr={on:document.getElementById('p2-on').value==='yes',room:v('p2-room'),note:v('p2-note')};
+  /* Read defensively: a field that isn't on screen must fall back to what is already
+     saved, never throw — one missing box used to fail the whole save. */
+  var g=function(id,fallback){ var e=document.getElementById(id); return e?e.value.trim():(fallback||''); };
+  var gOn=function(id,cur){ var e=document.getElementById(id); return e?e.value==='yes':!!cur; };
+  var LX=(C.live&&C.live.expedition)||{}, LP=(C.live&&C.live.prayer)||{}, LT=(C.live&&C.live.teaching)||{};
+  var srcEl=document.getElementById('e-src');
+  var exp={on:gOn('e-on',LX.on),title:g('e-title',LX.title),
+           source:(srcEl?srcEl.value:(LX.source||'none')),
+           youtubeId:g('e-yt',LX.youtubeId),room:g('e-room',LX.room)||'JoshuaMuraExpedition',
+           deckUrl:g('e-deck',LX.deckUrl),study:g('e-study',LX.study),
+           note:g('e-note',LX.note)||'When the fire is lit, this is the gathering place.'};
+  var pr={on:gOn('p2-on',LP.on),room:g('p2-room',LP.room)||'JoshuaMuraPrayer',note:g('p2-note',LP.note)};
   var clStudy=document.getElementById('cl-study');
-  var te={on:document.getElementById('t-on').value==='yes',room:v('t-room'),topic:v('cl-topic'),study:(clStudy?clStudy.value:((C.live.teaching&&C.live.teaching.study)||'')),note:v('t-note')};
+  var te={on:gOn('t-on',LT.on),room:g('t-room',LT.room)||'JoshuaMuraTeaching',
+          topic:g('cl-topic',LT.topic),
+          study:(clStudy?clStudy.value:(LT.study||'')),note:g('t-note',LT.note)};
   await db.ref('content/live').set({k:WRITE_KEY,expedition:exp,prayer:pr,teaching:te});
   C.live.expedition={...C.live.expedition,...exp}; C.live.prayer={...C.live.prayer,...pr}; C.live.teaching={...C.live.teaching,...te};
 }
