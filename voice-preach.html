@@ -418,7 +418,7 @@
 
 <nav class="steps" aria-label="Steps">
   <button id="tabPaste" aria-current="true">1 · Paste manuscript</button>
-  <button id="tabMark" disabled>2 · Mark slide turns</button>
+  <button id="tabMark" disabled>2 · Set slide turns</button>
   <button id="tabLive" disabled>3 · Preach</button>
   <button id="tabLog" disabled>Report</button>
 </nav>
@@ -432,8 +432,10 @@
   <section class="panel active" id="pastePanel">
     <textarea id="manuscriptInput" placeholder="Paste the full sermon manuscript here, exactly as it will be preached…" spellcheck="false"></textarea>
     <div class="row">
-      <button class="btn" id="toMarkBtn">Mark slide turns →</button>
-      <button class="btn ghost" id="sampleBtn">Load the John Mark sermon</button>
+      <label class="hint" for="sermonTitle" style="display:block;margin:.2rem 0 .3rem">Sermon title</label>
+      <input type="text" id="sermonTitle" placeholder="e.g. The 7th Man" style="width:100%;max-width:28rem;font-size:16px;padding:.55rem .7rem;margin-bottom:.9rem">
+      <button class="btn" id="toMarkBtn">Set slide turns →</button>
+      <button class="btn ghost" id="sampleBtn">Load a sample sermon (for practice)</button>
       <span class="hint" id="saveHint"></span>
     </div>
   </section>
@@ -564,12 +566,12 @@ try {
    content/sermons. Slides advance for every follower the instant this runs. */
 async function sermonWrite(patch){
   if (!db) return false;
-  const cur = { total:+(S.slideTotal||0), on:true, current:(S.slide||1), folder:(S.slideFolder||''), ...patch };
+  const cur = { total:+(S.slideTotal||0), on:true, current:(S.slide||1), folder:(S.slideFolder||''), title:(S.sermonTitle||''), ...patch };
   cur.total   = Math.min(50, Math.max(0, cur.total));
   cur.current = Math.min(Math.max(1, cur.current), Math.max(1, cur.total));
   cur.folder  = String(cur.folder||'').replace(/^\/+|\/+$/g,'');
   try {
-    await db.ref('content/sermons').set({ k:HUB.WRITE_KEY, on:cur.on, total:cur.total, current:cur.current, folder:cur.folder });
+    await db.ref('content/sermons').set({ k:HUB.WRITE_KEY, on:cur.on, total:cur.total, current:cur.current, folder:cur.folder, title:cur.title||'' });
     return true;
   } catch(e){ console.error('sermonWrite', e); return false; }
 }
@@ -586,6 +588,7 @@ const S = {
   tokens: [],        // [{raw, norm, para}] one per word
   cues: [],          // [{tokenIndex, fired, firedBy, clock, heard}] ordered by tokenIndex; cue k => advance to slide k+2
   slideTotal: 1,     // number of JPEG slides in this sermon
+  sermonTitle: '',   // what this sermon is called — shown on the hub
   slideFolder: '',   // per-sermon folder name (blank = plain /SERMONS/N.jpg)
   committedPtr: 0,   // next expected token index, from finalized speech only
   provPtr: 0,        // provisional pointer incl. interim speech (drives highlight + cue firing)
@@ -629,7 +632,14 @@ const OPTS = {
   // actually is. That run is allowed to reach past the fence and catch him up.
   // Ambiguous runs (a verse quoted twice, a refrain) are excluded when the
   // manuscript is parsed, so reading them can never cause a wrong jump.
-  rescueRun: 7      // consecutive words needed, and the run must be UNIQUE
+  rescueRun: 7,     // consecutive words needed, and the run must be UNIQUE
+
+  // How far a merely-strong phrase (3–4 words) may pull you FORWARD. Three words
+  // said while ad-libbing can easily coincide with three words further down the
+  // page — so a short run is only allowed to nudge, never to skip a sentence.
+  // Longer runs (5+) are unmistakable and may still reach the full fence.
+  shortRunFwd: 10,
+  sureRun: 5
 };
 
 /* ============================================================
@@ -791,7 +801,15 @@ function trackStep(ptr, buf){
   const a = bestAnchor(buf, ptr);
   if (!a) return ptr;                                   // newest word matched nothing → hold
   const np = a.idx + 1;                                 // pointer sits just past the matched word
-  if (a.run >= OPTS.strongRun) return np;               // strong phrase → trust (already fenced)
+  if (a.run >= OPTS.sureRun) return np;                 // 5+ words → unmistakable, trust it
+  if (a.run >= OPTS.strongRun){
+    // 3–4 words: enough to keep up with reading, not enough to justify a leap.
+    // If it wants to skip further than a nudge, hold where you are — an ad-lib
+    // must never carry the follower over text you have not yet spoken.
+    const ahead = a.idx - ptr;
+    if (ahead > OPTS.shortRunFwd) return ptr;
+    return np;
+  }
   if (a.run === 2) return a.dist <= OPTS.pairJump ? np : ptr;  // pair → nearby only
 
   // Lone word: accept only the NEAREST occurrence in the small window, and only
@@ -855,7 +873,8 @@ function saveState(){
       cueIdx: S.cues.map(c=>c.tokenIndex),
       folder: S.slideFolder || "",
       total: S.slideTotal || 1,
-      folderFor: S.folderFor || ""
+      folderFor: S.folderFor || "",
+      title: S.sermonTitle || ""
     }));
     document.getElementById("saveHint").textContent = "Saved on this device.";
   }catch(e){}
@@ -873,6 +892,10 @@ async function pullHubSermon(){
       S.slideFolder = v.folder;
       const fi = document.getElementById("slideFolder"); if (fi) fi.value = v.folder;
       changed = true;
+    }
+    if (v.title && v.title !== S.sermonTitle){
+      S.sermonTitle = v.title;
+      var si = document.getElementById('sermonTitle'); if (si) si.value = v.title;
     }
     if (v.total && +v.total !== +S.slideTotal){
       S.slideTotal = +v.total;
@@ -894,6 +917,7 @@ function loadState(){
       S.pendingCueIdx = d.cueIdx || [];
       document.getElementById("saveHint").textContent = "Restored your last manuscript.";
     }
+    if (d && d.title){ S.sermonTitle=d.title; var ti=document.getElementById('sermonTitle'); if(ti)ti.value=d.title; }
     if (d && d.folderFor) S.folderFor = d.folderFor;
     if (d && d.folder){ S.slideFolder = d.folder; const fi=document.getElementById("slideFolder"); if(fi) fi.value = d.folder; }
     if (d && d.total){ S.slideTotal = d.total; }
@@ -1419,6 +1443,10 @@ function syncSlideTotalHint(){
 document.getElementById("slideTotal").addEventListener("input", (e)=>{
   e.target.dataset.touched = "1";
   S.slideTotal = Math.max(1, Math.min(50, +e.target.value || 1));
+});
+document.getElementById("sermonTitle").addEventListener("input", (e)=>{
+  S.sermonTitle = e.target.value.trim();
+  saveState();
 });
 document.getElementById("slideFolder").addEventListener("input", (e)=>{
   S.slideFolder = e.target.value.trim().replace(/^\/+|\/+$/g,"");
