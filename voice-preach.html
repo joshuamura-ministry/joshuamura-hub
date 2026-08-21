@@ -643,13 +643,13 @@ const OPTS = {
   // actually is. That run is allowed to reach past the fence and catch him up.
   // Ambiguous runs (a verse quoted twice, a refrain) are excluded when the
   // manuscript is parsed, so reading them can never cause a wrong jump.
-  rescueRun: 7,     // consecutive words needed, and the run must be UNIQUE
+  rescueRun: 6,     // consecutive words needed, and the run must be UNIQUE
 
   // How far a merely-strong phrase (3–4 words) may pull you FORWARD. Three words
-  // said while ad-libbing can easily coincide with three words further down the
-  // page — so a short run is only allowed to nudge, never to skip a sentence.
-  // Longer runs (5+) are unmistakable and may still reach the full fence.
-  shortRunFwd: 10,
+  // said while ad-libbing can coincide with three words further down — but when
+  // you read verbatim and the follower has lagged a sentence behind, a solid 3–4
+  // word match ahead is almost always really you, so allow it to close ~1.5 lines.
+  shortRunFwd: 18,
   sureRun: 5
 };
 
@@ -757,10 +757,11 @@ function rescueAnchor(buf, ptr){
   if (at === undefined) return null;
   const end = at + N;                     // pointer sits just past the run
   if (end <= ptr) return null;            // never drag him backwards
-  // Inside the fence the ordinary tracker is already doing its job, and it is the
-  // logic that has been proven in the pulpit. The rescue exists only to reach
-  // BEYOND the fence — that is, when the follower has genuinely been left behind.
-  if (end <= ptr + OPTS.fwdReach) return null;
+  // A unique run of this length occurs in exactly ONE place in the manuscript,
+  // so it can only be where he actually is. Trust it to move the follower
+  // FORWARD to that spot — this both rescues a follower left far behind (beyond
+  // the fence) AND gently closes a smaller lag (a sentence or two) when the
+  // ordinary short-run logic was being too cautious to keep up.
   return end;
 }
 
@@ -1199,11 +1200,19 @@ function beginRecognition(){
         S.committedPtr = trackWords(S.committedPtr, newFinal, S.ctxFinal);
         S.resultBase = finalCount;
       }
-      // Live position follows the fast interim text; the phrase tracker prevents
-      // it from leaping ahead, so no lag cap is needed.
-      const ctxProv = S.ctxFinal.slice();
-      let prov = trackWords(S.committedPtr, interim, ctxProv);
-      S.provPtr = Math.max(prov, S.committedPtr);
+      // LIVE position: feed the WHOLE current interim phrase through the tracker,
+      // building a fresh rolling buffer, so multi-word runs accumulate and a
+      // unique run can JUMP the follower forward to catch up — instead of nudging
+      // one word at a time. (The old code tracked from committedPtr with a thin
+      // context, which starved the rescue of the 6-word run it needs on iPhone.)
+      if (interim.length){
+        let prov = S.committedPtr;
+        const ctxProv = S.ctxFinal.slice();          // seed with recent committed words
+        prov = trackWords(prov, interim, ctxProv);   // then run the full interim phrase
+        S.provPtr = Math.max(prov, S.committedPtr);
+      } else {
+        S.provPtr = Math.max(S.provPtr, S.committedPtr);
+      }
 
       const rawTail = [];
       for (let i=Math.max(0,e.results.length-3); i<e.results.length; i++)
@@ -1268,17 +1277,23 @@ function startListening(){
 
   beginRecognition();
 
-  // Stall-flush is ONLY for browsers that don't stream live text (iOS Safari):
-  // there, we force a commit so slides don't wait for a pause. Browsers that DO
-  // stream interim text (desktop Chrome/Safari) never need it — and forcing a
-  // restart on them just makes the browser re-ask for the mic, so we skip it.
+  // Stall-flush for iOS Safari, which can lag: it buffers speech and commits in
+  // late bursts. If the live position hasn't advanced for a moment, force the
+  // recognizer to commit so the follower catches up instead of trailing behind.
   clearInterval(S.flushTimer);
+  S.lastProvAt = Date.now(); S.lastProvSeen = S.provPtr;
   S.flushTimer = setInterval(()=>{
     if (!S.listening || !S.recognition) return;
-    if (S.sawInterim) return;                   // live text is flowing; no flush needed
-    if (Date.now() - S.lastResultAt >= FLUSH_STALL_MS){
-      S.lastResultAt = Date.now();
-      try{ S.recognition.stop(); }catch(e){}
+    const now = Date.now();
+    // Track whether the live pointer is actually moving.
+    if (S.provPtr !== S.lastProvSeen){ S.lastProvSeen = S.provPtr; S.lastProvAt = now; }
+    // Browsers that stream interim smoothly (desktop Chrome) keep provPtr moving,
+    // so this never trips for them. On iPhone, if provPtr has been stuck past the
+    // stall window while listening, force a commit to pull the position forward.
+    const streamingSmoothly = S.sawInterim && (now - S.lastResultAt < 700);
+    if (!streamingSmoothly && now - S.lastProvAt >= FLUSH_STALL_MS && now - S.lastResultAt >= 500){
+      S.lastProvAt = now; S.lastResultAt = now;
+      try{ S.recognition.stop(); }catch(e){}   // onend auto-restarts
     }
   }, 400);
 }
