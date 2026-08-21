@@ -646,6 +646,9 @@ const OPTS = {
   // Ambiguous runs (a verse quoted twice, a refrain) are excluded when the
   // manuscript is parsed, so reading them can never cause a wrong jump.
   rescueRun: 6,     // consecutive words needed, and the run must be UNIQUE
+  rescueReach: 35,  // farthest a unique-run catch-up may pull forward (~3 lines).
+                    // Big enough to close a real lag, small enough that a closing
+                    // phrase echoing earlier text can't leap across paragraphs.
 
   // How far a merely-strong phrase (3–4 words) may pull you FORWARD. Three words
   // said while ad-libbing can coincide with three words further down — but when
@@ -759,11 +762,12 @@ function rescueAnchor(buf, ptr){
   if (at === undefined) return null;
   const end = at + N;                     // pointer sits just past the run
   if (end <= ptr) return null;            // never drag him backwards
-  // A unique run of this length occurs in exactly ONE place in the manuscript,
-  // so it can only be where he actually is. Trust it to move the follower
-  // FORWARD to that spot — this both rescues a follower left far behind (beyond
-  // the fence) AND gently closes a smaller lag (a sentence or two) when the
-  // ordinary short-run logic was being too cautious to keep up.
+  // A unique run points to where he is — but only trust it to pull him forward a
+  // BOUNDED distance (enough to close a real lag of a line or two). Near the end
+  // of a sermon the closing echoes earlier phrases, so an unbounded jump could
+  // leap whole paragraphs on a coincidental match. Cap the catch-up so it helps
+  // with lag without ever skipping across the manuscript.
+  if (end > ptr + OPTS.rescueReach) return null;
   return end;
 }
 
