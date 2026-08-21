@@ -59,6 +59,7 @@
   .conn-dot.ok{color:var(--moss);}
   .conn-dot.off{color:var(--signal);}
   .conn-text{font-family:var(--mono); font-size:10px; letter-spacing:.08em; text-transform:none; color:var(--ink-soft);}
+  .ver-tag{font-family:var(--mono); font-size:10px; letter-spacing:.06em; color:var(--brass); text-transform:none;}
   body.live-mode .conn-text, body.live-mode .conn-dot{}
 
   /* ---------- live slide preview (presenter cockpit) ---------- */
@@ -409,17 +410,17 @@
 <!-- PIN gate: same code as the hub's Steward panel -->
 <div id="pinGate">
   <div class="pin-box">
-    <p class="eyebrow">Pastor Josh · private</p>
-    <h1 class="pin-title">Voice Preach</h1>
+    <p class="eyebrow">Pastor Josh · private</p>    <h1 class="pin-title">Voice Preach</h1>
     <p class="pin-sub">Enter your presenter code to open the voice-cued preaching tool.</p>
     <input id="pinInput" type="password" inputmode="numeric" autocomplete="off" placeholder="code" aria-label="Presenter code">
     <button class="btn" id="pinBtn">Unlock</button>
     <p class="pin-err" id="pinErr"></p>
+    <p class="ver-tag" id="verTagGate" style="margin-top:10px"></p>
   </div>
 </div>
 
 <header class="masthead">
-  <p class="eyebrow">Pastor Josh · voice-cued preaching <span id="connDot" class="conn-dot" title="Live sync">●</span> <span id="connText" class="conn-text">connecting…</span></p>
+  <p class="eyebrow">Pastor Josh · voice-cued preaching <span id="connDot" class="conn-dot" title="Live sync">●</span> <span id="connText" class="conn-text">connecting…</span> <span class="ver-tag" id="verTag"></span></p>
   <h1>Voice Preach</h1>
   <p class="sub">Paste your manuscript with the @@@ marks where slides change, then read aloud. As you reach each mark it advances the sermon slide — on the projector, the booth, and everyone following live. Your clicker always works too.</p>
 </header>
@@ -541,6 +542,13 @@
 
 <script>
 "use strict";
+
+/* ============================================================
+   VERSION — bump this each time we change Voice Preach so you can
+   confirm on-screen which build you're running after a deploy.
+   Format: v-DATE-letter (letter increments for same-day changes).
+   ============================================================ */
+const VOICE_PREACH_VERSION = "v21 · Aug 21";
 
 /* ============================================================
    HUB CONNECTION — matches joshuamura-hub exactly
@@ -1636,6 +1644,12 @@ if (db){
 }
 
 loadState();
+// Stamp the version everywhere it's shown, so you can confirm the deploy landed.
+(function(){
+  const t1=document.getElementById("verTag"), t2=document.getElementById("verTagGate");
+  if(t1) t1.textContent = VOICE_PREACH_VERSION;
+  if(t2) t2.textContent = VOICE_PREACH_VERSION;
+})();
 pullHubSermon();
 setTimeout(checkFolderMatch, 400);          /* whatever the back office already knows, use it */
 </script>
