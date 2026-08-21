@@ -295,10 +295,18 @@
     font-size:20px; line-height:2.0; color:var(--booth-text);
     scroll-behavior:smooth;
   }
-  .live-script .w{border-radius:4px; padding:1px 2px; transition:color .3s; color:var(--booth-text);}
+  .live-script .w{border-radius:4px; padding:1px 2px; transition:color .3s, background-color .3s;
+   color:var(--booth-text);
+   /* fixed metrics: nothing about a word may change its width as it is read */
+   font-weight:inherit; font-style:inherit; letter-spacing:inherit;}
   .live-script .w.read{color:var(--booth-dim);}   /* already spoken → fades back */
   .live-script .w.here{
-    background:var(--brass); color:#14161A; font-weight:600;
+    /* Highlight WITHOUT changing the word's width. Bold letters are wider, so a
+       bold highlight made every word swell as it was spoken and shrink again
+       after — which reflowed the line and pulled the next word up. Colour and
+       background move the eye just as well and never shift the text. */
+    background:var(--brass); color:#14161A;
+    box-shadow:0 0 0 2px var(--brass);
   }
   .live-script .cue-chip{cursor:default; background:#3A3E48; color:var(--booth-dim);}
   .live-script .cue-chip.armed{background:var(--brass); color:#fff;}
@@ -616,7 +624,10 @@ const S = {
 const OPTS = {
   nearBack: 3,      // a lone word may re-match a few words he just said (repeats/stumbles)
   nearAhead: 6,     // a lone word may advance only within this small window
-  pairJump: 30,     // a 2-word phrase may re-sync at most this far away
+  pairJump: 6,      // a 2-word phrase may re-sync only a word or two away.
+                    // Sermons repeat short pairs constantly — “John four” appears
+                    // at 4:4 and again at 4:5 — so a pair must never carry the
+                    // reader across a sentence. Long runs still do the real work.
   strongRun: 3,     // a run of this many words is a strong anchor
   gapAllow: 1,      // words he may skip inside a phrase and still keep the lock
   bufLen: 12,       // how many recent spoken words we keep as rolling context
@@ -810,7 +821,13 @@ function trackStep(ptr, buf){
     if (ahead > OPTS.shortRunFwd) return ptr;
     return np;
   }
-  if (a.run === 2) return a.dist <= OPTS.pairJump ? np : ptr;  // pair → nearby only
+  if (a.run === 2){
+    // Forward is the dangerous direction: it skips text he has not yet spoken.
+    const ahead = a.idx - ptr;
+    if (ahead > OPTS.pairJump) return ptr;
+    if (a.dist > OPTS.pairJump) return ptr;
+    return np;
+  }
 
   // Lone word: accept only the NEAREST occurrence in the small window, and only
   // if it's essentially where we already are (0-2 ahead) or a step back. A lone
