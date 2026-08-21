@@ -236,7 +236,11 @@
     flex:0 0 auto;
   }
   .ear.hearing .dot{background:var(--moss); box-shadow:0 0 8px var(--moss);}
-  .manual-row{display:flex; gap:10px;}
+  .folder-warn{display:none;margin:.5rem 0 .2rem;padding:.6rem .7rem;border-radius:8px;background:#f6e6c8;border:1px solid #c9a24b;color:#5a4420;font-size:.9rem;line-height:1.45}
+.folder-warn.show{display:block}
+.folder-warn b{font-family:var(--mono)}
+.folder-warn button{margin-left:.4rem;padding:.25rem .6rem;border:1px solid #8a6c2c;background:#fff;border-radius:6px;font-size:.85rem;cursor:pointer}
+.manual-row{display:flex; gap:10px;}
 .size-row{display:flex;align-items:center;gap:.4rem;justify-content:center;margin:.5rem 0 .1rem;flex-wrap:wrap}
 .size-lbl{font-size:.78rem;opacity:.65;letter-spacing:.04em;text-transform:uppercase}
 .size-row button{min-width:3rem;padding:.45rem .7rem;font-weight:700;font-size:1rem}
@@ -448,6 +452,7 @@
       <div class="row">
         <label class="hint" for="slideFolder">Sermon folder:</label>
         <input type="text" id="slideFolder" placeholder="e.g. john-mark" style="width:11em;font-family:var(--mono);font-size:15px;padding:8px;border:1.5px solid var(--ink);border-radius:8px;">
+        <div id="folderWarn" class="folder-warn"></div>
       </div>
       <div class="row">
         <label class="hint" for="slideTotal">Slides in this sermon:</label>
@@ -483,6 +488,10 @@
           <span class="size-lbl">Script size</span>
           <button id="sizeDown" aria-label="Smaller text">A&minus;</button>
           <button id="sizeUp" aria-label="Larger text">A+</button>
+        </div>
+        <div class="size-row">
+          <span class="size-lbl">Reading line</span>
+          <button id="readPos" aria-label="Where the line you are reading sits">Middle</button>
         </div>
         <div class="manual-row">
           <button id="prevBtn" aria-label="Previous slide">← Back</button>
@@ -817,13 +826,36 @@ function trackWords(ptr, words, ctx){
    PERSISTENCE
    ============================================================ */
 const LS_KEY = "voiceCuePrototype.v1";
+/* A short fingerprint of the manuscript. If it changes, this is a different sermon
+   — so the folder from the last one must not be trusted silently. */
+function sermonFingerprint(t){
+  t=(t||'').replace(/\s+/g,' ').trim().toLowerCase();
+  if(!t) return '';
+  var h=0; for(var i=0;i<t.length;i++){ h=((h<<5)-h+t.charCodeAt(i))|0; }
+  return t.length+':'+h;
+}
+function checkFolderMatch(){
+  var warn=document.getElementById("folderWarn"); if(!warn) return;
+  var txt=(document.getElementById("manuscriptInput")||{}).value||"";
+  var fp=sermonFingerprint(txt);
+  var mismatch = S.slideFolder && fp && S.folderFor!==fp;
+  if(mismatch){
+    warn.className="folder-warn show";
+    warn.innerHTML='\u26a0\ufe0f These slides \u2014 <b>'+(S.slideFolder||'')+'</b> \u2014 were set for a different sermon. '
+      +'If this one has its own slides, change the folder above. '
+      +'<button type="button" id="folderKeep">It\u2019s right \u2014 keep it</button>';
+    var k=document.getElementById("folderKeep");
+    if(k)k.onclick=function(){ S.folderFor=fp; saveState(); checkFolderMatch(); };
+  } else { warn.className="folder-warn"; warn.textContent=""; }
+}
 function saveState(){
   try{
     localStorage.setItem(LS_KEY, JSON.stringify({
       text: document.getElementById("manuscriptInput").value,
       cueIdx: S.cues.map(c=>c.tokenIndex),
       folder: S.slideFolder || "",
-      total: S.slideTotal || 1
+      total: S.slideTotal || 1,
+      folderFor: S.folderFor || ""
     }));
     document.getElementById("saveHint").textContent = "Saved on this device.";
   }catch(e){}
@@ -862,6 +894,7 @@ function loadState(){
       S.pendingCueIdx = d.cueIdx || [];
       document.getElementById("saveHint").textContent = "Restored your last manuscript.";
     }
+    if (d && d.folderFor) S.folderFor = d.folderFor;
     if (d && d.folder){ S.slideFolder = d.folder; const fi=document.getElementById("slideFolder"); if(fi) fi.value = d.folder; }
     if (d && d.total){ S.slideTotal = d.total; }
   }catch(e){}
@@ -972,10 +1005,15 @@ function paintLive(){
     // keeps the line near the bottom, the page naturally stays still until
     // you've read a couple of lines down, THEN begins scrolling — and it only
     // ever moves forward, so it lags gently behind your voice, never races ahead.
-    const zone = (window.innerWidth <= 960) ? 0.70 : 0.62;
+    // Where the line you are reading should sit. Lower numbers keep it nearer the
+    // top, so the page moves sooner and you are never reading at the bottom edge.
+    // At larger script sizes that matters more, since fewer lines fit on screen.
+    const zone = READ_ZONE[READ_POS] || 0.40;
     const target = hereEl.offsetTop - box.clientHeight*zone;
-    // Only scroll DOWN (forward), and only once we're clearly past the trigger.
-    if (target > box.scrollTop + 24){ box.scrollTop = target; }
+    // Only ever scroll DOWN (forward), so it lags gently behind and never races ahead.
+    if (target > box.scrollTop + 8){
+      box.scrollTo({top:target, behavior:'smooth'});
+    }
   }
   paintSlidePreview();
 }
@@ -1345,6 +1383,8 @@ document.getElementById("toMarkBtn").addEventListener("click", ()=>{
   if (!text){ document.getElementById("manuscriptInput").focus(); return; }
   const oldTokens = S.tokens.map(t=>t.norm).join(" ");
   const parsed = parseManuscript(text);
+  /* A different manuscript means a different sermon — flag the old slide folder. */
+  setTimeout(checkFolderMatch, 0);
   S.tokens = parsed.tokens;
   if (parsed.cueIdx.length){
     // @@@ markers found in the paste — they define the slide turns
@@ -1382,7 +1422,8 @@ document.getElementById("slideTotal").addEventListener("input", (e)=>{
 });
 document.getElementById("slideFolder").addEventListener("input", (e)=>{
   S.slideFolder = e.target.value.trim().replace(/^\/+|\/+$/g,"");
-  saveState();
+  S.folderFor = sermonFingerprint((document.getElementById("manuscriptInput")||{}).value||"");
+  saveState(); checkFolderMatch();
 });
 
 document.getElementById("toLiveBtn").addEventListener("click", ()=>{
@@ -1406,6 +1447,11 @@ document.getElementById("testMicBtn").addEventListener("click", toggleMicTest);
 document.getElementById("nextBtn").addEventListener("click", manualNext);
 
 /* ---- SCRIPT SIZE: the pulpit is further from the screen than a desk is ---- */
+/* How far down the screen the line you're reading is held.
+   'high' keeps it near the top so the text moves early; 'low' is the old behaviour. */
+const READ_ZONE = { high:0.28, middle:0.42, low:0.62 };
+var READ_POS = 'middle';
+try{ var _rp=localStorage.getItem('vpReadPos'); if(READ_ZONE[_rp]) READ_POS=_rp; }catch(e){}
 var SCRIPT_SIZE = 3;
 try{ var _ss=parseInt(localStorage.getItem("vpScriptSize"),10); if(_ss>=1&&_ss<=7) SCRIPT_SIZE=_ss; }catch(e){}
 function applyScriptSize(){
@@ -1421,6 +1467,18 @@ function setScriptSize(step){
   applyScriptSize();
 }
 document.getElementById("sizeUp").addEventListener("click", function(){ setScriptSize(1); });
+/* Cycle where the reading line sits: high (moves early) → middle → low. */
+(function(){
+  var b=document.getElementById("readPos");
+  var names={high:"High",middle:"Middle",low:"Low"};
+  function paint(){ if(b)b.textContent=names[READ_POS]||"Middle"; }
+  if(b)b.addEventListener("click", function(){
+    READ_POS = READ_POS==='high' ? 'middle' : READ_POS==='middle' ? 'low' : 'high';
+    try{ localStorage.setItem('vpReadPos', READ_POS); }catch(e){}
+    paint();
+  });
+  paint();
+})();
 document.getElementById("sizeDown").addEventListener("click", function(){ setScriptSize(-1); });
 applyScriptSize();
 
@@ -1499,7 +1557,8 @@ if (db){
 }
 
 loadState();
-pullHubSermon();          /* whatever the back office already knows, use it */
+pullHubSermon();
+setTimeout(checkFolderMatch, 400);          /* whatever the back office already knows, use it */
 </script>
 </body>
 </html>
