@@ -629,7 +629,9 @@ const OPTS = {
                     // at 4:4 and again at 4:5 — so a pair must never carry the
                     // reader across a sentence. Long runs still do the real work.
   strongRun: 3,     // a run of this many words is a strong anchor
-  gapAllow: 1,      // words he may skip inside a phrase and still keep the lock
+  gapAllow: 2,      // words he may stumble on (skip/add/misspeak) inside a phrase
+                    // and still keep the lock — real preaching is full of small slips,
+                    // so the run must survive them instead of freezing.
   bufLen: 12,       // how many recent spoken words we keep as rolling context
   // THE FENCE — even a strong phrase can only pull the follower this far from
   // where it already is. Beyond this, a coincidental match (an ad-lib that
@@ -769,13 +771,26 @@ function rescueAnchor(buf, ptr){
    of his preceding buffered words that also line up just before it? Allows a
    small number of skipped words so a missed word doesn't break the phrase. */
 function runLengthAt(buf, tIdx){
+  // Measure how long a matching run extends backward from this manuscript word,
+  // forgiving natural stumbles. A slip can be EITHER a manuscript word he skipped
+  // OR an extra/wrong word he said (an "um", a repeat, a misread). Tolerating both
+  // keeps the lock alive through real preaching instead of freezing on one slip.
   const T = S.tokens;
   let run = 1, gaps = 0;
   let bi = buf.length - 2, ti = tIdx - 1;
   while (bi >= 0 && ti >= 0 && (buf.length - bi) <= OPTS.bufLen){
-    if (similar(buf[bi], T[ti].norm)){ run++; bi--; ti--; }
-    else if (gaps < OPTS.gapAllow){ gaps++; ti--; }   // treat as a word he skipped
-    else break;
+    if (similar(buf[bi], T[ti].norm)){ run++; bi--; ti--; continue; }
+    if (gaps < OPTS.gapAllow){
+      gaps++;
+      // Decide which kind of slip this is, by peeking one step each way:
+      const skipManuscript = (ti-1 >= 0 && similar(buf[bi], T[ti-1].norm));   // he skipped a manuscript word
+      const extraSpoken     = (bi-1 >= 0 && similar(buf[bi-1], T[ti].norm));   // he said an extra/wrong word
+      if (skipManuscript){ ti--; }             // advance manuscript past the skipped word
+      else if (extraSpoken){ bi--; }           // advance spoken past the stumble word
+      else { ti--; bi--; }                     // a substitution: step both past it
+      continue;
+    }
+    break;
   }
   return run;
 }
