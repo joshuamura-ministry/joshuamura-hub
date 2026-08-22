@@ -342,6 +342,11 @@ h3.gsec{font-family:'Fraunces',serif;color:var(--gold);font-size:1.15rem;margin:
 .gxreflbl,.grlbl,.gplbl{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:.3em}
 .gxref ul{margin:.2em 0;padding-left:1.2em;color:var(--dim);line-height:1.6}
 .greflect{background:rgba(201,162,75,.06);border-radius:12px;padding:.8em 1em;margin:1.1em 0}
+.gxrow{margin:.4em 0}
+.gxbtn{background:transparent;border:none;border-bottom:1px dashed rgba(201,162,75,.6);color:var(--gold);font-family:inherit;font-size:1rem;font-weight:600;cursor:pointer;padding:0 0 1px}
+.gxbtn.open{border-bottom-style:solid}
+.gxnote{color:var(--dim);font-size:.92rem;margin-left:.4em}
+.gxtext{margin:.4em 0 .8em;padding:.7em .9em;border-left:3px solid rgba(201,162,75,.45);background:rgba(244,237,224,.04);border-radius:0 10px 10px 0;line-height:1.75;font-size:.98rem}
 .gq{border:1px solid rgba(201,162,75,.28);border-radius:12px;padding:.85em 1em;margin:.9em 0;background:rgba(244,237,224,.03)}
 .gqn{font-size:.7rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);opacity:.85}
 .gqt{font-family:'Fraunces',serif;font-size:1.12rem;line-height:1.45;margin:.3em 0 .6em}
@@ -2954,7 +2959,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v178</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v179</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -4368,17 +4373,7 @@ function guideReader(){
     }
   }
   const g=guideById(id);
-  if(!g){ app.innerHTML=`<div class="crumb"><a href="#mine">⛏️ ← The Mine</a></div><div class="card note">That companion study isn't here yet.</div>${footer()}`;
-  /* Answers stay hidden until the teacher asks for them — so the class thinks first. */
-  app.querySelectorAll('.gqbtn').forEach(function(b){
-    b.onclick=function(){
-      var box=document.getElementById('ga-'+b.dataset.ga);
-      if(!box)return;
-      var hidden=box.classList.toggle('hide');
-      b.textContent = hidden ? 'Reveal answer' : 'Hide answer';
-      b.classList.toggle('open', !hidden);
-    };
-  }); return; }
+  if(!g){ app.innerHTML=`<div class="crumb"><a href="#mine">⛏️ ← The Mine</a></div><div class="card note">That companion study isn't here yet.</div>${footer()}`; return; }
   logRead('guide:'+id);
   if(part!==null){ renderGuidePart(id, part); return; }
   // Table of contents
@@ -4403,6 +4398,33 @@ function guideReader(){
      <button class="btn" id="guide-print">📄 Download / Save as PDF</button>
    </div>
    ${footer()}`;
+  /* Answers stay hidden until the teacher asks \u2014 so the class thinks first. */
+  app.querySelectorAll('.gqbtn').forEach(function(b){
+    b.onclick=function(){
+      var box=document.getElementById('ga-'+b.dataset.ga);
+      if(!box)return;
+      var hidden=box.classList.toggle('hide');
+      b.textContent = hidden ? 'Reveal answer' : 'Hide answer';
+      b.classList.toggle('open', !hidden);
+    };
+  });
+  /* Cross-references open the verse itself, so nobody has to go and look it up. */
+  app.querySelectorAll('.gxbtn').forEach(function(b){
+    b.onclick=async function(){
+      var box=document.getElementById('gx-'+b.dataset.xi);
+      if(!box)return;
+      if(!box.classList.contains('hide')){ box.classList.add('hide'); b.classList.remove('open'); return; }
+      box.classList.remove('hide'); b.classList.add('open');
+      if(box.dataset.done) return;
+      try{
+        var txt = await lookupPassage(b.dataset.xref);
+        box.innerHTML = txt ? esc(txt) : '<span class="note">Open it in your Bible \u2014 the text could not be loaded.</span>';
+        box.dataset.done='1';
+      }catch(e){
+        box.innerHTML='<span class="note">Open it in your Bible \u2014 the text could not be loaded.</span>';
+      }
+    };
+  });
   const pb=document.getElementById('guide-print'); if(pb) pb.onclick=()=>printGuide(id);
 }
 function renderGuidePart(id, num){
@@ -4423,7 +4445,16 @@ function renderGuidePart(id, num){
    ${outline?`<div class="goutbox"><div class="goutlbl">${esc(s.outlineTitle||'')}</div>${outline}</div>`:''}
    ${sections}
    ${s.wordstudy?`<div class="gword"><span class="gwordlbl">🔑 Word study — ${esc(s.wordstudy.label)}.</span> ${esc(s.wordstudy.body)}</div>`:''}
-   ${crossrefs?`<div class="gxref"><div class="gxreflbl">Cross-references</div><ul>${crossrefs}</ul></div>`:''}
+   ${(s.crossrefs&&s.crossrefs.length)?`<div class="gxref"><div class="gxreflbl">Cross-references — tap to read</div>
+     ${s.crossrefs.map(function(r,ri){
+        var ref=String(r).split('\u2014')[0].split(' - ')[0].trim();
+        var note=String(r).indexOf('\u2014')>0?String(r).split('\u2014').slice(1).join('\u2014').trim():'';
+        return `<div class="gxrow">
+          <button class="gxbtn" data-xref="${esc(ref)}" data-xi="${ri}">${esc(ref)}</button>
+          ${note?`<span class="gxnote">${esc(note)}</span>`:''}
+          <div class="gxtext hide" id="gx-${ri}"><span class="note">Loading…</span></div>
+        </div>`;
+     }).join('')}</div>`:''}
    ${(s.questions||[]).map(function(q,qi){
        return `<div class="gq">
          <div class="gqn">Question ${qi+1}</div>
@@ -5569,6 +5600,21 @@ app.querySelectorAll('[data-play]').forEach(function(el){
 wirePassageLinks(app);
 }
 // Tap a reference (in a study or devotional) → read the verse in a pop-up, right where you are.
+/* Fetch the actual words of a passage from the KJV already in the Library,
+   so a cross-reference can show the verse instead of a summary of it. */
+async function lookupPassage(ref){
+  var B = await loadBible();
+  if(!B) return null;
+  var p = parseRef(ref);
+  if(!p) return null;
+  var verses = B.b[p.bi].c[p.ci];
+  if(!verses) return null;
+  if(!p.v1) return verses.map(function(t,i){ return (i+1)+' '+t; }).join(' ');
+  var out=[];
+  for(var i=p.v1; i<=p.v2 && i<=verses.length; i++) out.push(i+' '+verses[i-1]);
+  return out.join(' ');
+}
+
 function parseRef(ref){
   var B=BIBLE; if(!B) return null;
   var m=String(ref).match(/^\s*([1-3]?\s*[A-Za-z.\s]+?)\s+(\d+)(?::(\d+))?(.*)$/);
