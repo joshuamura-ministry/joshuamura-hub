@@ -2959,7 +2959,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v179</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v180</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -4398,33 +4398,7 @@ function guideReader(){
      <button class="btn" id="guide-print">📄 Download / Save as PDF</button>
    </div>
    ${footer()}`;
-  /* Answers stay hidden until the teacher asks \u2014 so the class thinks first. */
-  app.querySelectorAll('.gqbtn').forEach(function(b){
-    b.onclick=function(){
-      var box=document.getElementById('ga-'+b.dataset.ga);
-      if(!box)return;
-      var hidden=box.classList.toggle('hide');
-      b.textContent = hidden ? 'Reveal answer' : 'Hide answer';
-      b.classList.toggle('open', !hidden);
-    };
-  });
-  /* Cross-references open the verse itself, so nobody has to go and look it up. */
-  app.querySelectorAll('.gxbtn').forEach(function(b){
-    b.onclick=async function(){
-      var box=document.getElementById('gx-'+b.dataset.xi);
-      if(!box)return;
-      if(!box.classList.contains('hide')){ box.classList.add('hide'); b.classList.remove('open'); return; }
-      box.classList.remove('hide'); b.classList.add('open');
-      if(box.dataset.done) return;
-      try{
-        var txt = await lookupPassage(b.dataset.xref);
-        box.innerHTML = txt ? esc(txt) : '<span class="note">Open it in your Bible \u2014 the text could not be loaded.</span>';
-        box.dataset.done='1';
-      }catch(e){
-        box.innerHTML='<span class="note">Open it in your Bible \u2014 the text could not be loaded.</span>';
-      }
-    };
-  });
+
   const pb=document.getElementById('guide-print'); if(pb) pb.onclick=()=>printGuide(id);
 }
 function renderGuidePart(id, num){
@@ -4476,6 +4450,33 @@ function renderGuidePart(id, num){
   const prev=document.getElementById('g-prev'), next=document.getElementById('g-next');
   if(prev){ prev.disabled=(num===1); prev.onclick=()=>renderGuidePart(id,num-1); }
   if(next){ next.disabled=(num===total); next.onclick=()=>renderGuidePart(id,num+1); }
+  /* Answers stay hidden until the teacher asks — so the class thinks first. */
+  app.querySelectorAll('.gqbtn').forEach(function(b){
+    b.onclick=function(){
+      var box=document.getElementById('ga-'+b.dataset.ga);
+      if(!box)return;
+      var hidden=box.classList.toggle('hide');
+      b.textContent = hidden ? 'Reveal answer' : 'Hide answer';
+      b.classList.toggle('open', !hidden);
+    };
+  });
+  /* Cross-references open the verse itself, so nobody has to go and look it up. */
+  app.querySelectorAll('.gxbtn').forEach(function(b){
+    b.onclick=async function(){
+      var box=document.getElementById('gx-'+b.dataset.xi);
+      if(!box)return;
+      if(!box.classList.contains('hide')){ box.classList.add('hide'); b.classList.remove('open'); return; }
+      box.classList.remove('hide'); b.classList.add('open');
+      if(box.dataset.done) return;
+      try{
+        var txt = await lookupPassage(b.dataset.xref);
+        box.innerHTML = txt ? esc(txt) : '<span class="note">Open it in your Bible — the text could not be loaded.</span>';
+        box.dataset.done='1';
+      }catch(e){
+        box.innerHTML='<span class="note">Open it in your Bible — the text could not be loaded.</span>';
+      }
+    };
+  });
 }
 function printGuide(id){
   const g=guideById(id); if(!g)return;
