@@ -379,6 +379,28 @@
     /* script gets all remaining space, strictly below the header */
     .live-script{flex:1 1 auto; min-height:0; padding:26px 18px 55vh; font-size:20px; line-height:2.0;}
     .ticker{flex:0 0 auto;}
+
+    /* PREACHING MODE (mic on): collapse the header to essentials so the
+       manuscript gets the screen. Setup controls return when you Stop.
+       Keep BOTH Stop and Pause available, just compact. */
+    body.preaching .size-row,
+    body.preaching .manual-row,
+    body.preaching .reset-run,
+    body.preaching #testMicBtn,
+    body.preaching .live-left .tiny,
+    body.preaching .exit{ display:none !important; }
+    body.preaching .slide-preview{ width:88px; flex:0 0 auto; }   /* tiny confidence preview */
+    body.preaching .live-left{ padding:6px 10px; gap:6px; flex-direction:row; flex-wrap:wrap; align-items:center; }
+    body.preaching .listen-card{ flex:1 1 140px; grid-template-columns:1fr; gap:4px; }
+    body.preaching .listen-card .ear{ font-size:11px; }
+    body.preaching #listenBtn{ font-size:15px; padding:12px 8px; }
+    /* compact Pause button sits inline, not the giant circle */
+    body.preaching .big-pause{
+      flex:0 0 auto; width:auto; height:auto; border-radius:12px;
+      padding:12px 18px; margin:0; font-size:14px; flex-direction:row; gap:6px;
+    }
+    body.preaching .big-pause .pause-ico{ font-size:14px; }
+    body.preaching .live-script{ padding-top:18px; }
   }
   /* ---------- PHONE: landscape = small preview left, script right ---------- */
   @media (max-width:960px) and (orientation:landscape){
@@ -548,7 +570,7 @@
    confirm on-screen which build you're running after a deploy.
    Format: v-DATE-letter (letter increments for same-day changes).
    ============================================================ */
-const VOICE_PREACH_VERSION = "v21 · Aug 21";
+const VOICE_PREACH_VERSION = "v22 · Aug 21 · phone preaching mode";
 
 /* ============================================================
    HUB CONNECTION — matches joshuamura-hub exactly
@@ -1298,6 +1320,7 @@ function startListening(){
   if (!S.runStarted) S.runStarted = Date.now();
   document.getElementById("listenBtn").textContent = "■ Stop listening";
   document.getElementById("listenBtn").classList.add("on");
+  document.body.classList.add("preaching");   // collapse controls, give the manuscript the screen
   setEar("Turning mic on…");
   requestWake();
   armWatchdog();
@@ -1342,6 +1365,7 @@ function stopListening(){
   if (S.recognition){ try{ S.recognition.onend=null; S.recognition.stop(); }catch(e){} S.recognition=null; }
   document.getElementById("listenBtn").textContent = "▶ Start listening";
   document.getElementById("listenBtn").classList.remove("on");
+  document.body.classList.remove("preaching");   // bring the full controls back for editing
   setEar("Mic off", false);
   releaseWake();
 }
