@@ -570,7 +570,7 @@
    confirm on-screen which build you're running after a deploy.
    Format: v-DATE-letter (letter increments for same-day changes).
    ============================================================ */
-const VOICE_PREACH_VERSION = "v22 · Aug 21 · phone preaching mode";
+const VOICE_PREACH_VERSION = "v23 · Aug 21 · 9-word skip-ahead";
 
 /* ============================================================
    HUB CONNECTION — matches joshuamura-hub exactly
@@ -677,6 +677,9 @@ const OPTS = {
   // manuscript is parsed, so reading them can never cause a wrong jump.
   rescueRun: 6,     // consecutive words needed, and the run must be UNIQUE
   rescueReach: 35,  // farthest a unique-run catch-up may pull forward (~3 lines).
+  jumpRun: 9,       // a UNIQUE run of THIS many words in a row lets you intentionally
+                    // skip ahead to ANYWHERE forward, no distance limit — you'll never
+                    // accidentally speak 9 matching words, so it can't misfire.
                     // Big enough to close a real lag, small enough that a closing
                     // phrase echoing earlier text can't leap across paragraphs.
 
@@ -769,7 +772,9 @@ function buildWordIndex(){
    so it is never allowed to move him. (E.g. a verse quoted twice in one sermon.)
    Built once when the manuscript is parsed, so it costs nothing while preaching. */
 function buildRescueIndex(){
-  const N = OPTS.rescueRun, T = S.tokens;
+  const T = S.tokens;
+  // Index 1: short unique runs (rescueRun) for bounded catch-up of a small lag.
+  const N = OPTS.rescueRun;
   const seen = new Map(), dup = new Set();
   for (let i = 0; i + N <= T.length; i++){
     let key = '';
@@ -779,11 +784,35 @@ function buildRescueIndex(){
   dup.forEach(k => seen.delete(k));
   S.rescueIndex = seen;
   S.rescueDropped = dup.size;
+  // Index 2: long unique runs (jumpRun) for intentional skip-ahead to ANYWHERE.
+  const M = OPTS.jumpRun;
+  const seen2 = new Map(), dup2 = new Set();
+  for (let i = 0; i + M <= T.length; i++){
+    let key = '';
+    for (let k = 0; k < M; k++) key += T[i+k].norm + ' ';
+    if (seen2.has(key)) dup2.add(key); else seen2.set(key, i);
+  }
+  dup2.forEach(k => seen2.delete(k));
+  S.jumpIndex = seen2;
 }
 
 /* Has he just spoken a run that exists in exactly one place in the manuscript?
    If so that is where he is — no ambiguity is possible. Returns that index. */
 function rescueAnchor(buf, ptr){
+  // FIRST: intentional skip-ahead. If the last jumpRun (9) words form a unique
+  // run, jump to it — ANYWHERE forward, no distance limit. You'll never say 9
+  // matching words by accident, so this only fires on a deliberate move.
+  const M = OPTS.jumpRun;
+  if (S.jumpIndex && buf.length >= M){
+    let jkey = '';
+    for (let k = buf.length - M; k < buf.length; k++) jkey += buf[k] + ' ';
+    const jat = S.jumpIndex.get(jkey);
+    if (jat !== undefined){
+      const jend = jat + M;
+      if (jend > ptr) return jend;         // forward jump to anywhere
+    }
+  }
+  // OTHERWISE: bounded catch-up for a small lag, using the shorter unique run.
   const N = OPTS.rescueRun;
   if (!S.rescueIndex || buf.length < N) return null;
   let key = '';
@@ -792,11 +821,8 @@ function rescueAnchor(buf, ptr){
   if (at === undefined) return null;
   const end = at + N;                     // pointer sits just past the run
   if (end <= ptr) return null;            // never drag him backwards
-  // A unique run points to where he is — but only trust it to pull him forward a
-  // BOUNDED distance (enough to close a real lag of a line or two). Near the end
-  // of a sermon the closing echoes earlier phrases, so an unbounded jump could
-  // leap whole paragraphs on a coincidental match. Cap the catch-up so it helps
-  // with lag without ever skipping across the manuscript.
+  // A short unique run only pulls forward a BOUNDED distance (a line or two), so
+  // a closing phrase that echoes earlier text can't leap whole paragraphs.
   if (end > ptr + OPTS.rescueReach) return null;
   return end;
 }
