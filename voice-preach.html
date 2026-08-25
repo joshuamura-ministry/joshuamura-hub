@@ -66,6 +66,7 @@
   .slide-preview{
     background:#000; border:1px solid var(--booth-line); border-radius:12px;
     overflow:hidden; position:relative; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center;
+    width:100%; flex:0 0 auto; min-height:150px;
   }
   .slide-preview img{width:100%; height:100%; object-fit:contain; display:block;}
   .slide-preview .noimg{color:var(--booth-dim); font-family:var(--mono); font-size:12px; text-align:center; padding:10px;}
@@ -421,6 +422,11 @@
     .live-left .tiny, .exit{display:none;}
     .live-script{padding:18px 20px 45vh; font-size:18px; line-height:1.9;}
   }
+  /* ---------- TABLET / iPad: roomy left column, clearly visible preview ---------- */
+  @media (min-width:961px) and (max-width:1400px){
+    .live-left{flex:0 0 280px;}
+    .slide-preview{width:100%; min-height:150px; aspect-ratio:16/9;}
+  }
   @media (prefers-reduced-motion:reduce){
     #slideNum.flash{animation:none;}
     .live-script{scroll-behavior:auto;}
@@ -570,7 +576,7 @@
    confirm on-screen which build you're running after a deploy.
    Format: v-DATE-letter (letter increments for same-day changes).
    ============================================================ */
-const VOICE_PREACH_VERSION = "v23 · Aug 21 · 9-word skip-ahead";
+const VOICE_PREACH_VERSION = "v24 · Aug 25 · iPad preview + skip-ahead";
 
 /* ============================================================
    HUB CONNECTION — matches joshuamura-hub exactly
