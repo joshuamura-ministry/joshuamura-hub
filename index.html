@@ -761,7 +761,6 @@ footer b{color:var(--ink2);font-weight:600;font-family:var(--disp);letter-spacin
   </div>
 
   <!-- public sign-up page: reached by a share link, no code, no hub -->
-  <div class="enlist" id="enlistpage" hidden></div>
 
   <div class="hub" id="hub" hidden>
     <div class="hubwelcome">
@@ -863,13 +862,13 @@ footer b{color:var(--ink2);font-weight:600;font-family:var(--disp);letter-spacin
   <button class="totop" id="totop" hidden aria-label="Back to top">↑<span>Top</span></button>
   <footer>
     <div><b>TERRAIN</b> · Pastors Hub</div>
-    <div><span id="datacred" hidden>Data: U.S. Census Bureau, ACS 5-year · </span><span id="ver">v7.1</span></div>
+    <div><span id="datacred" hidden>Data: U.S. Census Bureau, ACS 5-year · </span><span id="ver">v7.2</span></div>
   </footer>
 </main>
 
 <script>
 /* ================= CONFIG ================= */
-const VERSION = 'v7.1';
+const VERSION = 'v7.2';
 const CENSUS_KEY = '1a05bcbfef2345b34b677a3cb41c83dd7809ff5f';           // ← paste your free Census API key between the quotes
 const ACS_YEAR = 2024;           // 2020–2024 ACS 5-year (released Dec 2025)
 const ACS_PAST = 2014;           // 2010–2014, for the ten-year shift
@@ -4865,16 +4864,15 @@ function plannerRender(p){
     ${streamsHtml}
     ${budgetHtml}
     ${planDoc(p,pl,T,fit,phases,ST,BU,roster,kindName)}
-    <div class="pnext"><b>Next step</b>Saved on this device; it rebuilds from the survey whenever you open it. The next build adds the monthly report — each team enters its actual numbers against these targets and the plan shows what is on pace — then the roster with a name for every role — both are in now. Tap <b>Track</b> at the top once the meetings begin.</div>`;
+    <div class="pnext"><b>Next step</b>The plan is saved on this device and rebuilds from the survey whenever you open it. Print it for the board, print the sign-up sheet for Sabbath morning, and fill the roster as the names come back. Once the meetings begin, tap <b>Track</b> at the top: the nightly grid, the visitation queue and the gift list are generated from the dates you have already entered.</div>`;
   $('pl-clear').hidden=false;
   const pd=$('pl-doc'); if(pd) pd.onclick=()=>{ document.body.dataset.print='plan'; window.print(); setTimeout(()=>delete document.body.dataset.print,600); };
-  enlistWire(p,pl); enlistPublish(p,pl);
+  enlistWire(p,pl);
   // roster names: save as typed, without re-rendering the page under the cursor
   $('pout').querySelectorAll('input.rname').forEach(inp=>{
     inp.addEventListener('input',()=>{
       PLAN.roster=PLAN.roster||{}; PLAN.roster[inp.dataset.role]=inp.value; planSave(PLAN);
       const n=[...$('pout').querySelectorAll('input.rname')].filter(x=>x.value.trim()).length;
-      const h=$('pout').querySelector('.phead:has(h2) .hint'); // first hint is the header; update the roster one directly
       const rh=[...$('pout').querySelectorAll('.phead')].find(x=>x.querySelector('h2')&&x.querySelector('h2').textContent==='The roster');
       if(rh){ const sp=rh.querySelector('.hint'); if(sp) sp.textContent=n+' of '+[...$('pout').querySelectorAll('input.rname')].length+' named'+(fit.gap?' · '+fit.gap+' leader'+(fit.gap>1?'s':'')+' still to find':''); }
     });
@@ -4923,7 +4921,7 @@ function nightDates(p){
 /* gift thresholds scale with the length of the series */
 function giftMarks(p){
   const n=p.nights;
-  return {book:Math.max(3,Math.round(n*0.40)), bible:Math.min(18,Math.max(6,Math.round(n*0.75))), picture:Math.min(24,n)};
+  return {book:Math.max(3,Math.round(n*0.40)), bible:Math.min(18,Math.max(6,Math.round(n*0.75))), picture:Math.min(24,Math.max(4,Math.round(n*0.92)))};
 }
 function pAtt(person){ return Object.keys(person.att||{}).filter(k=>person.att[k]).length; }
 function preachedTopics(){ const set=new Set(); Object.values(RECS.nights||{}).forEach(n=>{ if(n.topic&&n.topic!=='other') set.add(n.topic); }); return set; }
@@ -5102,57 +5100,29 @@ function wireTrack(p){
 
 /* ================= ENLISTMENT =================
    Step one of any campaign: the members have to be recruited before a roster
-   can be staffed. Two ways in, because Sabbath morning is paper and the rest
-   of the week is a phone:
-     · a printable sheet listing every committee, filled in by hand;
-     · a share link to a public sign-up page that writes straight into the
-       pastor's inbox here.
-   The digital side uses the ministry's existing Firebase project on its own
-   enlist/ path. If it is unreachable the page says so and the paper sheet
-   still works — nothing depends on the network. */
-const FB={apiKey:"AIzaSyDUBDjNkekomVzJ15fRbt4W53fUtmYQ9pc",authDomain:"joshuamura.firebaseapp.com",
-  databaseURL:"https://joshuamura-default-rtdb.firebaseio.com",projectId:"joshuamura",
-  storageBucket:"joshuamura.firebasestorage.app",messagingSenderId:"907772957025",
-  appId:"1:907772957025:web:6671580d9acd9c3aeb7520"};
-let FBDB=null, FBFAIL=null;
-function fbId(p){ return ((p.church||'church').trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'church')+'-'+p.date; }
-function loadScript(src){ return new Promise((ok,no)=>{ const t=document.createElement('script'); t.src=src; t.onload=ok; t.onerror=()=>no(new Error('offline')); document.head.appendChild(t); }); }
-async function fbReady(){
-  if(FBDB) return FBDB;
-  if(FBFAIL) throw FBFAIL;
-  try{
-    if(typeof firebase==='undefined'){
-      await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
-      await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js');
-    }
-    if(!firebase.apps.length) firebase.initializeApp(FB);
-    FBDB=firebase.database(); return FBDB;
-  }catch(e){ FBFAIL=e; throw e; }
-}
+   can be staffed. Sabbath morning is paper, so this is paper: a printable
+   sheet listing every committee, filled in by hand and handed back the same
+   day. The names are then typed into the roster below, which saves.
+
+   Deliberately no backend. This file keeps its original promise — one file,
+   no build step, nothing to configure — and a sheet of paper works in a
+   church hall with no signal. */
 /* the committees a member can volunteer for — the roster, minus the roles a
    pastor appoints himself */
 function enlistRoles(p,pl){
   const fit=planLeaderFit(planLeaderRoles(p,pl),p.leaders);
   return fit.list.filter(r=>r.g!=='coord'||['materials','platform','music'].some(id=>(r.ids||[r.id]).includes(id)));
 }
-function enlistLink(p){
-  const base=location.href.split('#')[0];
-  return base+'#enlist='+encodeURIComponent(fbId(p));
-}
-
-/* ---- the pastor's side: sheet, link, inbox ---- */
+/* ---- the pastor's side: the printed sheet ---- */
 function enlistSection(p,pl){
-  const roles=enlistRoles(p,pl), link=enlistLink(p);
+  const roles=enlistRoles(p,pl);
   const D=new Date(p.date+'T12:00:00'), chairs=addMonths(D,-4);
   return `<div class="phead"><h2>Enlist the church</h2><span class="hint">${roles.length} committees open · chairs by ${pDate(chairs)}</span></div>
-    <p class="note" style="margin-top:6px">Before a roster can be staffed the members have to be asked. Print the sheet for Sabbath morning, and send the link to everyone who would rather sign up on their phone. Both land in the same place.</p>
+    <p class="note" style="margin-top:6px">Before a roster can be staffed the members have to be asked. Print one sheet per member for Sabbath morning; collect them the same day and type the names into the roster below.</p>
     <div class="tbar" style="margin-top:12px">
       <button class="btn" id="en-print">Print the sign-up sheet</button>
-      <button class="btn ghost" id="en-copy">Copy the sign-up link</button>
-      <button class="btn ghost" id="en-refresh">Check for sign-ups</button>
       <span class="hint" id="en-msg"></span>
     </div>
-    <div id="en-inbox"></div>
     <div id="printsheet" class="sheet">
       <h3>${esc(p.church||'Our church')} — evangelistic series sign-up</h3>
       <div class="sub">Opening night ${pDate(D)} · ${p.nights} nights. Every member has a place in this. Tick every committee you are willing to serve on, and hand this back today.</div>
@@ -5162,106 +5132,11 @@ function enlistSection(p,pl){
       <div class="ll" style="margin-top:6px">I am willing to serve on</div>
       <ul>${roles.map(r=>`<li>${esc(r.n)}</li>`).join('')}</ul>
       <div class="ll" style="margin-top:8px">I could also help with</div><div class="ln"></div>
-      <div style="font-size:.78rem;color:#555;margin-top:6px">Or sign up from your phone: ${esc(link)}</div>
     </div>`;
 }
 function enlistWire(p,pl){
-  const msg=$('en-msg');
   const pr=$('en-print'); if(pr) pr.onclick=()=>{ document.body.dataset.print='sheet'; window.print(); setTimeout(()=>delete document.body.dataset.print,600); };
-  const cp=$('en-copy'); if(cp) cp.onclick=async()=>{
-    const link=enlistLink(p);
-    try{ await navigator.clipboard.writeText(link); msg.textContent='Link copied.'; }
-    catch(e){ msg.textContent=link; }
-  };
-  const rf=$('en-refresh'); if(rf) rf.onclick=()=>enlistInbox(p,pl,true);
-  enlistInbox(p,pl,false);
 }
-async function enlistInbox(p,pl,loud){
-  const host=$('en-inbox'), msg=$('en-msg'); if(!host) return;
-  if(loud) msg.textContent='Checking…';
-  let subs=[];
-  try{
-    const db=await fbReady();
-    const snap=await db.ref('enlist/'+fbId(p)).limitToLast(300).once('value');
-    subs=Object.entries(snap.val()||{}).map(([k,v])=>({k,...v})).sort((a,b)=>(b.ts||0)-(a.ts||0));
-    if(loud) msg.textContent=subs.length?subs.length+' sign-up'+(subs.length>1?'s':'')+'.':'No sign-ups yet.';
-  }catch(e){
-    host.innerHTML=`<div class="tempty">Digital sign-ups are not reachable right now — the printed sheet still works, and you can type names straight into the roster. ${loud?'<br><span style="color:var(--ink3);font-size:.8rem">('+esc((e&&e.message)||'offline')+')</span>':''}</div>`;
-    if(loud) msg.textContent='';
-    return;
-  }
-  if(!subs.length){ host.innerHTML=`<div class="tempty">No sign-ups yet. Send the link, or type the names from the printed sheets into the roster below.</div>`; return; }
-  const roles=enlistRoles(p,pl);
-  const nameOf=id=>{const r=roles.find(x=>(x.ids||[x.id]).includes(id)); return r?r.n:id;};
-  host.innerHTML=subs.map(v=>`<div class="signup">
-    <div class="sh"><b>${esc(v.name||'(no name)')}</b><span>${esc(v.when||'')}</span></div>
-    <div class="sr">${esc([v.phone,v.email].filter(Boolean).join(' · '))}</div>
-    <div class="sr">Willing to serve: <em>${(v.roles||[]).map(id=>esc(nameOf(id))).join(', ')||'anything needed'}</em></div>
-    ${v.note?`<div class="sr" style="color:var(--ink3)">${esc(v.note)}</div>`:''}
-  </div>`).join('');
-}
-
-/* ---- the member's side: the public page ---- */
-async function enlistPublic(id){
-  document.querySelectorAll('.top,.hub,.toolbar,.secnav,.report,.ask,.gate,#planner,footer').forEach(el=>{ if(el) el.hidden=true; });
-  const host=$('enlistpage'); host.hidden=false;
-  host.innerHTML=`<div class="card2"><p class="lead">Loading the sign-up…</p></div>`;
-  let meta=null;
-  try{ const db=await fbReady(); const s=await db.ref('enlistmeta/'+id).once('value'); meta=s.val(); }catch(e){}
-  if(!meta){ host.innerHTML=`<h1>Sign-up not found</h1><p class="lead">This link may be out of date. Ask your pastor for a current one, or sign the printed sheet at church.</p>`; return; }
-  const roles=meta.roles||[];
-  let picked=new Set();
-  host.innerHTML=`
-    <h1>${esc(meta.church||'Our church')} — I want to help</h1>
-    <p class="lead">Opening night ${esc(meta.dateLabel||'')}${meta.nights?' · '+meta.nights+' nights':''}. Every member has a place in this series. Tick everything you are willing to serve on — the pastor will follow up with you.</p>
-    <div class="card2">
-      <label class="fl"><span>Your name</span><input id="en-name" type="text" autocomplete="name"></label>
-      <label class="fl"><span>Phone</span><input id="en-phone" type="tel" autocomplete="tel"></label>
-      <label class="fl"><span>Email (optional)</span><input id="en-email" type="email" autocomplete="email"></label>
-    </div>
-    <div class="card2">
-      <span style="font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--ink3)">I am willing to serve on</span>
-      <div class="pick" id="en-pick">${roles.map(r=>`<button type="button" data-r="${esc(r.id)}"><span class="bx"></span><span><b>${esc(r.n)}</b><small>${esc(r.d||'')}</small></span></button>`).join('')}</div>
-    </div>
-    <div class="card2">
-      <label class="fl"><span>Anything else you could help with</span><textarea id="en-note" rows="2" placeholder="A skill, a language, a vehicle, a home to host in…"></textarea></label>
-      <div id="en-err" class="err" style="min-height:1.2em"></div>
-      <button class="btn" id="en-send">Sign me up</button>
-      <p class="note" style="margin-top:10px">Your details go to your pastor for this series only.</p>
-    </div>`;
-  host.querySelectorAll('#en-pick button').forEach(b=>b.onclick=()=>{
-    const r=b.dataset.r; if(picked.has(r)) picked.delete(r); else picked.add(r);
-    b.classList.toggle('on',picked.has(r));
-  });
-  $('en-send').onclick=async()=>{
-    const name=$('en-name').value.trim(), phone=$('en-phone').value.trim(), email=$('en-email').value.trim(), note=$('en-note').value.trim();
-    const err=$('en-err'), btn=$('en-send');
-    if(!name){ err.textContent='Please add your name.'; $('en-name').focus(); return; }
-    if(!phone&&!email){ err.textContent='A phone or an email, so the pastor can reach you.'; $('en-phone').focus(); return; }
-    btn.textContent='Sending…'; btn.disabled=true; err.textContent='';
-    try{
-      const db=await fbReady();
-      await db.ref('enlist/'+id).push({name,phone,email,note,roles:[...picked],when:new Date().toLocaleString(),ts:Date.now()});
-      host.innerHTML=`<h1>Thank you, ${esc(name.split(' ')[0])}.</h1>
-        <p class="lead">Your name is with the pastor. He will be in touch about ${picked.size?'the committee'+(picked.size>1?'s':'')+' you chose':'where you can help'} before the series begins.</p>
-        <div class="card2"><p style="line-height:1.6">“Every church member should be engaged in some line of service for the Master.” There is a place in this for everyone — thank you for taking yours.</p></div>`;
-      window.scrollTo({top:0,behavior:'smooth'});
-    }catch(e){
-      err.textContent='Could not send — check your connection, or sign the sheet at church.';
-      btn.textContent='Sign me up'; btn.disabled=false;
-    }
-  };
-}
-/* the pastor publishes the committee list so the public page can read it */
-async function enlistPublish(p,pl){
-  try{
-    const db=await fbReady(), roles=enlistRoles(p,pl);
-    await db.ref('enlistmeta/'+fbId(p)).set({church:p.church||'',dateLabel:pDate(new Date(p.date+'T12:00:00')),nights:p.nights,
-      roles:roles.map(r=>({id:(r.ids||[r.id])[0],n:r.n,d:(r.d||'').replace(/<[^>]+>/g,'')})),ts:Date.now()});
-  }catch(e){}
-}
-
-
 /* ---- the whole plan as one printable document ---- */
 function planDoc(p,pl,T,fit,phases,ST,BU,roster,kindName){
   const D=new Date(p.date+'T12:00:00'), close=phases.find(x=>x.tag==='series').end;
@@ -5478,14 +5353,7 @@ function showWho(){
     try{ location.reload(); }catch(e){}
   };
 }
-function enlistRoute(){
-  const m=(location.hash||'').match(/^#enlist=(.+)$/);
-  if(!m) return false;
-  enlistPublic(decodeURIComponent(m[1]));
-  return true;
-}
 async function initAccess(){
-  if(enlistRoute()) return;
   ACCESS=await checkAccess();
   ACCESS_CHECKED=true;
   if(ACCESS.required&&!ACCESS.ok){
