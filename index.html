@@ -2959,13 +2959,20 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v183</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v184</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
 const SIGNER_URL='/.netlify/functions/circle-token';
-/* remember a moderator pass for this browser session only (never stored to disk) */
+/* Pastor Josh is always the moderator, so his passphrase is remembered on HIS
+   device once he has entered it. It is never sent anywhere but the signer, and
+   "Forget me on this device" in the Upper Room clears it. */
 let SESSION_MOD_PASS=null;
+try{ SESSION_MOD_PASS = localStorage.getItem('modpass') || null; }catch(e){}
+function rememberModPass(p){
+  SESSION_MOD_PASS = p || null;
+  try{ p ? localStorage.setItem('modpass', p) : localStorage.removeItem('modpass'); }catch(e){}
+}
 let MOD_CONFIRMED=false;   /* true only when the signer actually granted moderator */
 
 /* Build the public (unauthenticated) fallback URL — today's behaviour. */
@@ -3443,7 +3450,7 @@ function syncClassPin(){
     if(lead)lead.onclick=function(e){e.preventDefault();
       var mp=document.getElementById('class-modpass');var p=(mp&&mp.value||'').trim();
       if(!p){if(mp)mp.focus();return;}
-      SESSION_MOD_PASS=p;CLASS_JOINED=true;syncClassPin();
+      rememberModPass(p);CLASS_JOINED=true;syncClassPin();
     };
     return;
   }
@@ -6791,6 +6798,7 @@ document.getElementById('panelbox').innerHTML=`
     </div>
     <div id="mt-link" class="note" style="margin-top:.5em;word-break:break-all"></div>
     <div id="mt-ok" class="ok"></div>
+    <div class="note" style="margin-top:.6em"><span id="mt-modstate"></span> <a href="#" id="mt-forget" style="color:var(--dim)">Forget my passphrase on this device</a></div>
   </div>
   </div>
  </details>
@@ -7828,7 +7836,7 @@ var azr=document.getElementById('az-refresh'); if(azr) azr.onclick=loadAnalytics
     if(!pass){
       pass = prompt('Moderator passphrase \u2014 needed once to create a private room:') || '';
       if(!pass){ if(ok)ok.textContent='Cancelled.'; return; }
-      SESSION_MOD_PASS = pass;
+      rememberModPass(pass);
     }
     fresh.disabled=true; var was=fresh.textContent; fresh.textContent='Creating\u2026';
     try{
@@ -7839,7 +7847,7 @@ var azr=document.getElementById('az-refresh'); if(azr) azr.onclick=loadAnalytics
         nameBox.value=j.room; showLink();
         if(ok)ok.textContent='Fresh room ready \u2014 copy the link and send it. Older links no longer reach this meeting.';
       } else if(j && j.reason==='not-authorised'){
-        SESSION_MOD_PASS=null;
+        rememberModPass(null);
         if(ok)ok.textContent='That passphrase didn\u2019t match \u2014 try again.';
       } else {
         if(ok)ok.textContent='Could not create the room. Check your connection and try again.';
@@ -7850,6 +7858,20 @@ var azr=document.getElementById('az-refresh'); if(azr) azr.onclick=loadAnalytics
     fresh.disabled=false; fresh.textContent=was;
     setTimeout(function(){ if(ok)ok.textContent=''; },8000);
   };
+  /* Show whether this device already knows him, and let him clear it. */
+  (function(){
+    var st=document.getElementById('mt-modstate'), fg=document.getElementById('mt-forget');
+    function paint(){
+      if(st)st.textContent = SESSION_MOD_PASS
+        ? '\u2713 This device remembers you as moderator \u2014 you won\u2019t be asked again.'
+        : 'You\u2019ll be asked for your moderator passphrase once.';
+      if(fg)fg.style.display = SESSION_MOD_PASS ? '' : 'none';
+    }
+    if(fg)fg.onclick=function(e){ e.preventDefault(); rememberModPass(null); MOD_CONFIRMED=false; paint(); };
+    paint();
+    var f=document.getElementById('mt-fresh');
+    if(f)f.addEventListener('click',function(){ setTimeout(paint,600); });
+  })();
   var o=document.getElementById('mt-open');
   if(o)o.onclick=function(){ var u=showLink(); location.hash=u.split('#')[1]; };
   var c=document.getElementById('mt-copy');
