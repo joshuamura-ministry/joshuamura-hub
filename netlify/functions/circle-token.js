@@ -1,8 +1,27 @@
-// circle-token.js — JaaS (8x8) JWT signer for Joshua Mura's live circles
-// Zero npm dependencies: uses Node's built-in crypto only.
+/* ============================================================
+   circle-token  —  the Watchman at the door of the circles
+   ------------------------------------------------------------
+   Signs a JaaS (Jitsi-as-a-Service) JWT so the live circles are
+   PRIVATE and have NO 5-minute limit.
+
+   The app calls:   /.netlify/functions/circle-token?room=X&name=Y&pass=Z
+   It answers:      { ok:true, token:"...", moderator:true|false }
+
+   Environment variables (set in Netlify → Site settings → Environment):
+     JAAS_APP_ID    vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb
+     JAAS_KID       vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb/780697
+     JAAS_KEY       the ENTIRE contents of the .pk file
+                    (-----BEGIN PRIVATE KEY----- ... -----END PRIVATE KEY-----)
+     MOD_PASS       the moderator passphrase Pastor Josh types
+                    (optional; defaults to shepherd2026)
+
+   The private key lives ONLY here, in Netlify's encrypted store.
+   It is never in the repo, never in the HTML, never in the browser.
+   ============================================================ */
 
 const crypto = require('crypto');
 
+/* ---- base64url helpers (no padding, URL-safe) ---- */
 function b64url(input) {
   return Buffer.from(input)
     .toString('base64')
@@ -10,165 +29,172 @@ function b64url(input) {
     .replace(/\+/g, '-')
     .replace(/\//g, '_');
 }
-
-function normalizeKey(raw) {
-  if (!raw) return raw;
-  let k = raw.trim();
-  if ((k.startsWith('"') && k.endsWith('"')) || (k.startsWith("'") && k.endsWith("'"))) {
-    k = k.slice(1, -1);
-  }
-  k = k.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-
-  // If the key got flattened (newlines replaced by spaces, or all on one line),
-  // rebuild a valid PEM: header line, 64-char base64 body lines, footer line.
-  const beginMatch = k.match(/-----BEGIN [^-]+-----/);
-  const endMatch = k.match(/-----END [^-]+-----/);
-  if (beginMatch && endMatch) {
-    const header = beginMatch[0];
-    const footer = endMatch[0];
-    let body = k.substring(k.indexOf(header) + header.length, k.indexOf(footer));
-    body = body.replace(/\s+/g, '');
-    const wrapped = body.match(/.{1,64}/g);
-    if (wrapped) {
-      k = header + '\n' + wrapped.join('\n') + '\n' + footer + '\n';
-    }
-  }
-  return k;
-}
-
-function sign(payloadObj, privateKeyPem, kid) {
-  const header = { alg: 'RS256', kid, typ: 'JWT' };
-  const encHeader = b64url(JSON.stringify(header));
-  const encPayload = b64url(JSON.stringify(payloadObj));
-  const signingInput = encHeader + '.' + encPayload;
-
-  let keyObject;
-  const isPkcs1 = /BEGIN RSA PRIVATE KEY/.test(privateKeyPem);
-  try {
-    keyObject = crypto.createPrivateKey({
-      key: privateKeyPem,
-      format: 'pem',
-      type: isPkcs1 ? 'pkcs1' : 'pkcs8',
-    });
-  } catch (e1) {
-    keyObject = crypto.createPrivateKey(privateKeyPem);
-  }
-
-  const signer = crypto.createSign('RSA-SHA256');
-  signer.update(signingInput);
-  signer.end();
-  const signature = signer
-    .sign(keyObject)
+function b64urlFromBuffer(buf) {
+  return buf
     .toString('base64')
     .replace(/=/g, '')
     .replace(/\+/g, '-')
     .replace(/\//g, '_');
-  return signingInput + '.' + signature;
 }
 
-exports.handler = async (event) => {
+/* ---- sign a JWT with RS256 ---- */
+function signJwt(payload, privateKey, kid) {
+  const header = { alg: 'RS256', typ: 'JWT', kid: kid };
+  const encHeader = b64url(JSON.stringify(header));
+  const encPayload = b64url(JSON.stringify(payload));
+  const signingInput = encHeader + '.' + encPayload;
+
+  const signer = crypto.createSign('RSA-SHA256');
+  signer.update(signingInput);
+  signer.end();
+  const signature = signer.sign(privateKey);
+
+  return signingInput + '.' + b64urlFromBuffer(signature);
+}
+
+exports.handler = async function (event) {
   const headers = {
     'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Cache-Control': 'no-store',
+    'Cache-Control': 'no-store'
   };
 
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers, body: '' };
-  }
-
-  const APP_ID = process.env.JAAS_APP_ID;
-  const KID = process.env.JAAS_KID;
-  const PRIVATE_KEY = process.env.JAAS_PRIVATE_KEY;
-  const MOD_PASS = process.env.CIRCLE_MOD_PASS;
-
-  if (!APP_ID || !KID || !PRIVATE_KEY) {
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({
-        ok: false,
-        error:
-          'Signer not configured: check JAAS_APP_ID, JAAS_KID, and JAAS_PRIVATE_KEY in Netlify environment variables.',
-      }),
-    };
-  }
-
-  let params = {};
-  if (event.httpMethod === 'POST' && event.body) {
-    try {
-      params = JSON.parse(event.body);
-    } catch (e) {
-      params = {};
-    }
-  } else {
-    params = event.queryStringParameters || {};
-  }
-
-  const room = (params.room || '').trim();
-  const name = (params.name || 'Friend').toString().slice(0, 60);
-  const pass = (params.pass || '').toString();
-
-  const isModerator = MOD_PASS ? pass === MOD_PASS : false;
-
-  const now = Math.floor(Date.now() / 1000);
-  const payload = {
-    aud: 'jitsi',
-    iss: 'chat',
-    sub: APP_ID,
-    room: room,
-    iat: now,
-    nbf: now - 5,
-    exp: now + 60 * 60 * 4,
-    context: {
-      user: {
-        id: 'josh-' + now,
-        name: name,
-        moderator: isModerator ? 'true' : 'false',
-      },
-      features: {
-        livestreaming: 'false',
-        recording: 'false',
-        transcription: 'false',
-        'outbound-call': 'false',
-      },
-    },
-  };
-
-  if (!room) {
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({ ok: false, error: 'Missing room name.' }),
-    };
-  }
-
-  let token;
   try {
-    token = sign(payload, normalizeKey(PRIVATE_KEY), KID);
-  } catch (e) {
+    const APP_ID = process.env.JAAS_APP_ID;
+    const KID = process.env.JAAS_KID;
+    let KEY = process.env.JAAS_KEY;
+    const MOD_PASS = process.env.MOD_PASS || 'shepherd2026';
+
+    /* If the vault isn't stocked yet, say so plainly.
+       The app already falls back to the public room, so nothing breaks. */
+    if (!APP_ID || !KID || !KEY) {
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          ok: false,
+          reason: 'missing-env',
+          need: ['JAAS_APP_ID', 'JAAS_KID', 'JAAS_KEY'].filter(function (k) {
+            return !process.env[k];
+          })
+        })
+      };
+    }
+
+    /* Netlify's UI turns real newlines into \n escapes. Put them back. */
+    KEY = KEY.replace(/\\n/g, '\n').trim();
+
+    const q = event.queryStringParameters || {};
+    const room = (q.room || '').trim();
+    const name = (q.name || 'Friend').trim().slice(0, 60);
+    const pass = q.pass || '';
+
+    if (!room) {
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ ok: false, reason: 'no-room' })
+      };
+    }
+
+    /* ---- Only OUR rooms get a token. ----------------------------------------
+       Without this, anyone who worked out that rooms are made by editing the
+       address could open #meet-whatever and hold their own meetings on this
+       JaaS account — spending the 25-unique-people monthly allowance that the
+       prayer circle and the classes depend on.
+       The fixed rooms are named. Upper Room meetings are allowed only in the
+       shape the panel actually produces: a word, optionally followed by a
+       six-character tail. Anything else is refused. */
+    const FIXED = [
+      'JoshuaMuraPrayer',      /* the Altar */
+      'JoshuaMuraTeaching',    /* the Live Class */
+      'JoshuaMuraExpedition'   /* the Watchfire */
+    ];
+    /* An Upper Room name is <base>-<tail>, where the tail is derived from the
+       base with the private key. Only this function can produce a valid tail,
+       so a room name invented in the address bar simply will not verify. */
+    function meetTail(base){
+      return crypto.createHmac('sha256', KEY)
+                   .update('room:' + base.toLowerCase())
+                   .digest('base64')
+                   .replace(/[^a-z0-9]/gi, '')
+                   .toLowerCase()
+                   .slice(0, 8);
+    }
+    function meetOK(r){
+      const m = String(r).match(/^([A-Za-z][A-Za-z0-9-]{0,30})-([a-z0-9]{8})$/);
+      if (!m) return false;
+      const want = meetTail(m[1]);
+      /* constant-time-ish compare */
+      if (want.length !== m[2].length) return false;
+      let diff = 0;
+      for (let i = 0; i < want.length; i++) diff |= want.charCodeAt(i) ^ m[2].charCodeAt(i);
+      return diff === 0;
+    }
+
+    /* Minting: the panel asks for a room name and must prove it is Pastor Josh
+       by sending the moderator passphrase. Nobody else can mint. */
+    if ((q.mint || '') === '1') {
+      if (pass !== MOD_PASS || !MOD_PASS) {
+        return { statusCode: 200, headers,
+                 body: JSON.stringify({ ok: false, reason: 'not-authorised' }) };
+      }
+      const base = (q.base || 'planning').trim()
+                     .replace(/\s+/g, '-').replace(/[^A-Za-z0-9-]/g, '')
+                     .replace(/-[a-z0-9]{8}$/, '').slice(0, 24) || 'planning';
+      const stamp = Math.random().toString(36).slice(2, 6);
+      const full  = base + stamp;
+      return { statusCode: 200, headers,
+               body: JSON.stringify({ ok: true, room: full + '-' + meetTail(full) }) };
+    }
+
+    const allowed = FIXED.indexOf(room) >= 0 || meetOK(room);
+
+    if (!allowed) {
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ ok: false, reason: 'room-not-allowed' })
+      };
+    }
+
+    /* Moderator only if the passphrase matches exactly. */
+    const isMod = pass !== '' && pass === MOD_PASS;
+
+    const now = Math.floor(Date.now() / 1000);
+    const payload = {
+      aud: 'jitsi',
+      iss: 'chat',
+      sub: APP_ID,
+      room: room,
+      exp: now + 60 * 60 * 6,   /* good for 6 hours — a long meeting is fine */
+      nbf: now - 30,            /* small clock-skew cushion */
+      context: {
+        user: {
+          name: name,
+          moderator: isMod ? 'true' : 'false'
+        },
+        features: {
+          livestreaming: isMod ? 'true' : 'false',
+          recording: isMod ? 'true' : 'false',
+          transcription: 'false',
+          'outbound-call': 'false'
+        }
+      }
+    };
+
+    const token = signJwt(payload, KEY, KID);
+
     return {
-      statusCode: 500,
+      statusCode: 200,
       headers,
-      body: JSON.stringify({
-        ok: false,
-        error:
-          'Could not sign token — the private key may be malformed. Re-paste the full PEM block (including BEGIN/END lines) into JAAS_PRIVATE_KEY.',
-        detail: (e && e.message) ? e.message : String(e),
-      }),
+      body: JSON.stringify({ ok: true, token: token, moderator: isMod })
+    };
+  } catch (err) {
+    /* Never throw at the visitor. The app keeps the public room. */
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ ok: false, reason: 'sign-failed', detail: String(err && err.message || err) })
     };
   }
-
-  return {
-    statusCode: 200,
-    headers,
-    body: JSON.stringify({
-      ok: true,
-      token: token,
-      moderator: isModerator,
-      room: room,
-    }),
-  };
 };
