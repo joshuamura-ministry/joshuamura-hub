@@ -2959,7 +2959,7 @@ function readProg(id){try{const v=JSON.parse(localStorage.getItem('mine-'+id)||'
 function bibleUrl(ref){return 'https://www.biblegateway.com/passage/?search='+encodeURIComponent(ref.replace(/\u2013/g,'-'))+'&version=NKJV'}
 function mapsUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function crumb(){return `<div class="crumb"><a href="#map">🗺️ ← Back to the map</a></div>`}
-function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v181</span></p></footer>`}
+function footer(){return `<footer><p class="v">"Seek, and ye shall find." — Matthew 7:7</p><p style="margin-top:.5em">Joshua Mura · Digital Ministry &nbsp;·&nbsp; <a href="#panel" style="color:rgba(244,237,224,.25);text-decoration:none">steward</a> &nbsp;·&nbsp; <span style="color:rgba(244,237,224,.2)">v183</span></p></footer>`}
 
 /* ===== LIVE CIRCLES: signed, sealed, moderated, embedded ===== */
 const JAAS_APPID='vpaas-magic-cookie-86d8e477e0754382b3deab81b3e8dcfb';
@@ -6775,11 +6775,19 @@ document.getElementById('panelbox').innerHTML=`
   <div class="pdesc">A private video room for planning, elders, counselling — anything that isn't for the whole church. It is <b>not</b> on the treasure map and nothing links to it: only someone you send the link to can find it. No time limit.</div>
   <div class="subcard">
     <b>Name this meeting</b>
-    <div class="note" style="margin:.3em 0 .5em">Anything you like — <code>planning</code>, <code>elders</code>, <code>board</code>. Each name is its own separate room. Same name = same room, so you can reuse it every week.</div>
+    <div class="note" style="margin:.3em 0 .5em">Anything you like — <code>planning</code>, <code>elders</code>, <code>board</code>. A plain name is the <b>same room every time</b>, so everyone you have ever sent that link to can walk back in.</div>
     <input type="text" id="mt-name" value="planning" placeholder="planning">
     <div style="display:flex;gap:.5em;flex-wrap:wrap;margin-top:.4em">
-      <button class="btn" id="mt-open">🚪 Open the room</button>
+      <button class="btn" id="mt-fresh">✨ Start a fresh meeting</button>
+      <button class="btn ghost" id="mt-open">🚪 Open the room</button>
       <button class="btn ghost" id="mt-copy">🔗 Copy the invite link</button>
+    </div>
+    <div class="note" style="margin-top:.5em;padding:.6em .7em;border-left:3px solid var(--gold);background:rgba(201,162,75,.07);border-radius:0 8px 8px 0">
+      <b style="color:var(--gold)">A fresh meeting makes a new, signed link</b> — like
+      <code>planningk3f9-7ordcmos</code>. The people you send it to just tap and walk in; no code
+      to remember. Every earlier link stops reaching this meeting, and a room name that you did
+      not create here <b>cannot get in at all</b> — so nobody can run their own meetings on your
+      Jitsi account.
     </div>
     <div id="mt-link" class="note" style="margin-top:.5em;word-break:break-all"></div>
     <div id="mt-ok" class="ok"></div>
@@ -7805,6 +7813,43 @@ var azr=document.getElementById('az-refresh'); if(azr) azr.onclick=loadAnalytics
     return url;
   };
   if(nameBox){ nameBox.addEventListener('input',showLink); showLink(); }
+  /* A fresh meeting: keep the name he recognises, add an unguessable tail.
+     The link IS the key — no code to remember, and every earlier link is left
+     pointing at a room nobody is in. */
+  /* The room name is MINTED BY THE SERVER and signed with the private key, so a
+     name invented in the address bar cannot get a token — nobody can hold their
+     own meetings on this Jitsi account. Minting needs the moderator passphrase. */
+  var fresh=document.getElementById('mt-fresh');
+  if(fresh)fresh.onclick=async function(){
+    var ok=document.getElementById('mt-ok');
+    var base=(nameBox.value||'planning').trim().replace(/\s+/g,'-')
+             .replace(/[^A-Za-z0-9-]/g,'').replace(/-[a-z0-9]{8}$/,'') || 'planning';
+    var pass = SESSION_MOD_PASS || '';
+    if(!pass){
+      pass = prompt('Moderator passphrase \u2014 needed once to create a private room:') || '';
+      if(!pass){ if(ok)ok.textContent='Cancelled.'; return; }
+      SESSION_MOD_PASS = pass;
+    }
+    fresh.disabled=true; var was=fresh.textContent; fresh.textContent='Creating\u2026';
+    try{
+      var r=await fetch('/.netlify/functions/circle-token?mint=1&base='
+              +encodeURIComponent(base)+'&pass='+encodeURIComponent(pass));
+      var j=await r.json();
+      if(j && j.ok && j.room){
+        nameBox.value=j.room; showLink();
+        if(ok)ok.textContent='Fresh room ready \u2014 copy the link and send it. Older links no longer reach this meeting.';
+      } else if(j && j.reason==='not-authorised'){
+        SESSION_MOD_PASS=null;
+        if(ok)ok.textContent='That passphrase didn\u2019t match \u2014 try again.';
+      } else {
+        if(ok)ok.textContent='Could not create the room. Check your connection and try again.';
+      }
+    }catch(e){
+      if(ok)ok.textContent='Could not reach the room service. Try again in a moment.';
+    }
+    fresh.disabled=false; fresh.textContent=was;
+    setTimeout(function(){ if(ok)ok.textContent=''; },8000);
+  };
   var o=document.getElementById('mt-open');
   if(o)o.onclick=function(){ var u=showLink(); location.hash=u.split('#')[1]; };
   var c=document.getElementById('mt-copy');
